@@ -30,6 +30,14 @@ body {
   box-sizing: border-box;
 }
 
+#actions-wall {
+  display: grid;
+  grid-template-columns: repeat(var(--action-per-line), var(--action-box-width));
+  gap: 0.5em;
+  justify-content: center;
+}
+
+
 #search-results.hidden,
 .hidden {
   display: none;
@@ -40,8 +48,10 @@ body {
 }
 
 #actions-panel {
+  display: grid;
+  grid-template-columns: repeat(var(--action-per-line), 1fr);
   height: calc(100% - var(--search-box-height));
-  overflow: auto;
+  overflow: hidden;
   width: 100%;
   font-size: 1rem;
   padding-left: calc(

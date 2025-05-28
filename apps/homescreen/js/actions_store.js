@@ -1,6 +1,11 @@
 // This class manages the persistence of the actions displayed on the homescreen.
 
 class ActionsStore extends EventTarget {
+  isPositionOccupied(position) {
+    return Array.from(this.actions.values()).some(
+      action => action.position === position
+    );
+  }
   constructor() {
     super();
 

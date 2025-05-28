@@ -77,3 +77,8 @@
   opacity: 1;
   transition: opacity 0.5s;
 }
+
+.ghost-blocked {
+  opacity: 0.5;
+  border: 2px dashed red;
+}

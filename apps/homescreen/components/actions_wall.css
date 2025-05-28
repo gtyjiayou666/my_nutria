@@ -6,3 +6,8 @@
   min-height: 100%;
   display: block;
 }
+
+.ghost-blocked {
+  opacity: 0.5;
+  border: 2px dashed red;
+}

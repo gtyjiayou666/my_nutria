@@ -1,5 +1,31 @@
 // Starts and attach some event listeners to open and close the search panel.
 
+
+
+function updateActionLayout() {
+  const root = document.documentElement;
+  console.log("box", document.getElementById("actions-wall"));
+  console.log("root:", root);
+  const container = document.getElementById('actions-panel');
+  if (!container) return;
+
+  const containerWidth = container.clientWidth;
+  const actionBoxWidth = 80;
+
+  const perLine = Math.max(1, Math.floor(containerWidth / actionBoxWidth));
+  console.log("cnt:", perLine);
+  root.style.setProperty('--action-per-line', perLine);
+  console.log("root:", root);
+  console.log("debug:", getComputedStyle(root, null));
+}
+
+window.addEventListener('resize', updateActionLayout);
+
+window.addEventListener('DOMContentLoaded', updateActionLayout);
+
+
+
+
 var graph;
 
 const kBindingsModifier = "Control";

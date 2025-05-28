@@ -3,6 +3,15 @@
 const kLongPressMinMs = 200;
 
 class ActionBox extends HTMLElement {
+  // 在 ActionBox 类中添加
+  setGhostActive(active, available = true) {
+    if (active) {
+      this.classList.add(available ? "ghost-active" : "ghost-blocked");
+    } else {
+      this.classList.remove("ghost-active", "ghost-blocked");
+    }
+  }
+  
   static get observedAttributes() {
     return ["position"];
   }

@@ -1,5 +1,6 @@
 // <actions-wall> is a container to layout <action-box> components.
 
+
 const kMaxWidth = window
   .getComputedStyle(document.body)
   .getPropertyValue("--action-per-line");
@@ -212,43 +213,101 @@ class ActionsWall extends HTMLElement {
     if (event.type === "pointerup") {
       this.removeEventListener("pointermove", this);
       this.removeAllGhosts();
-
+  
       let box = this.editing.box;
       box.animate(false);
       box.classList.remove("no-transition");
-
-      // Update the box position.
-      box.translateBy(0, 0);
-      let newPosition = this.editing.dropPosition;
-      if (newPosition) {
-        box.setAttribute("position", newPosition);
-        this.store.updatePositionFor(box.actionId, newPosition);
+  
+      // 只有在 dropPosition 存在且目标位置为空时才更新位置
+      if (this.editing.dropPosition) {
+        box.setAttribute("position", this.editing.dropPosition);
+        this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
       }
-
+  
+      // 无论是否成功移动，都重置位置到原始状态
+      box.translateBy(0, 0);
+  
       this.editing = null;
-
       location.hash = "unlock";
     } else if (event.type === "pointermove") {
-      // Find if we are intersecting with a box.
+      // Find if we are intersecting with a box
       let hover = this.findHoverBox(
         document.elementFromPoint(event.clientX, event.clientY)
       );
+      
       if (hover) {
-        // Change the "active ghost"
-        if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
-          this.editing.activeGhost.setGhostActive(false);
+        // 检查目标位置是否已被占用（不是 ghost）
+        const position = hover.getAttribute("position");
+        const isOccupied = !hover.classList.contains("ghost") && 
+                           this.store.isPositionOccupied(position);
+        
+        if (isOccupied) {
+          console.log("-------------------");
+          // 目标位置已被占用，取消激活当前 ghost（如果有）
+          if (this.editing.activeGhost) {
+            this.editing.activeGhost.setGhostActive(false);
+            this.editing.activeGhost = null;
+          }
+          this.editing.dropPosition = null;
+        } else {
+          // 目标位置可用，正常处理
+          if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
+            this.editing.activeGhost.setGhostActive(false);
+          }
+          hover.setGhostActive(true);
+          this.editing.activeGhost = hover;
+          this.editing.dropPosition = position;
         }
-        hover.setGhostActive(true);
-        this.editing.activeGhost = hover;
-        this.editing.dropPosition = hover.getAttribute("position");
       }
-
+  
       let deltaX = event.screenX - this.editing.startCoords.x;
       let deltaY = event.screenY - this.editing.startCoords.y;
-      // Update the translation of the box.
       this.editing.box.translateBy(deltaX, deltaY);
     }
   }
+  // handleEvent(event) {
+  //   if (event.type === "pointerup") {
+  //     this.removeEventListener("pointermove", this);
+  //     this.removeAllGhosts();
+
+  //     let box = this.editing.box;
+  //     box.animate(false);
+  //     box.classList.remove("no-transition");
+
+  //     // Update the box position.
+  //     box.translateBy(0, 0);
+  //     let newPosition = this.editing.dropPosition;
+  //     if (newPosition) {
+  //       box.setAttribute("position", newPosition);
+  //       this.store.updatePositionFor(box.actionId, newPosition);
+  //     }
+
+  //     this.editing = null;
+
+  //     location.hash = "unlock";
+  //   } else if (event.type === "pointermove") {
+  //     // Find if we are intersecting with a box.
+  //     let hover = this.findHoverBox(
+  //       document.elementFromPoint(event.clientX, event.clientY)
+  //     );
+  //     if (hover) {
+  //       // Change the "active ghost"
+  //       if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
+  //         this.editing.activeGhost.setGhostActive(false);
+  //       }
+  //       hover.setGhostActive(true);
+  //       this.editing.activeGhost = hover;
+  //       this.editing.dropPosition = hover.getAttribute("position");
+  //     }
+
+  //     let deltaX = event.screenX - this.editing.startCoords.x;
+  //     let deltaY = event.screenY - this.editing.startCoords.y;
+  //     // Update the translation of the box.
+  //     this.editing.box.translateBy(deltaX, deltaY);
+  //   }
+  // }
+
+
 }
 
 customElements.define("actions-wall", ActionsWall);
