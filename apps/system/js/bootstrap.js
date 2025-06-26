@@ -5,6 +5,64 @@
 
 const bsLoad = Date.now();
 
+// 在 bootstrap.js 中添加以下代码
+document.addEventListener('DOMContentLoaded', () => {
+    const appContainer = document.getElementById('app-container');
+    const apps = appContainer.querySelectorAll('.app');
+
+    let draggedApp = null;
+
+    apps.forEach(app => {
+        app.addEventListener('dragstart', (e) => {
+            draggedApp = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.outerHTML);
+            setTimeout(() => {
+                e.target.style.display = 'none';
+            }, 0);
+        });
+
+        app.addEventListener('dragend', (e) => {
+            e.target.style.display = 'block';
+            draggedApp = null;
+        });
+
+        app.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        app.addEventListener('drop', (e) => {
+            e.stopPropagation();
+            const targetApp = e.target;
+
+            // 判断是挤走还是合并
+            if (Math.random() < 0.5) {
+                // 合并逻辑
+                const folder = document.createElement('div');
+                folder.classList.add('folder');
+                folder.appendChild(draggedApp.cloneNode(true));
+                folder.appendChild(targetApp.cloneNode(true));
+
+                appContainer.removeChild(draggedApp);
+                appContainer.removeChild(targetApp);
+                appContainer.appendChild(folder);
+            } else {
+                // 挤走逻辑
+                const indexDragged = Array.from(appContainer.children).indexOf(draggedApp);
+                const indexTarget = Array.from(appContainer.children).indexOf(targetApp);
+
+                if (indexDragged < indexTarget) {
+                    appContainer.insertBefore(draggedApp, targetApp.nextSibling);
+                } else {
+                    appContainer.insertBefore(draggedApp, targetApp);
+                }
+            }
+        });
+    });
+});
+//添加部分
+
 function timingFromStart(label) {
   let now = Date.now();
   console.log(`Timing '${label}' at ${now - bsLoad}ms`);

@@ -1,3 +1,52 @@
+<!-- <!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no"
+    />
+    <meta id="theme-color" name="theme-color" content="transparent" />
+    <title>Home sweet home</title>
+
+    <meta name="defaultLanguage" content="en-US" />
+    <meta name="availableLanguages" content="en-US,zh-CN,ja" />
+    <link rel="localization" href="./locales/{locale}/main.ftl" />
+    <link rel="stylesheet" href="style/index.css" type="text/css" />
+
+    <script src="js/config.js" defer></script>
+    <script src="js/dependencies.js"></script>
+    <script src="js/bootstrap.js"></script>
+  </head>
+  <body>
+    <section id="actions-panel">
+      <actions-wall id="actions-wall">
+        <!-- <action-box></action-box> components go here. 
+      </actions-wall>
+    </section>
+    <section id="search-panel">
+      <div class="input no-blur">
+        <input data-l10n-id="search-box-placeholder" id="search-box" />
+        <sl-icon
+          id="private-browsing"
+          name="venetian-mask"
+          class="hidden"
+        ></sl-icon>
+        <sl-icon id="qr-code" name="qr-code"></sl-icon>
+        <sl-icon id="clear-search" name="x-circle" class="hidden"></sl-icon>
+      </div>
+      <div id="search-results" class="hidden">
+        <default-results
+          id="default-search-results"
+          class="no-blur hidden"
+        ></default-results>
+      </div>
+    </section>
+    <apps-list id="apps-list"></apps-list>
+    <qr-dialog id="qr-dialog"></qr-dialog>
+  </body>
+  
+</html> -->
 <!DOCTYPE html>
 <html lang="en-US">
   <head>
@@ -17,6 +66,26 @@
     <script src="js/config.js" defer></script>
     <script src="js/dependencies.js"></script>
     <script src="js/bootstrap.js"></script>
+
+    <!-- 添加应用图标和文件夹的样式 -->
+    <style>
+      .app {
+        width: 50px;
+        height: 50px;
+        background-color: lightblue;
+        margin: 5px;
+        display: inline-block;
+        cursor: move;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .folder {
+        border: 1px solid gray;
+        padding: 5px;
+        display: inline-block;
+        border-radius: 10px;
+      }
+    </style>
   </head>
   <body>
     <section id="actions-panel">
@@ -42,8 +111,73 @@
         ></default-results>
       </div>
     </section>
-    <apps-list id="apps-list"></apps-list>
+    <apps-list id="apps-list">
+      <!-- 添加几个应用图标 -->
+      <div class="app" draggable="true"></div>
+      <div class="app" draggable="true"></div>
+      <div class="app" draggable="true"></div>
+      <div class="app" draggable="true"></div>
+      <div class="app" draggable="true"></div>
+    </apps-list>
     <qr-dialog id="qr-dialog"></qr-dialog>
+
+    <!-- 添加 JavaScript 代码实现拖动、挤走和合并功能 -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const appContainer = document.getElementById('apps-list');
+        const apps = appContainer.querySelectorAll('.app');
+
+        let draggedApp = null;
+
+        apps.forEach(app => {
+          app.addEventListener('dragstart', (e) => {
+            draggedApp = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.outerHTML);
+            setTimeout(() => {
+              e.target.style.display = 'none';
+            }, 0);
+          });
+
+          app.addEventListener('dragend', (e) => {
+            e.target.style.display = 'block';
+            draggedApp = null;
+          });
+
+          app.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          });
+
+          app.addEventListener('drop', (e) => {
+            e.stopPropagation();
+            const targetApp = e.target;
+
+            // 随机决定是挤走还是合并
+            if (Math.random() < 0.5) {
+              // 合并逻辑
+              const folder = document.createElement('div');
+              folder.classList.add('folder');
+              folder.appendChild(draggedApp.cloneNode(true));
+              folder.appendChild(targetApp.cloneNode(true));
+
+              appContainer.removeChild(draggedApp);
+              appContainer.removeChild(targetApp);
+              appContainer.appendChild(folder);
+            } else {
+              // 挤走逻辑
+              const indexDragged = Array.from(appContainer.children).indexOf(draggedApp);
+              const indexTarget = Array.from(appContainer.children).indexOf(targetApp);
+
+              if (indexDragged < indexTarget) {
+                appContainer.insertBefore(draggedApp, targetApp.nextSibling);
+              } else {
+                appContainer.insertBefore(draggedApp, targetApp);
+              }
+            }
+          });
+        });
+      });
+    </script>
   </body>
-  
 </html>

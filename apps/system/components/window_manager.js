@@ -374,14 +374,29 @@ class WindowManager extends HTMLElement {
           if (this.expectedActiveFrame && this.expectedActiveFrame == frameId) {
             foundExpected = true;
           }
+          
+          // Ensure previous frame is properly deactivated before activating new one
+          if (this.activeFrame && this.activeFrame !== frameId) {
+            let prevFrame = this.frames[this.activeFrame];
+            if (prevFrame) {
+              prevFrame.deactivate();
+            }
+          }
+          
           frame.activate();
           if (this.activeFrame != frameId) {
             actionsDispatcher.dispatch("close-url-editor");
           }
           this.activeFrame = frameId;
+          // Ensure proper visibility management
+          this.ensureActiveFrameVisibility();
         } else if (frame) {
           // The frame may have been removed if we just closed it.
-          frame.deactivate();
+          // Only deactivate if this frame is currently active to prevent
+          // deactivating frames that are still visible during transitions
+          if (this.activeFrame === frameId && entry.intersectionRatio < 0.25) {
+            frame.deactivate();
+          }
         }
       });
 
@@ -792,8 +807,25 @@ class WindowManager extends HTMLElement {
       }
     }
 
+    // Immediately deactivate the current active frame to prevent overlap
+    if (this.activeFrame && this.activeFrame !== id) {
+      let currentFrame = this.frames[this.activeFrame];
+      if (currentFrame) {
+        currentFrame.deactivate();
+      }
+    }
+
     if (updatePreviousFrame) {
       this.frames[id].config.previousFrame = this.activeFrame;
+    }
+
+    // Pre-activate the target frame before scrolling to it
+    let targetFrame = this.frames[id];
+    if (targetFrame) {
+      targetFrame.activate();
+      this.activeFrame = id;
+      // Ensure visibility is properly managed
+      this.ensureActiveFrameVisibility();
     }
 
     document.querySelector(`#${id}`).scrollIntoView({
@@ -841,6 +873,13 @@ class WindowManager extends HTMLElement {
     }
   }
 
+  // Immediately switch to homescreen without animation
+  goHomeInstant() {
+    if (this.homescreenId && this.activeFrame != this.homescreenId) {
+      this.switchToFrame(this.homescreenId, "instant");
+    }
+  }
+
   // Load a new homescreen url.
   switchHome(url, display) {
     if (!this.homescreenId) {
@@ -876,6 +915,18 @@ class WindowManager extends HTMLElement {
   async openCarousel() {
     if (this.isCarouselOpen) {
       return;
+    }
+
+    // If apps list is open, close it first
+    let appsList = document.getElementById("apps-list");
+    if (appsList && appsList.classList.contains("open")) {
+      appsList.close();
+    }
+
+    // Ensure we have a consistent background by going to homescreen first
+    if (this.activeFrame !== this.homescreenId) {
+      this.goHomeInstant();
+      this.ensureActiveFrameVisibility();
     }
 
     let verticalMode = embedder.sessionType === "mobile";
@@ -1199,6 +1250,27 @@ class WindowManager extends HTMLElement {
     this.windows.classList.remove("hidden");
     this.carousel.classList.add("hidden");
     this.isCarouselOpen = false;
+    
+    // Ensure proper frame visibility after closing carousel
+    this.ensureActiveFrameVisibility();
+  }
+
+  // Ensure only the active frame is visible to prevent overlapping
+  ensureActiveFrameVisibility() {
+    for (let frameId in this.frames) {
+      let frame = this.frames[frameId];
+      if (frameId === this.activeFrame) {
+        frame.classList.add("active");
+        frame.style.zIndex = "10";
+        frame.style.opacity = "1";
+        frame.style.pointerEvents = "auto";
+      } else if (!frame.classList.contains("split")) {
+        frame.classList.remove("active");
+        frame.style.zIndex = "1";
+        frame.style.opacity = "0";
+        frame.style.pointerEvents = "none";
+      }
+    }
   }
 
   lockSwipe() {

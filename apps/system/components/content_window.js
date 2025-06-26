@@ -938,6 +938,9 @@ class ContentWindow extends HTMLElement {
     this.activated = true;
     this.addSiteInfoListeners();
 
+    // Add visual class to indicate active state
+    this.classList.add("active");
+
     this.webView.active = true;
     this.focus();
     processManager.setForeground(this.pid);
@@ -979,6 +982,9 @@ class ContentWindow extends HTMLElement {
 
     this.activated = false;
     this.removeSiteInfoListeners();
+
+    // Remove visual class to indicate inactive state
+    this.classList.remove("active");
 
     actionsDispatcher.removeListener("keyboard-opening", this.openKeyboard);
     actionsDispatcher.removeListener("keyboard-closing", this.closeKeyboard);

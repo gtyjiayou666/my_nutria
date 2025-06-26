@@ -76,6 +76,11 @@ class AppsList extends LitElement {
   }
 
   open() {
+    // If carousel is open, close it first
+    if (window.wm.isCarouselOpen) {
+      actionsDispatcher.dispatch("close-carousel");
+    }
+
     this.canOpen = false;
     this.addEventListener(
       "transitionend",
@@ -86,8 +91,17 @@ class AppsList extends LitElement {
     );
     this.classList.add("open");
 
-    // Hide the homescreen.
-    window.wm.homescreenFrame().classList.add("deactivated");
+    // Ensure we always show the homescreen as background with wallpaper visible
+    window.wm.goHomeInstant();
+    // Make sure only homescreen is visible as background
+    window.wm.ensureActiveFrameVisibility();
+    // Hide the homescreen content to show only the wallpaper
+    let homescreenFrame = window.wm.homescreenFrame();
+    if (homescreenFrame) {
+      homescreenFrame.classList.add("deactivated");
+      // Force wallpaper to be visible by ensuring no content windows are showing
+      homescreenFrame.style.background = "transparent";
+    }
     this.focus();
     embedder.addSystemEventListener("keypress", this, true);
   }
@@ -96,8 +110,12 @@ class AppsList extends LitElement {
     embedder.removeSystemEventListener("keypress", this, true);
     this.closeContextMenu();
     this.classList.remove("open");
-    // Show the homescreen.
-    window.wm.homescreenFrame().classList.remove("deactivated");
+    // Restore the homescreen content visibility
+    let homescreenFrame = window.wm.homescreenFrame();
+    if (homescreenFrame) {
+      homescreenFrame.classList.remove("deactivated");
+      homescreenFrame.style.background = "";
+    }
   }
 
   toggle() {
