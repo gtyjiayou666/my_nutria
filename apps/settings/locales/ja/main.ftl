@@ -46,6 +46,7 @@ display-title = 表示設定
 display-prefer-dark = ダークモードを使用する
 display-choose-homescreen = ホーム画面を選んでください
 display-choose-theme = テーマを選んでください
+display-choose-resolution = 画面解像度を選んでください
 
 # Search engines panel
 search-title = 検索エンジン
