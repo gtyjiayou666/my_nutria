@@ -1,9 +1,9 @@
 // <actions-wall> is a container to layout <action-box> components.
 
 
-const kMaxWidth = window
-  .getComputedStyle(document.body)
-  .getPropertyValue("--action-per-line");
+// const kMaxWidth = window
+//   .getComputedStyle(document.body)
+//   .getPropertyValue("--action-per-line");
 
 class ActionsWall extends HTMLElement {
   constructor() {
@@ -100,6 +100,9 @@ class ActionsWall extends HTMLElement {
   }
 
   async addNewAction(action) {
+    const kMaxWidth = window
+      .getComputedStyle(document.body)
+      .getPropertyValue("--action-per-line");
     // Find a empty spot for this new action.
     let empty = this.store.getEmptySlots(kMaxWidth);
     action.position = empty.values().next().value;
@@ -184,6 +187,10 @@ class ActionsWall extends HTMLElement {
       // Animate the icon but stop the transition in x,y
       this.editing.box.animate(true);
       this.editing.box.classList.add("no-transition");
+
+      const kMaxWidth = window
+        .getComputedStyle(document.body)
+        .getPropertyValue("--action-per-line");
 
       let emptySlots = this.store.getEmptySlots(kMaxWidth);
       emptySlots.forEach((position) => {
