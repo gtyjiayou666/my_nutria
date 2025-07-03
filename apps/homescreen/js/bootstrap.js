@@ -1,26 +1,297 @@
 // Starts and attach some event listeners to open and close the search panel.
 
+// 防抖函数，避免频繁触发布局更新
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
+// 检查 app 图标是否在可视区域外或超出网格边界
+function isAppOutsideViewport(appElement, container, perLine) {
+  if (!appElement || !container) return false;
+  
+  const appRect = appElement.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  
+  // 基本的视口检测
+  const outsideViewport = (
+    appRect.right > containerRect.right ||
+    appRect.left < containerRect.left ||
+    appRect.bottom > containerRect.bottom ||
+    appRect.top < containerRect.top
+  );
+  
+  // 如果有网格信息，也检查是否超出网格边界
+  if (perLine && window.actionsStore) {
+    const actionId = getActionIdFromElement(appElement);
+    if (actionId) {
+      const action = window.actionsStore.actions.find(a => a.id === actionId);
+      if (action && action.position) {
+        const [x] = action.position.split(',').map(n => parseInt(n));
+        if (x >= perLine) {
+          console.log(`App ${actionId} 在位置 ${action.position}，超出网格边界 (每行 ${perLine} 个)`);
+          return true;
+        }
+      }
+    }
+  }
+  
+  return outsideViewport;
+}
+
+// 获取所有 app 图标元素
+function getAllAppElements() {
+  const actionsWall = document.getElementById('actions-wall');
+  if (!actionsWall) return [];
+  
+  // 查找所有 action-box 或 action-bookmark 元素
+  const appElements = Array.from(actionsWall.querySelectorAll('action-box, action-bookmark'));
+  console.log(`找到 ${appElements.length} 个 app 图标元素`);
+  return appElements;
+}
+
+// 从 DOM 元素获取对应的 action ID
+function getActionIdFromElement(element) {
+  // 尝试多种方式获取 action ID
+  const id = element.getAttribute('data-id') || 
+            element.getAttribute('id') ||
+            element.getAttribute('data-action-id');
+  
+  // 如果直接属性没有，检查是否有 action 对象
+  if (!id && element.action) {
+    return element.action.id;
+  }
+  
+  return id;
+}
+
+// 重新排列超出窗口的 app 图标
+function rearrangeOutsideApps(actionsStore, newPerLine) {
+  const container = document.getElementById('actions-panel');
+  const appElements = getAllAppElements();
+  
+  if (!container || !actionsStore || appElements.length === 0) return;
+  
+  console.log('检查并重新排列超出窗口的 app 图标...');
+  
+  // 找出所有超出窗口的 app
+  const outsideApps = [];
+  appElements.forEach(appElement => {
+    if (isAppOutsideViewport(appElement, container, newPerLine)) {
+      const appId = getActionIdFromElement(appElement);
+      if (appId) {
+        outsideApps.push({ element: appElement, id: appId });
+        console.log(`App ${appId} 超出窗口范围`);
+      } else {
+        console.warn('无法获取 app 元素的 ID:', appElement);
+      }
+    }
+  });
+  
+  if (outsideApps.length === 0) {
+    console.log('所有 app 图标都在可视区域内');
+    return;
+  }
+  
+  // 获取空闲位置
+  const emptySlots = actionsStore.getEmptySlots(newPerLine);
+  console.log(`找到 ${emptySlots.size} 个空闲位置，需要重新安排 ${outsideApps.length} 个 app`);
+  
+  // 将超出窗口的 app 移动到空闲位置
+  const emptySlotArray = Array.from(emptySlots);
+  outsideApps.forEach((app, index) => {
+    if (index < emptySlotArray.length) {
+      const newPosition = emptySlotArray[index];
+      console.log(`移动 app ${app.id} 到位置 ${newPosition}`);
+      actionsStore.updatePositionFor(app.id, newPosition);
+    }
+  });
+  
+  // 如果空闲位置不够，重新排列所有 app
+  if (outsideApps.length > emptySlotArray.length) {
+    console.log('空闲位置不够，重新排列所有 app 图标');
+    rearrangeAllApps(actionsStore, newPerLine);
+  }
+}
+
+// 获取 widget 的大小信息
+function getWidgetSize(action) {
+  // 尝试从 DOM 元素获取 widget 大小
+  const actionElement = document.getElementById(`action-${action.id}`);
+  if (actionElement) {
+    if (actionElement.classList.contains('widget-2x2')) {
+      return { width: 2, height: 2 };
+    } else if (actionElement.classList.contains('widget-2x1')) {
+      return { width: 2, height: 1 };
+    } else if (actionElement.classList.contains('widget-1x2')) {
+      return { width: 1, height: 2 };
+    }
+  }
+  
+  // 尝试从 action.size 属性获取
+  if (action.size) {
+    if (action.size === '2x2') {
+      return { width: 2, height: 2 };
+    } else if (action.size === '2x1') {
+      return { width: 2, height: 1 };
+    } else if (action.size === '1x2') {
+      return { width: 1, height: 2 };
+    }
+  }
+  
+  // 默认为 1x1
+  return { width: 1, height: 1 };
+}
+
+// 检查网格位置是否可以放置指定大小的 widget
+function canPlaceWidget(grid, x, y, width, height, perLine, maxRows) {
+  // 检查边界
+  if (x + width > perLine || y + height > maxRows) {
+    return false;
+  }
+  
+  // 检查所有需要占用的格子是否空闲
+  for (let dy = 0; dy < height; dy++) {
+    for (let dx = 0; dx < width; dx++) {
+      if (grid[y + dy] && grid[y + dy][x + dx]) {
+        return false; // 位置已被占用
+      }
+    }
+  }
+  
+  return true;
+}
+
+// 在网格中标记 widget 占用的位置
+function markGridOccupied(grid, x, y, width, height, actionId) {
+  for (let dy = 0; dy < height; dy++) {
+    for (let dx = 0; dx < width; dx++) {
+      if (!grid[y + dy]) {
+        grid[y + dy] = [];
+      }
+      grid[y + dy][x + dx] = actionId;
+    }
+  }
+}
+
+// 重新排列所有 app 图标（支持多格 widget）
+function rearrangeAllApps(actionsStore, perLine) {
+  if (!actionsStore || !actionsStore.actions) return;
+  
+  console.log(`重新排列所有 app 图标，每行 ${perLine} 个`);
+  
+  // 按照当前位置排序
+  const sortedActions = [...actionsStore.actions].sort((a, b) => {
+    const [aX, aY] = a.position.split(',').map(n => parseInt(n));
+    const [bX, bY] = b.position.split(',').map(n => parseInt(n));
+    
+    // 先按行排序，再按列排序
+    if (aY !== bY) return aY - bY;
+    return aX - bX;
+  });
+  
+  // 创建网格来跟踪占用情况
+  const grid = [];
+  const maxRows = Math.ceil(sortedActions.length * 4 / perLine) + 10; // 预留足够空间
+  
+  // 逐个放置 widget
+  sortedActions.forEach((action) => {
+    const size = getWidgetSize(action);
+    console.log(`放置 widget ${action.id}，大小: ${size.width}x${size.height}`);
+    
+    // 寻找第一个可以放置该 widget 的位置
+    let placed = false;
+    for (let y = 0; y < maxRows && !placed; y++) {
+      for (let x = 0; x < perLine && !placed; x++) {
+        if (canPlaceWidget(grid, x, y, size.width, size.height, perLine, maxRows)) {
+          // 找到合适位置，更新 action 的位置
+          const newPosition = `${x},${y}`;
+          if (action.position !== newPosition) {
+            console.log(`移动 app ${action.id} 从 ${action.position} 到 ${newPosition}`);
+            actionsStore.updatePositionFor(action.id, newPosition);
+          }
+          
+          // 在网格中标记占用
+          markGridOccupied(grid, x, y, size.width, size.height, action.id);
+          placed = true;
+        }
+      }
+    }
+    
+    if (!placed) {
+      console.warn(`无法为 widget ${action.id} (${size.width}x${size.height}) 找到合适位置`);
+    }
+  });
+}
 
 function updateActionLayout() {
   const root = document.documentElement;
-  console.log("box", document.getElementById("actions-wall"));
-  console.log("root:", root);
   const container = document.getElementById('actions-panel');
   if (!container) return;
 
   const containerWidth = container.clientWidth;
-  const actionBoxWidth = 80;
+  
+  // 尝试从 CSS 变量获取实际的 action box 宽度
+  const computedStyle = getComputedStyle(root);
+  const actionBoxWidthStr = computedStyle.getPropertyValue('--action-box-width').trim();
+  let actionBoxWidth = 80; // 默认值
+  
+  if (actionBoxWidthStr) {
+    // 如果是 em 单位，需要转换为像素
+    if (actionBoxWidthStr.endsWith('em')) {
+      const emValue = parseFloat(actionBoxWidthStr);
+      const fontSize = parseFloat(computedStyle.fontSize) || 16;
+      actionBoxWidth = emValue * fontSize;
+    } else if (actionBoxWidthStr.endsWith('px')) {
+      actionBoxWidth = parseFloat(actionBoxWidthStr);
+    }
+  }
+  
+  // 添加一些额外的间距来计算每行的数量
+  const gapValue = parseFloat(computedStyle.getPropertyValue('gap')) || 10;
+  const effectiveWidth = actionBoxWidth + gapValue;
 
-  const perLine = Math.max(1, Math.floor(containerWidth / actionBoxWidth));
-  console.log("cnt:", perLine);
-  root.style.setProperty('--action-per-line', perLine);
-  console.log("root:", root);
-  console.log("debug:", getComputedStyle(root, null));
+  const newPerLine = Math.max(1, Math.floor(containerWidth / effectiveWidth));
+  const currentPerLine = parseInt(computedStyle.getPropertyValue('--action-per-line')) || 4;
+  
+  console.log(`布局更新: 容器宽度=${containerWidth}px, action宽度=${actionBoxWidth}px, 新的每行数量=${newPerLine}, 当前每行数量=${currentPerLine}`);
+  
+  // 更新 CSS 变量
+  root.style.setProperty('--action-per-line', newPerLine);
+  
+  // 如果每行数量发生变化，重新排列所有 app 图标
+  if (newPerLine !== currentPerLine) {
+    // 延迟一点时间等待 DOM 更新
+    setTimeout(() => {
+      // 尝试获取全局的 actionsStore 实例
+      if (window.actionsStore) {
+        console.log('窗口大小变化，重新排列所有 app 图标');
+        rearrangeAllApps(window.actionsStore, newPerLine);
+      } else {
+        console.log('actionsStore 未找到，将在初始化后重新检查');
+        // 如果 actionsStore 还没有初始化，监听 store-ready 事件
+        document.addEventListener('store-ready', () => {
+          if (window.actionsStore) {
+            console.log('窗口大小变化，重新排列所有 app 图标');
+            rearrangeAllApps(window.actionsStore, newPerLine);
+          }
+        }, { once: true });
+      }
+    }, 100);
+  }
 }
 
-window.addEventListener('resize', updateActionLayout);
+// 使用防抖版本的 updateActionLayout
+const debouncedUpdateActionLayout = debounce(updateActionLayout, 250);
 
+window.addEventListener('resize', debouncedUpdateActionLayout);
 window.addEventListener('DOMContentLoaded', updateActionLayout);
 
 

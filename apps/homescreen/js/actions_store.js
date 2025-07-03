@@ -248,8 +248,20 @@ class ActionsStore extends EventTarget {
   updatePositionFor(id, position) {
     this.actions.forEach((action) => {
       if (action.id === id) {
+        const oldPosition = action.position;
         action.position = position;
         this.updateAction(action);
+        
+        // 触发位置更新事件，通知 UI 更新
+        this.dispatchEvent(new CustomEvent("position-updated", {
+          detail: { 
+            actionId: id, 
+            oldPosition: oldPosition, 
+            newPosition: position 
+          }
+        }));
+        
+        this.log(`Updated position for action ${id} from ${oldPosition} to ${position}`);
       }
     });
   }

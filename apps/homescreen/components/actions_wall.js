@@ -12,15 +12,25 @@ class ActionsWall extends HTMLElement {
     this.editing = null;
 
     this.store = new ActionsStore();
+    // 将 store 实例设置为全局变量，以便 bootstrap.js 中的窗口大小调整功能可以访问
+    window.actionsStore = this.store;
+    
     this.store.addEventListener(
       "store-ready",
       () => {
         this.store.forEach((action) => {
           this.addAction(action);
         });
+        // 在 store 准备好后触发自定义事件，通知其他模块
+        document.dispatchEvent(new CustomEvent("store-ready", { detail: this.store }));
       },
       { once: true }
     );
+
+    // 监听 position-updated 事件，自动更新对应 action-box 的位置
+    this.store.addEventListener("position-updated", (event) => {
+      this.handlePositionUpdate(event.detail);
+    });
 
     // Listen for app related events.
     this.appsManager = window.apiDaemon.getAppsManager();
@@ -49,6 +59,20 @@ class ActionsWall extends HTMLElement {
         }
       });
     });
+  }
+
+  handlePositionUpdate(detail) {
+    const { actionId, oldPosition, newPosition } = detail;
+    
+    // 查找对应的 action-box 元素
+    const actionBox = this.querySelector(`#action-${actionId}`);
+    if (actionBox) {
+      // 更新位置属性，这会自动触发 action-box 的位置更新
+      actionBox.setAttribute("position", newPosition);
+      this.log(`Updated UI position for action ${actionId} from ${oldPosition} to ${newPosition}`);
+    } else {
+      this.error(`No action-box found for action ${actionId}`);
+    }
   }
 
   log(msg) {

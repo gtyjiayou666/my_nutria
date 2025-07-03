@@ -51,7 +51,7 @@ body {
   display: grid;
   grid-template-columns: repeat(var(--action-per-line), 1fr);
   height: calc(100% - var(--search-box-height));
-  overflow: hidden;
+  overflow: auto;
   width: 100%;
   font-size: 1rem;
   padding-left: calc(
