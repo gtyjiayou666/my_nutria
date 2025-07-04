@@ -194,3 +194,24 @@
   overflow: hidden;
   white-space: nowrap;
 }
+
+/* 新功能按钮样式 */
+#new-feature-icon {
+  font-size: 1.5em;
+  padding: 0.5em;
+  cursor: pointer;
+  color: var(--sl-color-neutral-700);
+  transition: all 0.2s ease;
+  border-radius: 50%;
+}
+
+#new-feature-icon:hover {
+  background-color: var(--sl-color-neutral-100);
+  transform: scale(1.05);
+  color: var(--sl-color-primary-600);
+}
+
+#new-feature-icon:active {
+  transform: scale(0.95);
+  background-color: var(--sl-color-neutral-200);
+}

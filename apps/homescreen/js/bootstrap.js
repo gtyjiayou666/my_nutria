@@ -181,13 +181,13 @@ function markGridOccupied(grid, x, y, width, height, actionId) {
   }
 }
 
-// 重新排列所有 app 图标（支持多格 widget）
+// 重新排列所有 app 图标（支持多格 widget，以底部为基准）
 function rearrangeAllApps(actionsStore, perLine) {
   if (!actionsStore || !actionsStore.actions) return;
   
   console.log(`重新排列所有 app 图标，每行 ${perLine} 个`);
   
-  // 按照当前位置排序
+  // 按照当前位置排序（保持相对顺序）
   const sortedActions = [...actionsStore.actions].sort((a, b) => {
     const [aX, aY] = a.position.split(',').map(n => parseInt(n));
     const [bX, bY] = b.position.split(',').map(n => parseInt(n));
@@ -201,27 +201,53 @@ function rearrangeAllApps(actionsStore, perLine) {
   const grid = [];
   const maxRows = Math.ceil(sortedActions.length * 4 / perLine) + 10; // 预留足够空间
   
+  // 从底部开始逐行填充
+  let currentRow = 0; // 从底行开始（y=0代表最底行）
+  let currentCol = 0;
+  let maxUsedRow = 0; // 记录实际使用的最高行
+  
   // 逐个放置 widget
   sortedActions.forEach((action) => {
     const size = getWidgetSize(action);
     console.log(`放置 widget ${action.id}，大小: ${size.width}x${size.height}`);
     
-    // 寻找第一个可以放置该 widget 的位置
     let placed = false;
-    for (let y = 0; y < maxRows && !placed; y++) {
-      for (let x = 0; x < perLine && !placed; x++) {
-        if (canPlaceWidget(grid, x, y, size.width, size.height, perLine, maxRows)) {
-          // 找到合适位置，更新 action 的位置
-          const newPosition = `${x},${y}`;
+    
+    // 从当前位置开始寻找合适的位置
+    for (let row = currentRow; row < maxRows && !placed; row++) {
+      let startCol = (row === currentRow) ? currentCol : 0;
+      
+      for (let col = startCol; col <= perLine - size.width && !placed; col++) {
+        if (canPlaceWidget(grid, col, row, size.width, size.height, perLine, maxRows)) {
+          // 找到合适位置
+          const newPosition = `${col},${row}`;
           if (action.position !== newPosition) {
             console.log(`移动 app ${action.id} 从 ${action.position} 到 ${newPosition}`);
             actionsStore.updatePositionFor(action.id, newPosition);
           }
           
           // 在网格中标记占用
-          markGridOccupied(grid, x, y, size.width, size.height, action.id);
+          markGridOccupied(grid, col, row, size.width, size.height, action.id);
           placed = true;
+          
+          // 更新最高使用行
+          maxUsedRow = Math.max(maxUsedRow, row + size.height - 1);
+          
+          // 更新下一个放置的起始位置
+          currentCol = col + size.width;
+          if (currentCol >= perLine) {
+            currentRow = row + 1;
+            currentCol = 0;
+          } else {
+            currentRow = row;
+          }
         }
+      }
+      
+      // 如果这一行放不下，移动到下一行
+      if (!placed && row === currentRow) {
+        currentRow = row + 1;
+        currentCol = 0;
       }
     }
     
@@ -229,6 +255,14 @@ function rearrangeAllApps(actionsStore, perLine) {
       console.warn(`无法为 widget ${action.id} (${size.width}x${size.height}) 找到合适位置`);
     }
   });
+  
+  // 设置actions-wall的高度以容纳所有图标
+  const actionsWall = document.getElementById('actions-wall');
+  if (actionsWall) {
+    const neededHeight = (maxUsedRow + 1) * parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--action-box-height') || '6em');
+    const minHeight = parseFloat(getComputedStyle(actionsWall.parentElement).height);
+    actionsWall.style.height = `${Math.max(neededHeight, minHeight)}px`;
+  }
 }
 
 function updateActionLayout() {

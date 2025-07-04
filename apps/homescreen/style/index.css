@@ -31,10 +31,11 @@ body {
 }
 
 #actions-wall {
-  display: grid;
-  grid-template-columns: repeat(var(--action-per-line), var(--action-box-width));
-  gap: 0.5em;
-  justify-content: center;
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+  /* 为绝对定位的 action-box 提供容器 */
 }
 
 
@@ -48,16 +49,60 @@ body {
 }
 
 #actions-panel {
-  display: grid;
-  grid-template-columns: repeat(var(--action-per-line), 1fr);
   height: calc(100% - var(--search-box-height));
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   width: 100%;
   font-size: 1rem;
-  padding-left: calc(
-    (100% - (var(--action-per-line) * var(--action-box-width))) / 2
-  );
   transition: all 0.3s;
+}
+
+/* 滚动条样式优化 */
+#actions-panel::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+#actions-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+#actions-panel::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+#actions-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#actions-panel::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+#actions-panel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+#actions-panel::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+#actions-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* 确保滚动平滑 */
+#actions-panel {
+  scroll-behavior: smooth;
+}
+
+/* 为触摸设备优化滚动 */
+#actions-panel {
+  -webkit-overflow-scrolling: touch;
 }
 
 #actions-panel.hide,

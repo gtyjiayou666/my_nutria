@@ -24,6 +24,7 @@ class QuickSettings extends HTMLElement {
         <div class="flex-fill"></div>
         <sl-badge pill variant="neutral" id="tor-icon"><img src="./resources/tor.ico"></sl-badge>
         <sl-icon name="monitor" id="display-preferences-icon"></sl-icon>
+        <sl-icon name="star" id="new-feature-icon"></sl-icon>
         <img id="settings-icon" src="http://settings.localhost:${config.port}/icons/settings.svg"/>
         <sl-icon name="log-out" id="logout-icon"></sl-icon>
         <sl-icon name="lock" id="lock-icon"></sl-icon>
@@ -87,6 +88,11 @@ class QuickSettings extends HTMLElement {
     shadow.querySelector("#display-preferences-icon").onclick = () => {
       this.drawer.hide();
       this.openDisplayPreferences();
+    };
+
+    shadow.querySelector("#new-feature-icon").onclick = () => {
+      this.drawer.hide();
+      this.handleNewFeatureClick();
     };
   }
 
@@ -587,6 +593,19 @@ class QuickSettings extends HTMLElement {
     
     // Show the dialog
     this.displayPreferences.show();
+  }
+
+  handleNewFeatureClick() {
+    console.log('新功能按钮被点击了！');
+    // 这里可以添加具体的功能逻辑
+    // 例如：打开一个新的面板、执行某个操作等
+    
+    // 示例：显示一个简单的通知
+    if (window.toaster) {
+      window.toaster.show('新功能按钮已点击', 'primary');
+    } else {
+      alert('新功能按钮已点击');
+    }
   }
 }
 

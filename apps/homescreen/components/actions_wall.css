@@ -5,6 +5,13 @@
   position: relative;
   min-height: 100%;
   display: block;
+  width: 100%;
+}
+
+/* 确保内容可以超出容器高度以支持滚动 */
+:host {
+  height: auto;
+  min-height: 100%;
 }
 
 .ghost-blocked {
