@@ -99,16 +99,16 @@ class DisplayPreferences extends HTMLElement {
 
     try {
       this.settings = await apiDaemon.getSettings();
-      
+
       // Initialize dark mode
       await this.initDarkMode();
-      
+
       // Initialize homescreen and theme options
       await this.initApps();
-      
+
       // Initialize resolution options
       await this.initResolutions();
-      
+
       this.ready = true;
     } catch (e) {
       this.error(`Failed to initialize: ${e}`);
@@ -120,7 +120,7 @@ class DisplayPreferences extends HTMLElement {
     try {
       let result = await this.settings.get("ui.prefers.color-scheme");
       isDarkMode = result.value === "dark";
-    } catch (e) {}
+    } catch (e) { }
 
     this.darkModeSwitch.checked = isDarkMode;
   }
@@ -132,14 +132,14 @@ class DisplayPreferences extends HTMLElement {
     try {
       let result = await this.settings.get("homescreen.manifestUrl");
       homescreenUrl = result.value.replace("$PORT", port);
-    } catch (e) {}
+    } catch (e) { }
 
     // Get the manifest url of the current theme from the setting.
     let themeUrl;
     try {
       let result = await this.settings.get("nutria.theme");
       themeUrl = `http://${result.value}.localhost${port}/manifest.webmanifest`;
-    } catch (e) {}
+    } catch (e) { }
 
     // Get the list of homescreen and theme apps and populate the menus.
     let appsManager = await apiDaemon.getAppsManager();
@@ -149,7 +149,7 @@ class DisplayPreferences extends HTMLElement {
         // Fetch the manifest to check if the app role is "homescreen"
         let response = await fetch(app.manifestUrl);
         let manifest = await response.json();
-        
+
         if (manifest.b2g_features?.role === "homescreen") {
           let item = document.createElement("sl-menu-item");
           item.setAttribute("type", "checkbox");
@@ -180,23 +180,23 @@ class DisplayPreferences extends HTMLElement {
   async initResolutions() {
     // Get available resolutions from the backend
     let availableResolutions = await this.getAvailableResolutions();
-    
+
     // Get current resolution
     let currentResolution = await this.getCurrentResolution();
-    
+
     for (let res of availableResolutions) {
       let item = document.createElement("sl-menu-item");
       item.setAttribute("type", "checkbox");
       item.textContent = `${res.width} × ${res.height}`;
       item.dataset.width = res.width;
       item.dataset.height = res.height;
-      
+
       // Check if this is the current resolution
       if (currentResolution && res.width === currentResolution.width && res.height === currentResolution.height) {
         item.setAttribute("checked", "true");
         this.resolution = item;
       }
-      
+
       this.resolutions.append(item);
     }
   }
@@ -204,22 +204,22 @@ class DisplayPreferences extends HTMLElement {
   async getAvailableResolutions() {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        let resolutions = await navigator.b2g.b2GScreenManager.getScreenResolution();
+        let resolutions = await navigator.b2g.b2GScreenManager.getScreenResolution(0);
         let availableResolutions = [];
-        
+
         for (var i = 0; i < resolutions.length; i++) {
           availableResolutions.push({
             width: resolutions[i].width,
             height: resolutions[i].height
           });
         }
-        
+
         return availableResolutions;
       }
     } catch (e) {
       this.error(`Failed to get available resolutions: ${e}`);
     }
-    
+
     // Default resolutions if backend doesn't return any
     return [
       { width: 1920, height: 1080 },
@@ -237,7 +237,7 @@ class DisplayPreferences extends HTMLElement {
     } catch (e) {
       this.error(`Failed to get current resolution: ${e}`);
     }
-    
+
     // Default resolution
     return { width: 1920, height: 1080 };
   }
@@ -245,7 +245,13 @@ class DisplayPreferences extends HTMLElement {
   async setScreenResolution(width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        await navigator.b2g.b2GScreenManager.setScreenResolution(parseInt(width), parseInt(height));
+        await navigator.b2g.b2GScreenManager.SetResolution(0, parseInt(width), parseInt(height));
+        window.top.dispatchEvent(new CustomEvent("changeSize", {
+          detail: {
+            weight: width,
+            height: height
+          }
+        }));
         this.log(`Resolution changed to ${width}x${height}`);
       } else {
         this.error("b2GScreenManager not available");
@@ -312,7 +318,7 @@ class DisplayPreferences extends HTMLElement {
 
   toggleResolutionSection() {
     const isHidden = this.resolutions.classList.contains('hidden');
-    
+
     if (isHidden) {
       this.resolutions.classList.remove('hidden');
       this.expandIcon.setAttribute('name', 'chevron-up');
