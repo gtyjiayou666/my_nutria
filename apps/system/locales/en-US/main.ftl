@@ -199,3 +199,11 @@ caret-selection-copy = Copy
 caret-selection-search = Search
 caret-selection-select-all = Select all
 caret-selection-share = Share
+
+# Display preferences panel
+display-title = Display Preferences
+display-prefer-dark = Use Dark Mode
+display-choose-homescreen = Choose Your Homescreen
+display-choose-theme = Choose Your Theme
+display-choose = Select monitor
+display-choose-resolution = Choose Screen Resolution

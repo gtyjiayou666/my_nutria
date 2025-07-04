@@ -178,3 +178,12 @@ activity-p2p-tile-start = 选择图块
 activity-scan-qr-code = 扫描二维码
 activity-view-resource = 查看文件
 activity-publish-resource = 发布文件
+
+
+# Display preferences panel
+display-title = 显示偏好
+display-prefer-dark = 使用深色模式
+display-choose-homescreen = 选择主屏幕
+display-choose-theme = 选择主题
+display-choose = 选择显示器
+display-choose-resolution = 选择分辨率

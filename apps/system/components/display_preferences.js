@@ -6,6 +6,7 @@ class DisplayPreferences extends HTMLElement {
     this.log("constructor");
     this.ready = false;
     this.homescreen = null;
+    this.display = null;
     this.resolution = null;
     this.theme = null;
     this.settings = null;
@@ -55,6 +56,15 @@ class DisplayPreferences extends HTMLElement {
           </div>
 
           <div class="section">
+            <div class="section-header clickable" id="display-header">
+              <sl-icon name="monitor"></sl-icon>
+              <span data-l10n-id="display-choose">Select Monitor</span>
+              <sl-icon name="chevron-down-display" class="expand-icon"></sl-icon>
+            </div>
+            <sl-menu id="displays" class="collapsible hidden"></sl-menu>
+          </div>
+
+          <div class="section">
             <div class="section-header clickable" id="resolution-header">
               <sl-icon name="monitor"></sl-icon>
               <span data-l10n-id="display-choose-resolution">Screen Resolution</span>
@@ -71,6 +81,8 @@ class DisplayPreferences extends HTMLElement {
     this.darkModeSwitch = shadow.querySelector('#dark-mode-switch');
     this.homescreens = shadow.querySelector('#homescreens');
     this.themes = shadow.querySelector('#themes');
+    this.displays = shadow.querySelector('#displays');
+    this.displayHeader = shadow.querySelector('#display-header');
     this.resolutions = shadow.querySelector('#resolutions');
     this.resolutionHeader = shadow.querySelector('#resolution-header');
     this.expandIcon = shadow.querySelector('.expand-icon');
@@ -79,6 +91,8 @@ class DisplayPreferences extends HTMLElement {
     this.darkModeSwitch.addEventListener('sl-change', this.updateDarkMode.bind(this));
     this.homescreens.addEventListener('sl-select', this.handleHomescreenSelect.bind(this));
     this.themes.addEventListener('sl-select', this.handleThemeSelect.bind(this));
+    this.displays.addEventListener('sl-select', this.handleDisplaySelect.bind(this));
+    this.displayHeader.addEventListener('click', this.toggleDisplaySection.bind(this));
     this.resolutions.addEventListener('sl-select', this.handleResolutionSelect.bind(this));
     this.resolutionHeader.addEventListener('click', this.toggleResolutionSection.bind(this));
 
@@ -106,6 +120,7 @@ class DisplayPreferences extends HTMLElement {
       // Initialize homescreen and theme options
       await this.initApps();
 
+      await this.initDisplays();
       // Initialize resolution options
       await this.initResolutions();
 
@@ -177,12 +192,36 @@ class DisplayPreferences extends HTMLElement {
     }
   }
 
-  async initResolutions() {
+  async initDisplays() {
     // Get available resolutions from the backend
-    let availableResolutions = await this.getAvailableResolutions();
+    let availableDisplays = await this.getAvailableDisplays();
 
     // Get current resolution
-    let currentResolution = await this.getCurrentResolution();
+    let currentDisplay = availableDisplays[0];
+
+    for (let res of availableDisplays) {
+      let item = document.createElement("sl-menu-item");
+      item.setAttribute("type", "checkbox");
+      item.textContent = `${res}`;
+      item.dataset.num = res;
+
+      // Check if this is the current resolution
+      if (currentDisplay && res === currentDisplay) {
+        item.setAttribute("checked", "true");
+        this.display = item;
+      }
+
+      this.displays.append(item);
+    }
+  }
+
+  async initResolutions() {
+    // Get available resolutions from the backend
+    let availableResolutions = await this.getAvailableResolutions(this.display);
+
+    // Get current resolution
+    // let currentResolution = await this.getCurrentResolution();
+    let currentResolution = availableResolutions[0];
 
     for (let res of availableResolutions) {
       let item = document.createElement("sl-menu-item");
@@ -201,10 +240,30 @@ class DisplayPreferences extends HTMLElement {
     }
   }
 
-  async getAvailableResolutions() {
+  async getAvailableDisplays() {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        let resolutions = await navigator.b2g.b2GScreenManager.getScreenResolution(0);
+        let num = await navigator.b2g.b2GScreenManager.GetScreenNum();
+        let availableDisplays = [];
+
+        for (var i = 0; i < num; i++) {
+          availableDisplays.push(i);
+        }
+
+        return availableDisplays;
+      }
+    } catch (e) {
+      this.error(`Failed to get available resolutions: ${e}`);
+    }
+
+    // Default resolutions if backend doesn't return any
+    return [0];
+  }
+
+  async getAvailableResolutions(screen) {
+    try {
+      if (navigator.b2g && navigator.b2g.b2GScreenManager) {
+        let resolutions = await navigator.b2g.b2GScreenManager.getScreenResolution(screen);
         let availableResolutions = [];
 
         for (var i = 0; i < resolutions.length; i++) {
@@ -242,13 +301,17 @@ class DisplayPreferences extends HTMLElement {
     return { width: 1920, height: 1080 };
   }
 
-  async setScreenResolution(width, height) {
+  async setDisplay() {
+    await this.getAvailableResolutions(this.display)
+  }
+
+  async setScreenResolution(screen, width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        await navigator.b2g.b2GScreenManager.SetResolution(0, parseInt(width), parseInt(height));
+        await navigator.b2g.b2GScreenManager.SetResolution(screen, parseInt(width), parseInt(height));
         window.top.dispatchEvent(new CustomEvent("changeSize", {
           detail: {
-            weight: width,
+            width: width,
             height: height
           }
         }));
@@ -304,6 +367,18 @@ class DisplayPreferences extends HTMLElement {
     await this.settings.set([setting]);
   }
 
+  async handleDisplaySelect(event) {
+    if (this.display === event.detail.item) {
+      this.display.checked = true;
+      return;
+    }
+    // Uncheck the "old" menu item.
+    this.display?.removeAttribute("checked");
+    this.display = event.detail.item;
+    // Set the new screen resolution.
+    await this.setDisplay();
+  }
+
   async handleResolutionSelect(event) {
     if (this.resolution === event.detail.item) {
       this.resolution.checked = true;
@@ -313,7 +388,19 @@ class DisplayPreferences extends HTMLElement {
     this.resolution?.removeAttribute("checked");
     this.resolution = event.detail.item;
     // Set the new screen resolution.
-    await this.setScreenResolution(event.detail.item.dataset.width, event.detail.item.dataset.height);
+    await this.setScreenResolution(this.display, event.detail.item.dataset.width, event.detail.item.dataset.height);
+  }
+
+  toggleDisplaySection() {
+    const isHidden = this.displays.classList.contains('hidden');
+
+    if (isHidden) {
+      this.displays.classList.remove('hidden');
+      this.expandIcon.setAttribute('name', 'chevron-up-display');
+    } else {
+      this.displays.classList.add('hidden');
+      this.expandIcon.setAttribute('name', 'chevron-down-display');
+    }
   }
 
   toggleResolutionSection() {

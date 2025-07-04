@@ -46,6 +46,7 @@ display-title = Display Preferences
 display-prefer-dark = Use Dark Mode
 display-choose-homescreen = Choose Your Homescreen
 display-choose-theme = Choose Your Theme
+display-choose = Select monitor
 display-choose-resolution = Choose Screen Resolution
 
 # Search engines panel
