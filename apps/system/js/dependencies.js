@@ -276,6 +276,7 @@ const kDeps = [
       "mediacontroller comp",
       "webext comp",
       "api daemon core",
+      "display preferences comp",
       "shoelace-icon",
       "shoelace-range",
       "shoelace-badge",
@@ -446,6 +447,19 @@ const kDeps = [
       "shoelace-menu-item",
       "shoelace-divider",
       "shoelace-icon",
+    ],
+  },
+  {
+    name: "display preferences comp",
+    kind: "module",
+    param: ["./components/display_preferences.js"],
+    deps: [
+      "api daemon core",
+      "shoelace-icon",
+      "shoelace-icon-button",
+      "shoelace-switch",
+      "shoelace-menu",
+      "shoelace-menu-item",
     ],
   },
 ];

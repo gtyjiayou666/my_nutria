@@ -23,6 +23,7 @@ class QuickSettings extends HTMLElement {
         <sl-badge pill variant="neutral"><sl-icon class="flashlight-icon inactive" name="flashlight-off"></sl-icon></sl-badge>
         <div class="flex-fill"></div>
         <sl-badge pill variant="neutral" id="tor-icon"><img src="./resources/tor.ico"></sl-badge>
+        <sl-icon name="monitor" id="display-preferences-icon"></sl-icon>
         <img id="settings-icon" src="http://settings.localhost:${config.port}/icons/settings.svg"/>
         <sl-icon name="log-out" id="logout-icon"></sl-icon>
         <sl-icon name="lock" id="lock-icon"></sl-icon>
@@ -81,6 +82,11 @@ class QuickSettings extends HTMLElement {
         `http://settings.localhost:${config.port}/index.html`,
         { activate: true }
       );
+    };
+
+    shadow.querySelector("#display-preferences-icon").onclick = () => {
+      this.drawer.hide();
+      this.openDisplayPreferences();
     };
   }
 
@@ -570,6 +576,17 @@ class QuickSettings extends HTMLElement {
     return this.shadowRoot.querySelector(
       `#browser-action-${this.safeExtensionId(extensionId)}`
     );
+  }
+
+  openDisplayPreferences() {
+    // Create display preferences dialog if it doesn't exist
+    if (!this.displayPreferences) {
+      this.displayPreferences = document.createElement('display-preferences');
+      document.body.appendChild(this.displayPreferences);
+    }
+    
+    // Show the dialog
+    this.displayPreferences.show();
   }
 }
 

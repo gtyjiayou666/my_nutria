@@ -1,0 +1,213 @@
+/* Display preferences component styling */
+
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+:host(.visible) {
+  opacity: 1;
+}
+
+.container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--sl-panel-background-color);
+  border-radius: var(--sl-border-radius-large);
+  box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+  min-width: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  color: var(--sl-color-neutral-700);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 1em;
+  border-bottom: 1px solid var(--sl-color-neutral-200);
+  background-color: var(--sl-color-neutral-50);
+}
+
+.header sl-icon {
+  margin-right: 0.5em;
+  font-size: 1.5em;
+  color: var(--sl-color-primary-600);
+}
+
+.header h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: 500;
+  color: var(--sl-color-neutral-900);
+}
+
+.close-button {
+  margin-left: 0.5em;
+}
+
+.content {
+  padding: 1em;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.section {
+  margin-bottom: 1.5em;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--sl-color-neutral-200);
+}
+
+.section-header.clickable {
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin: -0.5rem;
+  margin-bottom: 0.5em;
+}
+
+.section-header.clickable:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.expand-icon {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.collapsible {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.collapsible.hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.section-header sl-icon {
+  margin-right: 0.5em;
+  font-size: 1.2em;
+  color: var(--sl-color-primary-600);
+}
+
+.section-header span {
+  flex: 1;
+  font-weight: 500;
+  color: var(--sl-color-neutral-900);
+}
+
+.section-header sl-switch {
+  margin-left: auto;
+}
+
+sl-menu {
+  width: 100%;
+  margin-top: 0.5em;
+}
+
+sl-menu sl-menu-item {
+  padding: 0.5em 0.75em;
+}
+
+sl-menu sl-menu-item[checked] {
+  background-color: var(--sl-color-primary-50);
+  color: var(--sl-color-primary-700);
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  .container {
+    background-color: var(--sl-color-neutral-800);
+  }
+
+  .header {
+    background-color: var(--sl-color-neutral-900);
+    border-bottom-color: var(--sl-color-neutral-600);
+  }
+
+  .header h2 {
+    color: var(--sl-color-neutral-100);
+  }
+
+  .section-header {
+    border-bottom-color: var(--sl-color-neutral-600);
+  }
+
+  .section-header span {
+    color: var(--sl-color-neutral-100);
+  }
+
+  sl-menu sl-menu-item[checked] {
+    background-color: var(--sl-color-primary-900);
+    color: var(--sl-color-primary-300);
+  }
+}
+
+/* Animation for showing/hiding */
+.container {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+:host(.visible) .container {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .container {
+    min-width: 90vw;
+    max-width: 90vw;
+    max-height: 90vh;
+  }
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: var(--sl-color-neutral-100);
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--sl-color-neutral-300);
+  border-radius: 3px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--sl-color-neutral-400);
+}
+
+/* Prevent body scrolling when modal is open */
+body.display-preferences-open {
+  overflow: hidden;
+}

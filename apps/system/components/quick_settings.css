@@ -135,6 +135,27 @@
   box-shadow: 2px 2px 3px black;
 }
 
+:host #display-icon {
+  width: 3em;
+  height: 3em;
+  cursor: pointer;
+  border-radius: 40%;
+  box-shadow: 2px 2px 3px black;
+  padding: 0.5em;
+  color: var(--sl-color-neutral-700);
+  transition: all 0.2s ease;
+}
+
+:host #display-icon:hover {
+  background-color: var(--sl-color-neutral-100);
+  transform: scale(1.05);
+}
+
+:host #display-preferences-icon {
+  font-size: 1.5em;
+  padding: 0.5em;
+}
+
 :host .peer {
   display: flex;
   align-items: center;
