@@ -217,8 +217,8 @@ class DisplayPreferences extends HTMLElement {
 
   async initResolutions() {
     // Get available resolutions from the backend
-    let availableResolutions = await this.getAvailableResolutions(this.display);
-
+    let availableResolutions = await this.getAvailableResolutions(this.display.dataset.num);
+    this.resolutions.innerHTML = '';
     // Get current resolution
     // let currentResolution = await this.getCurrentResolution();
     let currentResolution = availableResolutions[0];
@@ -243,7 +243,7 @@ class DisplayPreferences extends HTMLElement {
   async getAvailableDisplays() {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        let num = await navigator.b2g.b2GScreenManager.GetScreenNum();
+        let num = await navigator.b2g.b2GScreenManager.getScreenNum();
         let availableDisplays = [];
 
         for (var i = 0; i < num; i++) {
@@ -302,19 +302,21 @@ class DisplayPreferences extends HTMLElement {
   }
 
   async setDisplay() {
-    await this.getAvailableResolutions(this.display)
+    await this.initResolutions();
   }
 
   async setScreenResolution(screen, width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
         await navigator.b2g.b2GScreenManager.SetResolution(screen, parseInt(width), parseInt(height));
-        window.top.dispatchEvent(new CustomEvent("changeSize", {
-          detail: {
-            width: width,
-            height: height
-          }
-        }));
+        if (screen === 0) {
+          window.top.dispatchEvent(new CustomEvent("changeSize", {
+            detail: {
+              width: width,
+              height: height
+            }
+          }));
+        }
         this.log(`Resolution changed to ${width}x${height}`);
       } else {
         this.error("b2GScreenManager not available");
@@ -388,18 +390,20 @@ class DisplayPreferences extends HTMLElement {
     this.resolution?.removeAttribute("checked");
     this.resolution = event.detail.item;
     // Set the new screen resolution.
-    await this.setScreenResolution(this.display, event.detail.item.dataset.width, event.detail.item.dataset.height);
+    await this.setScreenResolution(this.display.dataset.num, event.detail.item.dataset.width, event.detail.item.dataset.height);
   }
 
-  toggleDisplaySection() {
+  async toggleDisplaySection() {
+    this.displays.innerHTML = '';
+    await this.initDisplays();
     const isHidden = this.displays.classList.contains('hidden');
 
     if (isHidden) {
       this.displays.classList.remove('hidden');
-      this.expandIcon.setAttribute('name', 'chevron-up-display');
+      this.expandIcon.setAttribute('name', 'chevron-up');
     } else {
       this.displays.classList.add('hidden');
-      this.expandIcon.setAttribute('name', 'chevron-down-display');
+      this.expandIcon.setAttribute('name', 'chevron-down');
     }
   }
 

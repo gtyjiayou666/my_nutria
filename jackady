@@ -6,6 +6,7 @@ if [ -e ./prebuilts/env ]; then
 fi
 
 cd builder
+rustup default 1.79.0
 
 export RUST_LOG=${RUST_LOG:-info}
 cargo run --release -- $@

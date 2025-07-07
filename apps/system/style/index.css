@@ -180,3 +180,17 @@ sl-drawer::part(overlay) {
 #caret-selection .hidden {
   display: none;
 }
+
+/**gty*/
+#blackOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  z-index: 9999; /* 确保在最上层 */
+  display: none; /* 默认隐藏 */
+  opacity: 1; /* 可调整透明度 */
+  transition: opacity 0.3s ease-in-out;
+}

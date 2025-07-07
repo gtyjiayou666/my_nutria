@@ -452,7 +452,7 @@ class QuickSettings extends HTMLElement {
     try {
       conns = navigator.b2g?.mobileConnections;
       dataCallManager = navigator.b2g?.dataCallManager;
-    } catch (e) {}
+    } catch (e) { }
 
     if (!conns || !dataCallManager) {
       console.error("mobileConnections or dataCallManager are not available.");
@@ -516,13 +516,11 @@ class QuickSettings extends HTMLElement {
       };
 
       if (dataCallState === "connected" && conn.data.type) {
-        text = `${text} — ${
-          mobileDataTypes[conn.data.type] || conn.data.type
-        }⇅`;
+        text = `${text} — ${mobileDataTypes[conn.data.type] || conn.data.type
+          }⇅`;
       } else if (conn.voice.type) {
-        text = `${text} — ${
-          mobileDataTypes[conn.voice.type] || conn.voice.type
-        }`;
+        text = `${text} — ${mobileDataTypes[conn.voice.type] || conn.voice.type
+          }`;
       } else if (conn.voice.emergencyCallsOnly) {
         let msg = await window.utils.l10n("emergency-calls-only");
         text = `${text} — ${msg}`;
@@ -590,22 +588,38 @@ class QuickSettings extends HTMLElement {
       this.displayPreferences = document.createElement('display-preferences');
       document.body.appendChild(this.displayPreferences);
     }
-    
+
     // Show the dialog
     this.displayPreferences.show();
   }
 
   handleNewFeatureClick() {
-    console.log('新功能按钮被点击了！');
-    // 这里可以添加具体的功能逻辑
-    // 例如：打开一个新的面板、执行某个操作等
-    
-    // 示例：显示一个简单的通知
-    if (window.toaster) {
-      window.toaster.show('新功能按钮已点击', 'primary');
+    const overlay = document.getElementById("blackOverlay");
+    overlay.style.display = "block";
+    overlay.style.opacity = "1"
+    var w = 0;
+    var h = 0;
+    if (embedder.sessionType != "desktop") {
+      embedder.sessionType = "desktop";
+      w = window.screen.width;
+      h = window.screen.height;
     } else {
-      alert('新功能按钮已点击');
+      embedder.sessionType = "mobile";
+      h = window.screen.height;
+      w = h / 1.5;
     }
+    setTimeout(() => {
+      window.top.dispatchEvent(new CustomEvent("changeSize", {
+        detail: {
+          width: w,
+          height: h
+        }
+      }));
+      overlay.style.opacity = "0";
+      setTimeout(() => {
+        overlay.style.display = "none";
+      }, 100); // 等待透明度动画完成
+    }, 100);
   }
 }
 
