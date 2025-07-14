@@ -90,6 +90,7 @@ class QuickSettings extends HTMLElement {
       this.openDisplayPreferences();
     };
 
+    this.isDesktop = true;
     shadow.querySelector("#new-feature-icon").onclick = () => {
       this.drawer.hide();
       this.handleNewFeatureClick();
@@ -599,14 +600,14 @@ class QuickSettings extends HTMLElement {
     overlay.style.opacity = "1"
     var w = 0;
     var h = 0;
-    if (embedder.sessionType != "desktop") {
-      embedder.sessionType = "desktop";
+    if (!this.isDesktop) {
+      this.isDesktop = true;
       w = window.screen.width;
       h = window.screen.height;
     } else {
-      embedder.sessionType = "mobile";
+      this.isDesktop = false;
       h = window.screen.height;
-      w = h / 1.5;
+      w = Math.min(h / 1.5, window.screen.width);
     }
     setTimeout(() => {
       window.top.dispatchEvent(new CustomEvent("changeSize", {

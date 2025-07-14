@@ -232,9 +232,10 @@ class DisplayPreferences extends HTMLElement {
       item.dataset.num = res;
 
       // Check if this is the current resolution
-      if (currentDisplay && res === currentDisplay) {
+      if (currentDisplay != null && res === currentDisplay) {
         item.setAttribute("checked", "true");
         this.display = item;
+        currentDisplay = null;
       }
 
       this.displays.append(item);
@@ -361,8 +362,8 @@ class DisplayPreferences extends HTMLElement {
           setTimeout(() => {
             overlay.style.opacity = "0";
             overlay.style.display = "none";
-          }, 100); // 等待透明度动画完成
-        }, 300); // 等待透明度动画完成
+          }, 100); 
+        }, 300);
       } else {
         this.error("b2GScreenManager not available");
       }
