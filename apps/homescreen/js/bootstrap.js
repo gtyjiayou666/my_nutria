@@ -36,7 +36,6 @@ function isAppOutsideViewport(appElement, container, perLine) {
       if (action && action.position) {
         const [x] = action.position.split(',').map(n => parseInt(n));
         if (x >= perLine) {
-          console.log(`App ${actionId} 在位置 ${action.position}，超出网格边界 (每行 ${perLine} 个)`);
           return true;
         }
       }
@@ -53,7 +52,6 @@ function getAllAppElements() {
   
   // 查找所有 action-box 或 action-bookmark 元素
   const appElements = Array.from(actionsWall.querySelectorAll('action-box, action-bookmark'));
-  console.log(`找到 ${appElements.length} 个 app 图标元素`);
   return appElements;
 }
 
@@ -79,8 +77,6 @@ function rearrangeOutsideApps(actionsStore, newPerLine) {
   
   if (!container || !actionsStore || appElements.length === 0) return;
   
-  console.log('检查并重新排列超出窗口的 app 图标...');
-  
   // 找出所有超出窗口的 app
   const outsideApps = [];
   appElements.forEach(appElement => {
@@ -88,35 +84,28 @@ function rearrangeOutsideApps(actionsStore, newPerLine) {
       const appId = getActionIdFromElement(appElement);
       if (appId) {
         outsideApps.push({ element: appElement, id: appId });
-        console.log(`App ${appId} 超出窗口范围`);
-      } else {
-        console.warn('无法获取 app 元素的 ID:', appElement);
       }
     }
   });
   
   if (outsideApps.length === 0) {
-    console.log('所有 app 图标都在可视区域内');
     return;
   }
   
   // 获取空闲位置
   const emptySlots = actionsStore.getEmptySlots(newPerLine);
-  console.log(`找到 ${emptySlots.size} 个空闲位置，需要重新安排 ${outsideApps.length} 个 app`);
   
   // 将超出窗口的 app 移动到空闲位置
   const emptySlotArray = Array.from(emptySlots);
   outsideApps.forEach((app, index) => {
     if (index < emptySlotArray.length) {
       const newPosition = emptySlotArray[index];
-      console.log(`移动 app ${app.id} 到位置 ${newPosition}`);
       actionsStore.updatePositionFor(app.id, newPosition);
     }
   });
   
   // 如果空闲位置不够，重新排列所有 app
   if (outsideApps.length > emptySlotArray.length) {
-    console.log('空闲位置不够，重新排列所有 app 图标');
     rearrangeAllApps(actionsStore, newPerLine);
   }
 }
@@ -185,8 +174,6 @@ function markGridOccupied(grid, x, y, width, height, actionId) {
 function rearrangeAllApps(actionsStore, perLine) {
   if (!actionsStore || !actionsStore.actions) return;
   
-  console.log(`重新排列所有 app 图标，每行 ${perLine} 个`);
-  
   // 按照当前位置排序（保持相对顺序）
   const sortedActions = [...actionsStore.actions].sort((a, b) => {
     const [aX, aY] = a.position.split(',').map(n => parseInt(n));
@@ -209,7 +196,6 @@ function rearrangeAllApps(actionsStore, perLine) {
   // 逐个放置 widget
   sortedActions.forEach((action) => {
     const size = getWidgetSize(action);
-    console.log(`放置 widget ${action.id}，大小: ${size.width}x${size.height}`);
     
     let placed = false;
     
@@ -222,7 +208,6 @@ function rearrangeAllApps(actionsStore, perLine) {
           // 找到合适位置
           const newPosition = `${col},${row}`;
           if (action.position !== newPosition) {
-            console.log(`移动 app ${action.id} 从 ${action.position} 到 ${newPosition}`);
             actionsStore.updatePositionFor(action.id, newPosition);
           }
           
@@ -295,7 +280,6 @@ function updateActionLayout() {
   const newPerLine = Math.max(1, Math.floor(containerWidth / effectiveWidth));
   const currentPerLine = parseInt(computedStyle.getPropertyValue('--action-per-line')) || 4;
   
-  console.log(`布局更新: 容器宽度=${containerWidth}px, action宽度=${actionBoxWidth}px, 新的每行数量=${newPerLine}, 当前每行数量=${currentPerLine}`);
   
   // 更新 CSS 变量
   root.style.setProperty('--action-per-line', newPerLine);
@@ -306,14 +290,11 @@ function updateActionLayout() {
     setTimeout(() => {
       // 尝试获取全局的 actionsStore 实例
       if (window.actionsStore) {
-        console.log('窗口大小变化，重新排列所有 app 图标');
         rearrangeAllApps(window.actionsStore, newPerLine);
       } else {
-        console.log('actionsStore 未找到，将在初始化后重新检查');
         // 如果 actionsStore 还没有初始化，监听 store-ready 事件
         document.addEventListener('store-ready', () => {
           if (window.actionsStore) {
-            console.log('窗口大小变化，重新排列所有 app 图标');
             rearrangeAllApps(window.actionsStore, newPerLine);
           }
         }, { once: true });

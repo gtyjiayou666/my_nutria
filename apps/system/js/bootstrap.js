@@ -487,21 +487,9 @@ function configureTopStatus() {
   window.actionsDispatcher?.dispatch("top-status-bar-changed", enableTopStatus);
 }
 
-// const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
-
-// const repeatedGreetings = async () => {
-//   await sleep(10000)
-//   console.log(1)
-//   await sleep(1000)
-//   console.log(2)
-//   await sleep(1000)
-//   console.log(3)
-// }
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
-    // const startTime = new Date();
-
     timingFromStart(
       `DOMContentLoaded, embedder is ${window.embedderSetupDone}`
     );
@@ -613,10 +601,6 @@ document.addEventListener(
     };
     // Load dependencies that are not in the critical launch path.
     graph.waitForDeps("late start");
-
-    // const endTime = new Date();
-    // const executionTime = endTime - startTime;
-    // console.log(`……………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………代码执行时间：ms ${executionTime} ms`);
   },
   { once: true }
 );

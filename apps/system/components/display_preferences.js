@@ -248,8 +248,7 @@ class DisplayPreferences extends HTMLElement {
     // Get current resolution
     // let currentResolution = await this.getCurrentResolution();
     if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-      let r_index = await navigator.b2g.b2GScreenManager.getCurrentResolution(this.display.dataset.num);
-      let currentResolution = availableResolutions[r_index];
+      let currentResolution = await navigator.b2g.b2GScreenManager.getCurrentResolution(this.display.dataset.num);
       for (let res of availableResolutions) {
         let item = document.createElement("sl-menu-item");
         item.setAttribute("type", "checkbox");
@@ -358,7 +357,6 @@ class DisplayPreferences extends HTMLElement {
                 height: pos.height
               }
             }));
-            this.log(`Resolution changed to ${width}x${height}`);
           }
           setTimeout(() => {
             overlay.style.opacity = "0";

@@ -273,7 +273,6 @@ class ActionsWall extends HTMLElement {
                            this.store.isPositionOccupied(position);
         
         if (isOccupied) {
-          console.log("-------------------");
           // 目标位置已被占用，取消激活当前 ghost（如果有）
           if (this.editing.activeGhost) {
             this.editing.activeGhost.setGhostActive(false);
