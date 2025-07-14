@@ -7,7 +7,6 @@ class DisplayPanel {
     this.ready = false;
     this.panel.addEventListener("panel-ready", this);
     this.homescreen = null;
-    this.resolution = null;
   }
 
   log(msg) {
@@ -56,16 +55,6 @@ class DisplayPanel {
           value: event.detail.item.dataset.theme,
         };
         await this.settings.set([setting]);
-      } else if (kind == "resolutions") {
-        if (this.resolution === event.detail.item) {
-          this.resolution.checked = true;
-          return;
-        }
-        // Uncheck the "old" menu item.
-        this.resolution?.removeAttribute("checked");
-        this.resolution = event.detail.item;
-        // Set the new screen resolution.
-        await this.setScreenResolution(event.detail.item.dataset.width, event.detail.item.dataset.height);
       }
     }
   }
@@ -149,92 +138,7 @@ class DisplayPanel {
     homescreens.addEventListener("sl-select", this);
     themes.addEventListener("sl-select", this);
 
-    // Initialize resolution options
-    await this.initResolutions();
-
     this.ready = true;
-  }
-
-  async initResolutions() {
-    let resolutions = document.getElementById("resolutions");
-    
-    // Get available resolutions from the backend
-    let availableResolutions = await this.getAvailableResolutions();
-    
-    // Get current resolution
-    let currentResolution = await this.getCurrentResolution();
-    
-    for (let res of availableResolutions) {
-      let item = document.createElement("sl-menu-item");
-      item.setAttribute("type", "checkbox");
-      item.textContent = `${res.width} × ${res.height}`;
-      item.dataset.width = res.width;
-      item.dataset.height = res.height;
-      
-      // Check if this is the current resolution
-      if (currentResolution && res.width === currentResolution.width && res.height === currentResolution.height) {
-        item.setAttribute("checked", "true");
-        this.resolution = item;
-      }
-      
-      resolutions.append(item);
-    }
-    
-    resolutions.addEventListener("sl-select", this);
-  }
-
-  async getAvailableResolutions() {
-    try {
-      if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        let resolutions = await navigator.b2g.b2GScreenManager.getScreenResolution();
-        let availableResolutions = [];
-        
-        for (var i = 0; i < resolutions.length; i++) {
-          availableResolutions.push({
-            width: resolutions[i].width,
-            height: resolutions[i].height
-          });
-        }
-        
-        return availableResolutions;
-      }
-    } catch (e) {
-      this.error(`Failed to get available resolutions: ${e}`);
-    }
-    
-    // Default resolutions if backend doesn't return any
-    return [
-      { width: 1920, height: 1080 },
-      { width: 1366, height: 768 },
-      { width: 1280, height: 720 },
-      { width: 1024, height: 768 }
-    ];
-  }
-
-  async getCurrentResolution() {
-    try {
-      if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        return await navigator.b2g.b2GScreenManager.getCurrentResolution();
-      }
-    } catch (e) {
-      this.error(`Failed to get current resolution: ${e}`);
-    }
-    
-    // Default resolution
-    return { width: 1920, height: 1080 };
-  }
-
-  async setScreenResolution(width, height) {
-    try {
-      if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        await navigator.b2g.b2GScreenManager.setScreenResolution(parseInt(width), parseInt(height));
-        this.log(`Resolution changed to ${width}x${height}`);
-      } else {
-        this.error("b2GScreenManager not available");
-      }
-    } catch (e) {
-      this.error(`Failed to set resolution: ${e}`);
-    }
   }
 }
 
