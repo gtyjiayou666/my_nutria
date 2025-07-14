@@ -28,14 +28,14 @@ class DisplayPreferences extends HTMLElement {
       <div class="container">
         <div class="header">
           <sl-icon name="monitor"></sl-icon>
-          <h2 data-l10n-id="display-preferences-title">Display Preferences</h2>
+          <h2 data-l10n-id="display-title"></h2>
           <sl-icon-button class="close-button" name="x" circle></sl-icon-button>
         </div>
         <div class="content">
           <div class="section">
             <div class="section-header">
               <sl-icon name="moon"></sl-icon>
-              <span data-l10n-id="display-prefer-dark">Dark Mode</span>
+              <span data-l10n-id="display-prefer-dark"></span>
               <sl-switch id="dark-mode-switch"></sl-switch>
             </div>
           </div>
@@ -43,7 +43,7 @@ class DisplayPreferences extends HTMLElement {
           <div class="section">
             <div class="section-header">
               <sl-icon name="home"></sl-icon>
-              <span data-l10n-id="display-choose-homescreen">Choose Homescreen</span>
+              <span data-l10n-id="display-choose-homescreen"></span>
             </div>
             <sl-menu id="homescreens"></sl-menu>
           </div>
@@ -51,7 +51,7 @@ class DisplayPreferences extends HTMLElement {
           <div class="section">
             <div class="section-header">
               <sl-icon name="palette"></sl-icon>
-              <span data-l10n-id="display-choose-theme">Choose Theme</span>
+              <span data-l10n-id="display-choose-theme"></span>
             </div>
             <sl-menu id="themes"></sl-menu>
           </div>
@@ -59,7 +59,7 @@ class DisplayPreferences extends HTMLElement {
           <div class="section">
             <div class="section-header clickable" id="display-header">
               <sl-icon name="monitor"></sl-icon>
-              <span data-l10n-id="display-choose">Select Monitor</span>
+              <span data-l10n-id="display-choose"></span>
               <sl-icon name="chevron-down-display" class="expand-icon"></sl-icon>
             </div>
             <sl-menu id="displays" class="collapsible hidden"></sl-menu>
@@ -68,7 +68,7 @@ class DisplayPreferences extends HTMLElement {
           <div class="section">
             <div class="section-header clickable" id="resolution-header">
               <sl-icon name="monitor"></sl-icon>
-              <span data-l10n-id="display-choose-resolution">Screen Resolution</span>
+              <span data-l10n-id="display-choose-resolution"></span>
               <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
             </div>
             <sl-menu id="resolutions" class="collapsible hidden"></sl-menu>
@@ -77,7 +77,7 @@ class DisplayPreferences extends HTMLElement {
           <div class="section">
             <div class="section-header">
               <sl-icon name="palette"></sl-icon>
-              <span data-l10n-id="display-choose-extension">Select Screen Extension</span>
+              <span data-l10n-id="display-choose-extension"></span>
             </div>
             <sl-menu id="extensions"></sl-menu>
           </div>
@@ -85,7 +85,7 @@ class DisplayPreferences extends HTMLElement {
         </div>
       </div>
     `;
-
+    document.l10n.translateFragment(shadow);
     this.container = shadow.querySelector('.container');
     this.closeButton = shadow.querySelector('.close-button');
     this.darkModeSwitch = shadow.querySelector('#dark-mode-switch');

@@ -187,3 +187,4 @@ display-choose-homescreen = 选择主屏幕
 display-choose-theme = 选择主题
 display-choose = 选择显示器
 display-choose-resolution = 选择分辨率
+display-choose-extension = 选择屏幕扩展

@@ -207,3 +207,4 @@ display-choose-homescreen = ホーム画面を選んでください
 display-choose-theme = テーマを選んでください
 display-choose = ディスプレイの選択
 display-choose-resolution = 画面解像度を選んでください
+display-choose-extension = 画面拡張を選択

@@ -207,3 +207,4 @@ display-choose-homescreen = Choose Your Homescreen
 display-choose-theme = Choose Your Theme
 display-choose = Select monitor
 display-choose-resolution = Choose Screen Resolution
+display-choose-extension = Select Screen Extension
