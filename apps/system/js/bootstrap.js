@@ -7,59 +7,59 @@ const bsLoad = Date.now();
 
 // 在 bootstrap.js 中添加以下代码
 document.addEventListener('DOMContentLoaded', () => {
-    const appContainer = document.getElementById('app-container');
-    const apps = appContainer.querySelectorAll('.app');
+  const appContainer = document.getElementById('app-container');
+  const apps = appContainer.querySelectorAll('.app');
 
-    let draggedApp = null;
+  let draggedApp = null;
 
-    apps.forEach(app => {
-        app.addEventListener('dragstart', (e) => {
-            draggedApp = e.target;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', e.target.outerHTML);
-            setTimeout(() => {
-                e.target.style.display = 'none';
-            }, 0);
-        });
-
-        app.addEventListener('dragend', (e) => {
-            e.target.style.display = 'block';
-            draggedApp = null;
-        });
-
-        app.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        });
-
-        app.addEventListener('drop', (e) => {
-            e.stopPropagation();
-            const targetApp = e.target;
-
-            // 判断是挤走还是合并
-            if (Math.random() < 0.5) {
-                // 合并逻辑
-                const folder = document.createElement('div');
-                folder.classList.add('folder');
-                folder.appendChild(draggedApp.cloneNode(true));
-                folder.appendChild(targetApp.cloneNode(true));
-
-                appContainer.removeChild(draggedApp);
-                appContainer.removeChild(targetApp);
-                appContainer.appendChild(folder);
-            } else {
-                // 挤走逻辑
-                const indexDragged = Array.from(appContainer.children).indexOf(draggedApp);
-                const indexTarget = Array.from(appContainer.children).indexOf(targetApp);
-
-                if (indexDragged < indexTarget) {
-                    appContainer.insertBefore(draggedApp, targetApp.nextSibling);
-                } else {
-                    appContainer.insertBefore(draggedApp, targetApp);
-                }
-            }
-        });
+  apps.forEach(app => {
+    app.addEventListener('dragstart', (e) => {
+      draggedApp = e.target;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.target.outerHTML);
+      setTimeout(() => {
+        e.target.style.display = 'none';
+      }, 0);
     });
+
+    app.addEventListener('dragend', (e) => {
+      e.target.style.display = 'block';
+      draggedApp = null;
+    });
+
+    app.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    app.addEventListener('drop', (e) => {
+      e.stopPropagation();
+      const targetApp = e.target;
+
+      // 判断是挤走还是合并
+      if (Math.random() < 0.5) {
+        // 合并逻辑
+        const folder = document.createElement('div');
+        folder.classList.add('folder');
+        folder.appendChild(draggedApp.cloneNode(true));
+        folder.appendChild(targetApp.cloneNode(true));
+
+        appContainer.removeChild(draggedApp);
+        appContainer.removeChild(targetApp);
+        appContainer.appendChild(folder);
+      } else {
+        // 挤走逻辑
+        const indexDragged = Array.from(appContainer.children).indexOf(draggedApp);
+        const indexTarget = Array.from(appContainer.children).indexOf(targetApp);
+
+        if (indexDragged < indexTarget) {
+          appContainer.insertBefore(draggedApp, targetApp.nextSibling);
+        } else {
+          appContainer.insertBefore(draggedApp, targetApp);
+        }
+      }
+    });
+  });
 });
 //添加部分
 
@@ -148,7 +148,7 @@ class HomescreenManager {
     try {
       let result = await settings.get("homescreen.manifestUrl");
       await this.setInfo(result.value);
-    } catch (e) {}
+    } catch (e) { }
 
     settings.addObserver("homescreen.manifestUrl", async (setting) => {
       await this.setInfo(setting.value);
@@ -253,7 +253,7 @@ async function setupTelephony() {
       await settings.set(init);
       console.log(`Telephony Data turned on`);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // Open the dialer when we receive an incoming call.
   navigator.b2g.telephony.onincoming = () => {
@@ -293,7 +293,7 @@ window.utils = {
           "intl.ellipsis",
           Ci.nsIPrefLocalizedString
         ).data;
-      } catch (e) {}
+      } catch (e) { }
       text = text.substr(0, truncLength) + ellipsis;
     }
     return text;
@@ -370,7 +370,7 @@ async function manageFTU() {
   try {
     let result = await settings.get("ftu.done");
     ftuDone = result.value;
-  } catch (e) {}
+  } catch (e) { }
 
   window.config.ftuDone = ftuDone;
 
@@ -441,7 +441,7 @@ class TorProxyChannelFilter {
       // console.log(
       //   `TorProxyChannelFilter: doNotProxy=${doNotProxy} for ${hostname}`
       // );
-    } catch (e) {}
+    } catch (e) { }
     if (doNotProxy) {
       proxyFilter.onProxyFilterResult(defaultProxyInfo);
     } else {
@@ -487,9 +487,21 @@ function configureTopStatus() {
   window.actionsDispatcher?.dispatch("top-status-bar-changed", enableTopStatus);
 }
 
+// const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
+
+// const repeatedGreetings = async () => {
+//   await sleep(10000)
+//   console.log(1)
+//   await sleep(1000)
+//   console.log(2)
+//   await sleep(1000)
+//   console.log(3)
+// }
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
+    // const startTime = new Date();
+
     timingFromStart(
       `DOMContentLoaded, embedder is ${window.embedderSetupDone}`
     );
@@ -512,13 +524,12 @@ document.addEventListener(
     addStylesheet(
       `http://shared.localhost:${window.config.port}/style/themes/default/theme.css`
     );
-
+    
     await depGraphLoaded();
     let platform = embedder.isGonk() ? "gonk" : "linux";
     let graph = new ParallelGraphLoader(addShoelaceDeps(kDeps), customRunner, {
       platform,
     });
-
     // Start with the lock screen on before we load the homescreen to avoid a
     // flash of the homescreen.
     await graph.waitForDeps("lockscreen comp");
@@ -528,13 +539,10 @@ document.addEventListener(
 
     await graph.waitForDeps("phase1");
     await graph.waitForDeps("launch");
-
     await manageFTU();
-
     keyManager.registerShortPressAction(config.powerKey, "power");
     keyManager.registerLongPressAction(config.powerKey, "power");
     keyManager.registerShortPressAction("PrintScreen", "printscreen");
-
     setupTelephony();
 
     await graph.waitForDeps("audio volume");
@@ -603,9 +611,12 @@ document.addEventListener(
         return peer.send("homescreen.localhost", "newTab");
       },
     };
-
     // Load dependencies that are not in the critical launch path.
     graph.waitForDeps("late start");
+
+    // const endTime = new Date();
+    // const executionTime = endTime - startTime;
+    // console.log(`……………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………………代码执行时间：ms ${executionTime} ms`);
   },
   { once: true }
 );

@@ -611,15 +611,17 @@ class QuickSettings extends HTMLElement {
     setTimeout(() => {
       window.top.dispatchEvent(new CustomEvent("changeSize", {
         detail: {
+          x: ((window.screen.width - w) / 2) | 0,
+          y: 0,
           width: w,
           height: h
         }
       }));
-      overlay.style.opacity = "0";
       setTimeout(() => {
+        overlay.style.opacity = "0";
         overlay.style.display = "none";
-      }, 100); // 等待透明度动画完成
-    }, 100);
+      }, 100);
+    }, 300);
   }
 }
 
