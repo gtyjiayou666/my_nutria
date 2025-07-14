@@ -86,8 +86,10 @@ class QuickSettings extends HTMLElement {
     };
 
     shadow.querySelector("#display-preferences-icon").onclick = () => {
-      this.drawer.hide();
-      this.openDisplayPreferences();
+      if (!embedder.isGonk()) {
+        this.drawer.hide();
+        this.openDisplayPreferences();
+      }
     };
 
     this.isDesktop = true;
