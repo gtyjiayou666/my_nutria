@@ -336,6 +336,7 @@ class DisplayPreferences extends HTMLElement {
   async setScreenResolution(screen, width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
+        this.close();
         const overlay = document.getElementById("blackOverlay");
         overlay.style.display = "block";
         overlay.style.opacity = "1"
@@ -358,11 +359,21 @@ class DisplayPreferences extends HTMLElement {
                 height: pos.height
               }
             }));
+          } else {
+            window.top.dispatchEvent(new CustomEvent("changeSize", {
+              detail: {
+                x: 0,
+                y: 0,
+                width: window.screen.width,
+                height: window.screen.height
+              }
+            }));
           }
           setTimeout(() => {
+            this.show();
             overlay.style.opacity = "0";
             overlay.style.display = "none";
-          }, 100); 
+          }, 100);
         }, 300);
       } else {
         this.error("b2GScreenManager not available");
@@ -486,9 +497,7 @@ class DisplayPreferences extends HTMLElement {
   close() {
     this.classList.remove('visible');
     document.body.classList.remove('display-preferences-open');
-    setTimeout(() => {
-      this.style.display = 'none';
-    }, 300);
+    this.style.display = 'none';
   }
 
   isVisible() {
