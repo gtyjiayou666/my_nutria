@@ -60,7 +60,7 @@ class DisplayPreferences extends HTMLElement {
             <div class="section-header clickable" id="display-header">
               <sl-icon name="monitor"></sl-icon>
               <span data-l10n-id="display-choose"></span>
-              <sl-icon name="chevron-down-display" class="expand-icon"></sl-icon>
+              <sl-icon name="chevron-down" class="expand-icon-display"></sl-icon>
             </div>
             <sl-menu id="displays" class="collapsible hidden"></sl-menu>
           </div>
@@ -69,7 +69,7 @@ class DisplayPreferences extends HTMLElement {
             <div class="section-header clickable" id="resolution-header">
               <sl-icon name="monitor"></sl-icon>
               <span data-l10n-id="display-choose-resolution"></span>
-              <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
+              <sl-icon name="chevron-down" class="expand-icon-resolution"></sl-icon>
             </div>
             <sl-menu id="resolutions" class="collapsible hidden"></sl-menu>
           </div>
@@ -96,7 +96,8 @@ class DisplayPreferences extends HTMLElement {
     this.displayHeader = shadow.querySelector('#display-header');
     this.resolutions = shadow.querySelector('#resolutions');
     this.resolutionHeader = shadow.querySelector('#resolution-header');
-    this.expandIcon = shadow.querySelector('.expand-icon');
+    this.expandIconDisplay = shadow.querySelector('.expand-icon-display');
+    this.expandIcon = shadow.querySelector('.expand-icon-resolution');
 
     this.closeButton.addEventListener('click', () => this.close());
     this.darkModeSwitch.addEventListener('sl-change', this.updateDarkMode.bind(this));
@@ -469,10 +470,10 @@ class DisplayPreferences extends HTMLElement {
 
     if (isHidden) {
       this.displays.classList.remove('hidden');
-      this.expandIcon.setAttribute('name', 'chevron-up');
+      this.expandIconDisplay.setAttribute('name', 'chevron-up');
     } else {
       this.displays.classList.add('hidden');
-      this.expandIcon.setAttribute('name', 'chevron-down');
+      this.expandIconDisplay.setAttribute('name', 'chevron-down');
     }
   }
 
