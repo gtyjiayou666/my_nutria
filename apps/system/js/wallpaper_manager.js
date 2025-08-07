@@ -28,10 +28,15 @@ class ColorUtil {
 class WallpaperManager extends EventTarget {
   constructor() {
     super();
+    this.isDesktop = true; // 默认桌面模式
+    this.mobileWallpaper = null;
+    this.desktopWallpaper = null;
     this.loadOrUseDefault().then(() => {
       this.log(`ready`);
       this.updateBackground();
       this.dispatchEvent(new CustomEvent("wallpaper-ready"));
+      // 发送 wallpaper manager 准备就绪事件
+      window.dispatchEvent(new CustomEvent("wallpaper-manager-ready"));
     });
 
     actionsDispatcher.addListener("set-wallpaper", (_name, url) => {
@@ -241,9 +246,19 @@ class WallpaperManager extends EventTarget {
   }
 
   async loadDefaultWallpaper() {
-    let image = await this.fetchAsBlob("./resources/default-wallpaper.webp");
-    this.log(`got default blob ${image}`);
-    await this.save(image);
+    // 加载移动版壁纸（默认显示）
+    let mobileImage = await this.fetchAsBlob("./resources/default-wallpaper.webp");
+    this.log(`got mobile wallpaper blob ${mobileImage}`);
+    this.mobileWallpaper = mobileImage;
+    
+    // 加载桌面版壁纸（隐藏状态）
+    let desktopImage = await this.fetchAsBlob("./resources/newdesktop.png");
+    this.log(`got desktop wallpaper blob ${desktopImage}`);
+    this.desktopWallpaper = desktopImage;
+    
+    // 根据当前模式保存对应的壁纸
+    let currentImage = this.isDesktop ? this.desktopWallpaper : this.mobileWallpaper;
+    await this.save(currentImage);
   }
 
   // Retrieve the list of wallpapers from the content manager.
@@ -275,6 +290,33 @@ class WallpaperManager extends EventTarget {
 
   asURL() {
     return this.currentResource.variantUrl("default");
+  }
+
+  // 切换桌面/移动模式的壁纸
+  async switchWallpaper(isDesktop) {
+    this.log(`switchWallpaper to ${isDesktop ? 'desktop' : 'mobile'} mode`);
+    this.isDesktop = isDesktop;
+    
+    // 确保两张壁纸都已加载
+    if (!this.mobileWallpaper || !this.desktopWallpaper) {
+      await this.loadDefaultWallpaper();
+      return;
+    }
+    
+    // 根据模式选择对应的壁纸
+    let targetImage = isDesktop ? this.desktopWallpaper : this.mobileWallpaper;
+    
+    // 保存新壁纸
+    this.ignoreNextChange = true;
+    await this.save(targetImage);
+    
+    // 更新背景
+    this.updateBackground();
+    
+    // 发送桌面模式切换事件
+    window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
+      detail: { isDesktop }
+    }));
   }
 }
 

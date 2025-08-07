@@ -9,4 +9,9 @@
 
     --keyboard-height: 180px;
     --statusbar-height: 2.5em;
+    
+    /* Desktop mode statusbar colors */
+    --statusbar-desktop-background: rgba(25, 25, 35, 0.85);
+    --statusbar-desktop-text-color: #ffffff;
+    --statusbar-desktop-height: 3.75em; /* 1.5 times the normal height */
 }

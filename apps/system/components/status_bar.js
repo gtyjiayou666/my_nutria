@@ -82,9 +82,15 @@ class StatusBar extends HTMLElement {
           <sl-icon class="static battery-icon homescreen-icon" name="battery-charging"></sl-icon>
           <img class="favicon" />
           <span class="left-text">Current page title that could be way too long to fit so we need to clip it some way.</span>
+          <svg class="quicklaunch homescreen-icon desktop-mode" style="display: none; width: 2.25rem; height: 2.25rem; cursor: pointer; fill: currentColor;" alt="Apps" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="8" height="8" rx="1"/>
+            <rect x="13" y="3" width="8" height="8" rx="1"/>
+            <rect x="3" y="13" width="8" height="8" rx="1"/>
+            <rect x="13" y="13" width="8" height="8" rx="1"/>
+          </svg>
         </div>
         <div class="center">
-          <sl-icon name="circle-ellipsis" class="quicklaunch homescreen-icon"></sl-icon>
+          <sl-icon name="circle-ellipsis" class="quicklaunch homescreen-icon mobile-mode"></sl-icon>
         </div>
         <div class="right">
           <sl-icon name="chevron-left" class="go-back content-icon"></sl-icon>
@@ -105,6 +111,9 @@ class StatusBar extends HTMLElement {
     this.elems = {};
 
     this.isCarouselOpen = false;
+
+    // Initialize desktop mode state
+    this.initializeDesktopMode();
 
     // Initialize the clock and update it when needed.
     this.updateClock();
@@ -175,6 +184,16 @@ class StatusBar extends HTMLElement {
     let quickLaunchElem = this.getElem(`.quicklaunch`);
     hapticFeedback.register(quickLaunchElem);
     quickLaunchElem.onpointerdown = async () => {
+      if (this.isCarouselOpen) {
+        actionsDispatcher.dispatch("close-carousel");
+      }
+      document.getElementById("apps-list").toggle();
+    };
+
+    // 为桌面模式的 quicklaunch 图标也添加事件监听器
+    let quickLaunchDesktopElem = this.getElem(`svg.quicklaunch.desktop-mode`);
+    hapticFeedback.register(quickLaunchDesktopElem);
+    quickLaunchDesktopElem.onpointerdown = async () => {
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
@@ -556,6 +575,59 @@ class StatusBar extends HTMLElement {
       this.style.backgroundColor = null;
       this.style.backgroundColor = null;
       this.classList.add("transparent");
+    }
+  }
+
+  initializeDesktopMode() {
+    // 监听桌面模式状态变化
+    if (window.wallpaperManager) {
+      this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
+      // 监听桌面模式切换事件
+      window.addEventListener('desktop-mode-changed', (event) => {
+        this.updateQuicklaunchPosition(event.detail.isDesktop);
+      });
+    } else {
+      // 如果 wallpaperManager 还未加载，等待其加载完成
+      window.addEventListener('wallpaper-manager-ready', () => {
+        this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
+        window.addEventListener('desktop-mode-changed', (event) => {
+          this.updateQuicklaunchPosition(event.detail.isDesktop);
+        });
+      });
+    }
+  }
+
+  updateQuicklaunchPosition(isDesktop) {
+    const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
+    const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
+    const screenElement = document.getElementById('screen');
+    
+    if (isDesktop) {
+      // 桌面模式：显示左侧图标，隐藏中心图标，添加桌面模式样式
+      if (mobileQuicklaunch) {
+        mobileQuicklaunch.style.display = 'none';
+      }
+      if (desktopQuicklaunch) {
+        desktopQuicklaunch.style.display = 'initial';
+      }
+      // 添加桌面模式样式类
+      this.classList.add('desktop-mode');
+      if (screenElement) {
+        screenElement.classList.add('desktop-mode');
+      }
+    } else {
+      // 移动模式：显示中心图标，隐藏左侧图标，移除桌面模式样式
+      if (mobileQuicklaunch) {
+        mobileQuicklaunch.style.display = 'initial';
+      }
+      if (desktopQuicklaunch) {
+        desktopQuicklaunch.style.display = 'none';
+      }
+      // 移除桌面模式样式类
+      this.classList.remove('desktop-mode');
+      if (screenElement) {
+        screenElement.classList.remove('desktop-mode');
+      }
     }
   }
 

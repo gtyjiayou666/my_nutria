@@ -173,8 +173,8 @@ const customRunner = {
   wallpaperReady: () => {
     return () => {
       return new Promise((resolve) => {
-        let wallpaperManager = new window.WallpaperManager();
-        wallpaperManager.addEventListener("wallpaper-ready", resolve, {
+        window.wallpaperManager = new window.WallpaperManager();
+        window.wallpaperManager.addEventListener("wallpaper-ready", resolve, {
           once: true,
         });
       });

@@ -611,6 +611,12 @@ class QuickSettings extends HTMLElement {
       h = window.screen.height;
       w = Math.min(h / 1.5, window.screen.width);
     }
+    
+    // 切换壁纸
+    if (window.wallpaperManager) {
+      window.wallpaperManager.switchWallpaper(this.isDesktop);
+    }
+    
     setTimeout(() => {
       window.top.dispatchEvent(new CustomEvent("changeSize", {
         detail: {

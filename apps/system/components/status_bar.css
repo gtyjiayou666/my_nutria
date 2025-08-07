@@ -9,7 +9,7 @@
   --pb-background: rgb(37, 0, 62);
 }
 
-:host .homescreen.session-desktop .left > * {
+:host .homescreen.session-desktop .left > *:not(.desktop-mode) {
   display: none;
 }
 
@@ -28,6 +28,71 @@
 :host(.privatebrowsing) {
   color: var(--pb-color);
   background-color: var(--pb-background);
+}
+
+/* Desktop mode statusbar styling */
+:host(.desktop-mode) {
+  background-color: var(--statusbar-desktop-background);
+  color: var(--statusbar-desktop-text-color);
+  backdrop-filter: blur(10px);
+  border-radius: 8px 8px 0 0;
+  margin: 0 8px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: none;
+  height: var(--statusbar-desktop-height);
+}
+
+:host(.desktop-mode) .container {
+  height: 100%; /* Ensure container fills the new height */
+  align-items: center; /* Keep items vertically centered */
+}
+
+:host(.desktop-mode) sl-icon {
+  font-size: 2.25rem; /* 1.5 times the normal size */
+  color: var(--statusbar-desktop-text-color);
+}
+
+:host(.desktop-mode) .quicklaunch.desktop-mode {
+  width: 2.25rem; /* 1.5 times the normal size for SVG */
+  height: 2.25rem;
+  fill: var(--statusbar-desktop-text-color);
+}
+
+:host(.desktop-mode) sl-badge[variant="neutral"]::part(base) {
+  color: var(--statusbar-desktop-text-color);
+  background-color: rgba(255, 255, 255, 0.1);
+  font-size: 1.5rem; /* Scale badge text too */
+}
+
+:host(.desktop-mode) .battery-icon {
+  color: var(--statusbar-desktop-text-color);
+  font-size: 2.25rem;
+}
+
+:host(.desktop-mode) .favicon {
+  filter: brightness(1.2);
+  width: 2.25em; /* Scale favicon */
+  height: 2.25em;
+}
+
+:host(.desktop-mode) .left-text {
+  font-size: 1.5rem; /* Scale text */
+}
+
+:host(.desktop-mode) .left,
+:host(.desktop-mode) .center,
+:host(.desktop-mode) .right {
+  align-items: center; /* Ensure all sections stay centered */
+}
+
+:host(.desktop-mode) .frame-list {
+  gap: 0.375em; /* Increase gap proportionally */
+}
+
+:host(.desktop-mode) .frame-list div {
+  padding-left: 0.375em;
+  padding-right: 0.375em;
 }
 
 :host .container {

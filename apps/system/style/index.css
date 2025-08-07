@@ -25,6 +25,7 @@ body {
   background-position: 50% 50%;
   overflow: hidden;
   -moz-user-select: none;
+  user-select: none;
 }
 
 body.screen-off {
@@ -85,6 +86,17 @@ body.screen-off {
 
 #screen.fullscreen {
   grid-template-rows: min-content calc(100vh) min-content;
+}
+
+/* Desktop mode layout adjustments */
+#screen.desktop-mode {
+  grid-template-rows:
+    min-content calc(100vh - var(--statusbar-desktop-height) - var(--status-top-height))
+    min-content;
+}
+
+#screen.desktop-mode:not(.show-top-status-bar) {
+  grid-template-rows: 0px calc(100vh - var(--statusbar-desktop-height)) min-content;
 }
 
 #status-top {
