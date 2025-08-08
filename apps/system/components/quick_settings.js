@@ -92,11 +92,28 @@ class QuickSettings extends HTMLElement {
       }
     };
 
-    this.isDesktop = true;
+    // 初始化桌面模式状态，与 wallpaperManager 保持同步
+    this.initializeDesktopState();
+    
     shadow.querySelector("#new-feature-icon").onclick = () => {
       this.drawer.hide();
       this.handleNewFeatureClick();
     };
+  }
+
+  initializeDesktopState() {
+    // 与 wallpaperManager 保持同步
+    if (window.wallpaperManager) {
+      this.isDesktop = window.wallpaperManager.isDesktop;
+    } else {
+      // 如果 wallpaperManager 还未加载，设置默认值并等待同步
+      this.isDesktop = true; // 默认桌面模式
+      window.addEventListener('wallpaper-manager-ready', () => {
+        this.isDesktop = window.wallpaperManager.isDesktop;
+        // 确保首次同步后状态一致
+        console.log(`QuickSettings: Desktop state synchronized to ${this.isDesktop}`);
+      });
+    }
   }
 
   connectedCallback() {
@@ -602,19 +619,32 @@ class QuickSettings extends HTMLElement {
     overlay.style.opacity = "1"
     var w = 0;
     var h = 0;
-    if (!this.isDesktop) {
-      this.isDesktop = true;
-      w = window.screen.width;
-      h = window.screen.height;
-    } else {
-      this.isDesktop = false;
+    
+    // 获取当前实际的 isDesktop 状态
+    let currentIsDesktop = this.isDesktop;
+    if (window.wallpaperManager && window.wallpaperManager.isDesktop !== this.isDesktop) {
+      // 如果状态不同步，以 wallpaperManager 为准
+      currentIsDesktop = window.wallpaperManager.isDesktop;
+      this.isDesktop = currentIsDesktop;
+    }
+    
+    // 切换到新状态
+    let newIsDesktop = !currentIsDesktop;
+    this.isDesktop = newIsDesktop;
+    
+    if (!newIsDesktop) {
       h = window.screen.height;
       w = Math.min(h / 1.5, window.screen.width);
+    } else {
+      w = window.screen.width;
+      h = window.screen.height;
     }
+    
+    console.log(`Switching desktop mode from ${currentIsDesktop} to ${newIsDesktop}`);
     
     // 切换壁纸
     if (window.wallpaperManager) {
-      window.wallpaperManager.switchWallpaper(this.isDesktop);
+      window.wallpaperManager.switchWallpaper(newIsDesktop);
     }
     
     setTimeout(() => {

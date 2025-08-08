@@ -112,9 +112,6 @@ class StatusBar extends HTMLElement {
 
     this.isCarouselOpen = false;
 
-    // Initialize desktop mode state
-    this.initializeDesktopMode();
-
     // Initialize the clock and update it when needed.
     this.updateClock();
     this.clockTimer = new MinuteTimer();
@@ -181,7 +178,7 @@ class StatusBar extends HTMLElement {
       siteInfo.open();
     };
 
-    let quickLaunchElem = this.getElem(`.quicklaunch`);
+    let quickLaunchElem = this.getElem(`.quicklaunch.mobile-mode`);
     hapticFeedback.register(quickLaunchElem);
     quickLaunchElem.onpointerdown = async () => {
       if (this.isCarouselOpen) {
@@ -273,6 +270,9 @@ class StatusBar extends HTMLElement {
         }
       };
     }
+
+    // Initialize desktop mode state after all event listeners are set
+    this.initializeDesktopMode();
   }
 
   setupSwipeDetector() {
@@ -579,18 +579,31 @@ class StatusBar extends HTMLElement {
   }
 
   initializeDesktopMode() {
+    // 设置默认状态，与 wallpaperManager 保持一致（默认桌面模式）
+    const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
+    const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
+    const screenElement = document.getElementById('screen');
+    
+    // 检查 wallpaperManager 是否已加载并获取当前状态
+    let currentIsDesktop = window.wallpaperManager ? window.wallpaperManager.isDesktop : true; // 默认桌面模式
+    
+    // 立即设置正确的状态
+    this.updateQuicklaunchPosition(currentIsDesktop);
+    
     // 监听桌面模式状态变化
     if (window.wallpaperManager) {
-      this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
       // 监听桌面模式切换事件
       window.addEventListener('desktop-mode-changed', (event) => {
+        console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
         this.updateQuicklaunchPosition(event.detail.isDesktop);
       });
     } else {
       // 如果 wallpaperManager 还未加载，等待其加载完成
       window.addEventListener('wallpaper-manager-ready', () => {
+        console.log(`StatusBar: WallpaperManager ready, setting desktop mode to ${window.wallpaperManager.isDesktop}`);
         this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
         window.addEventListener('desktop-mode-changed', (event) => {
+          console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
           this.updateQuicklaunchPosition(event.detail.isDesktop);
         });
       });
@@ -601,6 +614,8 @@ class StatusBar extends HTMLElement {
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
+    
+    console.log(`StatusBar: updateQuicklaunchPosition to ${isDesktop ? 'desktop' : 'mobile'} mode`);
     
     if (isDesktop) {
       // 桌面模式：显示左侧图标，隐藏中心图标，添加桌面模式样式
