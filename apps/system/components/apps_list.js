@@ -138,7 +138,7 @@ class AppsList extends LitElement {
         }
         break;
       case "contextmenu":
-        // console.log(`AppsList: contextmenu ${event.target?.localName}`);
+         //console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         event.preventDefault();
         this.openContextMenu(event, event.target.data);
         break;
