@@ -82,3 +82,76 @@
   opacity: 0.5;
   border: 2px dashed red;
 }
+
+/* 上下文菜单样式 - 类似 Windows 右键菜单 */
+:host .context-menu {
+  position: fixed;
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  min-width: 140px;
+  padding: 6px 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+:host .context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1f2937;
+  gap: 10px;
+  transition: background-color 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+:host .context-menu-item:hover {
+  background-color: #e5f3ff;
+  color: #0066cc;
+}
+
+:host .context-menu-item:active {
+  background-color: #cce7ff;
+}
+
+:host .context-menu-item sl-icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+:host .context-menu-item:hover sl-icon {
+  color: #0066cc;
+}
+
+/* 分隔线样式 */
+:host .context-menu-separator {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 6px 0;
+}
+
+/* 禁用状态 */
+:host .context-menu-item:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+:host .context-menu-item:disabled:hover {
+  background-color: transparent;
+  color: #9ca3af;
+}
+
+:host .context-menu-item:disabled sl-icon {
+  color: #9ca3af;
+}
