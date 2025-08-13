@@ -63,6 +63,9 @@ class AppsList extends LitElement {
     this.contextMenuOpen = false;
     this.contextMenuHandler = this.captureContextMenuEvent.bind(this);
     this.buildAppsNodes();
+    
+    // 绑定全局点击处理器
+    this.globalClickHandler = this.handleGlobalClick.bind(this);
   }
 
   static get properties() {
@@ -73,6 +76,23 @@ class AppsList extends LitElement {
 
   log(msg) {
     console.log(`AppsList: ${msg}`);
+  }
+
+  handleGlobalClick(event) {
+    // 检查点击是否在 apps-list 元素内部
+    if (!this.contains(event.target)) {
+      // 检查是否点击了开始按钮或快速启动按钮，如果是则不关闭
+      const target = event.target;
+      const isStartButton = target.closest('[data-l10n-id="quickstart"]') || 
+                           target.closest('.start-button') ||
+                           target.closest('quicklaunch-button');
+      
+      if (!isStartButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.close();
+      }
+    }
   }
 
   open() {
@@ -104,6 +124,11 @@ class AppsList extends LitElement {
     }
     this.focus();
     embedder.addSystemEventListener("keypress", this, true);
+    
+    // 添加全局点击监听器，延迟添加以避免立即触发
+    setTimeout(() => {
+      document.addEventListener("click", this.globalClickHandler, true);
+    }, 100);
   }
 
   close() {
@@ -116,6 +141,9 @@ class AppsList extends LitElement {
       homescreenFrame.classList.remove("deactivated");
       homescreenFrame.style.background = "";
     }
+    
+    // 移除全局点击监听器
+    document.removeEventListener("click", this.globalClickHandler, true);
   }
 
   toggle() {
