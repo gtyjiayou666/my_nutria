@@ -116,9 +116,6 @@ class AppsList extends LitElement {
       homescreenFrame.classList.remove("deactivated");
       homescreenFrame.style.background = "";
     }
-    
-    // 发送应用框关闭事件
-    document.dispatchEvent(new CustomEvent('apps-list-closed'));
   }
 
   toggle() {

@@ -187,25 +187,6 @@ class StatusBar extends HTMLElement {
       document.getElementById("apps-list").toggle();
     };
 
-        // Mobile mode quicklaunch
-    let quickLaunchElem = this.getElem(`svg.quicklaunch:not(.desktop-mode)`);
-    hapticFeedback.register(quickLaunchElem);
-    quickLaunchElem.onpointerdown = async () => {
-      if (this.isCarouselOpen) {
-        actionsDispatcher.dispatch("close-carousel");
-      }
-      
-      const appsList = document.getElementById("apps-list");
-      const wasOpen = appsList.hasAttribute("open");
-      
-      appsList.toggle();
-      
-      // 如果应用面板被打开，添加外部点击监听器
-      if (!wasOpen && appsList.hasAttribute("open")) {
-        this.addAppsListOutsideClickHandler();
-      }
-    };
-
     // 为桌面模式的 quicklaunch 图标也添加事件监听器
     let quickLaunchDesktopElem = this.getElem(`svg.quicklaunch.desktop-mode`);
     hapticFeedback.register(quickLaunchDesktopElem);
@@ -213,16 +194,7 @@ class StatusBar extends HTMLElement {
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
-      
-      const appsList = document.getElementById("apps-list");
-      const wasOpen = appsList.hasAttribute("open");
-      
-      appsList.toggle();
-      
-      // 如果应用面板被打开，添加外部点击监听器
-      if (!wasOpen && appsList.hasAttribute("open")) {
-        this.addAppsListOutsideClickHandler();
-      }
+      document.getElementById("apps-list").toggle();
     };
 
     let leftText = this.getElem(`.left-text`);
@@ -301,11 +273,6 @@ class StatusBar extends HTMLElement {
 
     // Initialize desktop mode state after all event listeners are set
     this.initializeDesktopMode();
-    
-    // 监听应用框关闭事件以清理外部点击监听器
-    document.addEventListener('apps-list-closed', () => {
-      this.cleanupOutsideClickHandler();
-    });
   }
 
   setupSwipeDetector() {
@@ -419,62 +386,6 @@ class StatusBar extends HTMLElement {
       this.elems[selector] = this.shadow.querySelector(selector);
     }
     return this.elems[selector];
-  }
-  
-  addAppsListOutsideClickHandler() {
-    // 如果已有监听器，先移除
-    if (this.outsideClickHandler) {
-      document.removeEventListener('click', this.outsideClickHandler);
-    }
-    
-    // 添加新的监听器
-    this.outsideClickHandler = (event) => {
-      const appsList = document.getElementById("apps-list");
-      const startButton = this.shadow.querySelector('.start-button');
-      const mobileQuickLaunch = this.shadow.querySelector('svg.quicklaunch:not(.desktop-mode)');
-      const desktopQuickLaunch = this.shadow.querySelector('svg.quicklaunch.desktop-mode');
-      
-      // 检查点击是否在应用框或任何触发按钮外部
-      if (appsList && appsList.classList.contains("open")) {
-        // 检查点击是否在应用框内
-        const appsListBounds = appsList.getBoundingClientRect();
-        const clickX = event.clientX;
-        const clickY = event.clientY;
-        
-        const clickedInside = (
-          clickX >= appsListBounds.left && 
-          clickX <= appsListBounds.right &&
-          clickY >= appsListBounds.top && 
-          clickY <= appsListBounds.bottom
-        );
-        
-        // 检查是否点击了任何触发按钮
-        const clickedStartButton = startButton && startButton.contains(event.target);
-        const clickedMobileQuickLaunch = mobileQuickLaunch && mobileQuickLaunch.contains(event.target);
-        const clickedDesktopQuickLaunch = desktopQuickLaunch && desktopQuickLaunch.contains(event.target);
-        
-        // 如果点击在外部且不是任何触发按钮，关闭应用框
-        if (!clickedInside && !clickedStartButton && !clickedMobileQuickLaunch && !clickedDesktopQuickLaunch) {
-          appsList.close();
-          // 移除监听器
-          document.removeEventListener('click', this.outsideClickHandler);
-          this.outsideClickHandler = null;
-        }
-      }
-    };
-    
-    // 使用 setTimeout 确保在当前点击事件处理完后再添加监听器
-    setTimeout(() => {
-      document.addEventListener('click', this.outsideClickHandler);
-    }, 0);
-  }
-  
-  // 清理外部点击监听器
-  cleanupOutsideClickHandler() {
-    if (this.outsideClickHandler) {
-      document.removeEventListener('click', this.outsideClickHandler);
-      this.outsideClickHandler = null;
-    }
   }
 
   // Returns the local time properly formatted.
@@ -675,39 +586,33 @@ class StatusBar extends HTMLElement {
   }
 
   initializeDesktopMode() {
-    // 不设置默认状态，等待 wallpaperManager 提供正确的初始状态
+    // 设置默认状态，与 wallpaperManager 保持一致（默认桌面模式）
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
     
     // 检查 wallpaperManager 是否已加载并获取当前状态
-    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-      let currentIsDesktop = window.wallpaperManager.isDesktop;
-      console.log(`StatusBar: wallpaperManager ready, isDesktop = ${currentIsDesktop}`);
-      // 立即设置正确的状态
-      this.updateQuicklaunchPosition(currentIsDesktop);
-      
+    let currentIsDesktop = window.wallpaperManager ? window.wallpaperManager.isDesktop : true; // 默认桌面模式
+    
+    // 立即设置正确的状态
+    this.updateQuicklaunchPosition(currentIsDesktop);
+    
+    // 监听桌面模式状态变化
+    if (window.wallpaperManager) {
       // 监听桌面模式切换事件
       window.addEventListener('desktop-mode-changed', (event) => {
         console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
         this.updateQuicklaunchPosition(event.detail.isDesktop);
       });
     } else {
-      // 如果 wallpaperManager 还未加载，等待其加载完成，不设置任何默认状态
-      console.log(`StatusBar: Waiting for wallpaperManager to be ready...`);
-      
+      // 如果 wallpaperManager 还未加载，等待其加载完成
       window.addEventListener('wallpaper-manager-ready', () => {
-        if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-          let currentIsDesktop = window.wallpaperManager.isDesktop;
-          console.log(`StatusBar: WallpaperManager ready, setting desktop mode to ${currentIsDesktop}`);
-          this.updateQuicklaunchPosition(currentIsDesktop);
-        }
-      }, { once: true });
-      
-      // 也监听桌面模式切换事件
-      window.addEventListener('desktop-mode-changed', (event) => {
-        console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
-        this.updateQuicklaunchPosition(event.detail.isDesktop);
+        console.log(`StatusBar: WallpaperManager ready, setting desktop mode to ${window.wallpaperManager.isDesktop}`);
+        this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
+        window.addEventListener('desktop-mode-changed', (event) => {
+          console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
+          this.updateQuicklaunchPosition(event.detail.isDesktop);
+        });
       });
     }
   }
@@ -718,6 +623,7 @@ class StatusBar extends HTMLElement {
     const screenElement = document.getElementById('screen');
     
     console.log(`StatusBar: updateQuicklaunchPosition to ${isDesktop ? 'desktop' : 'mobile'} mode`);
+    console.log(`StatusBar: Current classes before update:`, this.className);
     
     if (isDesktop) {
       // 桌面模式：重新组织状态栏布局
@@ -747,7 +653,15 @@ class StatusBar extends HTMLElement {
       if (screenElement) {
         screenElement.classList.remove('desktop-mode');
       }
+      
+      // 确保移动模式下status bar是可见的
+      this.style.display = '';
+      this.classList.remove('fullscreen');
+      console.log(`StatusBar: Mobile mode restored, display:`, this.style.display);
     }
+    
+    console.log(`StatusBar: Current classes after update:`, this.className);
+    console.log(`StatusBar: Status bar visibility:`, window.getComputedStyle(this).display);
   }
 
   enableDesktopTaskbar() {
@@ -789,18 +703,11 @@ class StatusBar extends HTMLElement {
       `;
       
       // 添加点击事件
-      startButton.onclick = (event) => {
-        event.stopPropagation(); // 阻止事件冒泡
+      startButton.onclick = () => {
         if (this.isCarouselOpen) {
           actionsDispatcher.dispatch("close-carousel");
         }
-        const appsList = document.getElementById("apps-list");
-        appsList.toggle();
-        
-        // 如果应用框被打开，添加全局点击监听器
-        if (appsList.classList.contains("open")) {
-          this.addAppsListOutsideClickHandler();
-        }
+        document.getElementById("apps-list").toggle();
       };
       
       // 插入到容器的开始位置
@@ -884,16 +791,40 @@ class StatusBar extends HTMLElement {
     const leftText = this.getElem('.left-text');
     const favicon = this.getElem('.favicon');
     
+    console.log('StatusBar: Restoring original mobile layout');
+    
     // 恢复显示移动模式元素
-    if (center) center.style.display = '';
-    if (leftText) leftText.style.display = '';
-    if (favicon) favicon.style.display = '';
-    if (batteryIcon) batteryIcon.style.display = '';
+    if (center) {
+      center.style.display = '';
+      console.log('StatusBar: Center restored');
+    }
+    if (leftText) {
+      leftText.style.display = '';
+      console.log('StatusBar: Left text restored');
+    }
+    if (favicon) {
+      favicon.style.display = '';
+      console.log('StatusBar: Favicon restored');
+    }
+    if (batteryIcon) {
+      batteryIcon.style.display = '';
+      console.log('StatusBar: Battery icon restored');
+    }
     
     // 移除桌面模式类
     if (left) left.classList.remove('desktop-left');
     if (right) right.classList.remove('desktop-right');
     if (frameList) frameList.classList.remove('desktop-taskbar-items');
+    
+    // 确保状态栏容器本身是可见的
+    const container = this.getElem('.container');
+    if (container) {
+      container.style.display = '';
+      container.classList.remove('desktop-taskbar');
+      console.log('StatusBar: Container restored');
+    }
+    
+    console.log('StatusBar: Original layout restoration complete');
   }
 
   updateState(_name, state) {

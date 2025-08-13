@@ -12,9 +12,32 @@
   --statusbar-desktop-height: 48px;
   --statusbar-desktop-background: rgba(240, 240, 240, 0.95);
   --statusbar-desktop-text-color: #333;
+  
+  /* 确保默认状态下状态栏是可见的 */
+  display: block;
 }
 
-:host .homescreen.session-desktop .left > *:not(.desktop-mode) {
+/* 移除过于宽泛的隐藏规则，改为针对性隐藏 */
+
+/* 移动模式样式确保正确显示 */
+:host:not(.desktop-mode) {
+  display: block;
+  height: var(--statusbar-height);
+}
+
+:host:not(.desktop-mode) .container {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  height: 100%;
+}
+
+/* 桌面模式下隐藏特定的移动元素 */
+:host(.desktop-mode) .mobile-only {
+  display: none;
+}
+
+/* 移动模式下隐藏特定的桌面元素 */
+:host:not(.desktop-mode) .desktop-only {
   display: none;
 }
 

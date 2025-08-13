@@ -19,7 +19,7 @@ class ActionBox extends HTMLElement {
   constructor() {
     super();
     this.contextMenuActive = false; // 初始化上下文菜单状态
-    this.isDesktop = undefined; // 不设置默认值，等待正确的状态同步
+    this.isDesktop = true; // 本地桌面模式状态，默认为桌面模式
   }
 
   connectedCallback() {
@@ -142,13 +142,7 @@ class ActionBox extends HTMLElement {
 
   // 检查是否为桌面模式 - 使用本地缓存的状态
   isDesktopMode() {
-    // 如果本地状态还未设置，从 wallpaperManager 获取
-    if (this.isDesktop === undefined) {
-      const wallpaperManager = window.wallpaperManager;
-      if (wallpaperManager) {
-        this.isDesktop = wallpaperManager.isDesktop;
-      }
-    }
+    // 直接返回本地状态，这个状态通过事件监听器保持同步
     return this.isDesktop;
   }
 
