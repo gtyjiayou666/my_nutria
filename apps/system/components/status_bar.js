@@ -187,6 +187,25 @@ class StatusBar extends HTMLElement {
       document.getElementById("apps-list").toggle();
     };
 
+        // Mobile mode quicklaunch
+    let quickLaunchElem = this.getElem(`svg.quicklaunch:not(.desktop-mode)`);
+    hapticFeedback.register(quickLaunchElem);
+    quickLaunchElem.onpointerdown = async () => {
+      if (this.isCarouselOpen) {
+        actionsDispatcher.dispatch("close-carousel");
+      }
+      
+      const appsList = document.getElementById("apps-list");
+      const wasOpen = appsList.hasAttribute("open");
+      
+      appsList.toggle();
+      
+      // 如果应用面板被打开，添加外部点击监听器
+      if (!wasOpen && appsList.hasAttribute("open")) {
+        this.addAppsListOutsideClickHandler();
+      }
+    };
+
     // 为桌面模式的 quicklaunch 图标也添加事件监听器
     let quickLaunchDesktopElem = this.getElem(`svg.quicklaunch.desktop-mode`);
     hapticFeedback.register(quickLaunchDesktopElem);
@@ -194,7 +213,16 @@ class StatusBar extends HTMLElement {
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
-      document.getElementById("apps-list").toggle();
+      
+      const appsList = document.getElementById("apps-list");
+      const wasOpen = appsList.hasAttribute("open");
+      
+      appsList.toggle();
+      
+      // 如果应用面板被打开，添加外部点击监听器
+      if (!wasOpen && appsList.hasAttribute("open")) {
+        this.addAppsListOutsideClickHandler();
+      }
     };
 
     let leftText = this.getElem(`.left-text`);
@@ -403,8 +431,10 @@ class StatusBar extends HTMLElement {
     this.outsideClickHandler = (event) => {
       const appsList = document.getElementById("apps-list");
       const startButton = this.shadow.querySelector('.start-button');
+      const mobileQuickLaunch = this.shadow.querySelector('svg.quicklaunch:not(.desktop-mode)');
+      const desktopQuickLaunch = this.shadow.querySelector('svg.quicklaunch.desktop-mode');
       
-      // 检查点击是否在应用框或开始按钮外部
+      // 检查点击是否在应用框或任何触发按钮外部
       if (appsList && appsList.classList.contains("open")) {
         // 检查点击是否在应用框内
         const appsListBounds = appsList.getBoundingClientRect();
@@ -418,11 +448,13 @@ class StatusBar extends HTMLElement {
           clickY <= appsListBounds.bottom
         );
         
-        // 检查是否点击了开始按钮
+        // 检查是否点击了任何触发按钮
         const clickedStartButton = startButton && startButton.contains(event.target);
+        const clickedMobileQuickLaunch = mobileQuickLaunch && mobileQuickLaunch.contains(event.target);
+        const clickedDesktopQuickLaunch = desktopQuickLaunch && desktopQuickLaunch.contains(event.target);
         
-        // 如果点击在外部且不是开始按钮，关闭应用框
-        if (!clickedInside && !clickedStartButton) {
+        // 如果点击在外部且不是任何触发按钮，关闭应用框
+        if (!clickedInside && !clickedStartButton && !clickedMobileQuickLaunch && !clickedDesktopQuickLaunch) {
           appsList.close();
           // 移除监听器
           document.removeEventListener('click', this.outsideClickHandler);
