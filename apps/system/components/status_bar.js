@@ -273,6 +273,11 @@ class StatusBar extends HTMLElement {
 
     // Initialize desktop mode state after all event listeners are set
     this.initializeDesktopMode();
+    
+    // 监听应用框关闭事件以清理外部点击监听器
+    document.addEventListener('apps-list-closed', () => {
+      this.cleanupOutsideClickHandler();
+    });
   }
 
   setupSwipeDetector() {
@@ -386,6 +391,58 @@ class StatusBar extends HTMLElement {
       this.elems[selector] = this.shadow.querySelector(selector);
     }
     return this.elems[selector];
+  }
+  
+  addAppsListOutsideClickHandler() {
+    // 如果已有监听器，先移除
+    if (this.outsideClickHandler) {
+      document.removeEventListener('click', this.outsideClickHandler);
+    }
+    
+    // 添加新的监听器
+    this.outsideClickHandler = (event) => {
+      const appsList = document.getElementById("apps-list");
+      const startButton = this.shadow.querySelector('.start-button');
+      
+      // 检查点击是否在应用框或开始按钮外部
+      if (appsList && appsList.classList.contains("open")) {
+        // 检查点击是否在应用框内
+        const appsListBounds = appsList.getBoundingClientRect();
+        const clickX = event.clientX;
+        const clickY = event.clientY;
+        
+        const clickedInside = (
+          clickX >= appsListBounds.left && 
+          clickX <= appsListBounds.right &&
+          clickY >= appsListBounds.top && 
+          clickY <= appsListBounds.bottom
+        );
+        
+        // 检查是否点击了开始按钮
+        const clickedStartButton = startButton && startButton.contains(event.target);
+        
+        // 如果点击在外部且不是开始按钮，关闭应用框
+        if (!clickedInside && !clickedStartButton) {
+          appsList.close();
+          // 移除监听器
+          document.removeEventListener('click', this.outsideClickHandler);
+          this.outsideClickHandler = null;
+        }
+      }
+    };
+    
+    // 使用 setTimeout 确保在当前点击事件处理完后再添加监听器
+    setTimeout(() => {
+      document.addEventListener('click', this.outsideClickHandler);
+    }, 0);
+  }
+  
+  // 清理外部点击监听器
+  cleanupOutsideClickHandler() {
+    if (this.outsideClickHandler) {
+      document.removeEventListener('click', this.outsideClickHandler);
+      this.outsideClickHandler = null;
+    }
   }
 
   // Returns the local time properly formatted.
@@ -700,11 +757,18 @@ class StatusBar extends HTMLElement {
       `;
       
       // 添加点击事件
-      startButton.onclick = () => {
+      startButton.onclick = (event) => {
+        event.stopPropagation(); // 阻止事件冒泡
         if (this.isCarouselOpen) {
           actionsDispatcher.dispatch("close-carousel");
         }
-        document.getElementById("apps-list").toggle();
+        const appsList = document.getElementById("apps-list");
+        appsList.toggle();
+        
+        // 如果应用框被打开，添加全局点击监听器
+        if (appsList.classList.contains("open")) {
+          this.addAppsListOutsideClickHandler();
+        }
       };
       
       // 插入到容器的开始位置
