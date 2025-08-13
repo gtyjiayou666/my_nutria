@@ -19,6 +19,7 @@ class ActionBox extends HTMLElement {
   constructor() {
     super();
     this.contextMenuActive = false; // 初始化上下文菜单状态
+    this.isDesktop = undefined; // 不设置默认值，等待正确的状态同步
   }
 
   connectedCallback() {
@@ -65,11 +66,15 @@ class ActionBox extends HTMLElement {
     // 监听桌面模式变化事件
     window.addEventListener('desktop-mode-changed', (event) => {
       console.log(`ActionBox: Desktop mode changed to ${event.detail.isDesktop}`);
+      this.isDesktop = event.detail.isDesktop; // 更新本地状态
       // 如果切换到移动模式，隐藏任何打开的上下文菜单
       if (!event.detail.isDesktop && this.contextMenuActive) {
         this.hideContextMenu();
       }
     });
+
+    // 初始化桌面模式状态
+    this.initializeDesktopState();
   }
 
   menuClick() {
@@ -78,32 +83,87 @@ class ActionBox extends HTMLElement {
     );
   }
 
-  // 检查是否为桌面模式 - 与 QuickSettings 的逻辑保持一致
-  isDesktopMode() {
-    // 首先检查 QuickSettings 的桌面模式状态
+  // 初始化桌面模式状态，与 QuickSettings 保持同步
+  initializeDesktopState() {
+    // 首先检查 QuickSettings 的状态
     const quickSettings = document.querySelector('quick-settings');
     if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-      return quickSettings.isDesktop;
+      this.isDesktop = quickSettings.isDesktop;
+      console.log(`ActionBox: Initialized from QuickSettings, isDesktop = ${this.isDesktop}`);
+      return;
     }
     
     // 如果 QuickSettings 不可用，检查 wallpaperManager
-    if (window.wallpaperManager && window.wallpaperManager.isWallpaperManagerReady()) {
-      return window.wallpaperManager.isDesktop;
+    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+      this.isDesktop = window.wallpaperManager.isDesktop;
+      console.log(`ActionBox: Initialized from wallpaperManager, isDesktop = ${this.isDesktop}`);
+      return;
     }
     
-    // 如果 wallpaperManager 不可用，检查其他可能的状态指示器
-    if (window.wallpaperManager) {
-      return window.wallpaperManager.getCurrentDesktopState();
-    }
+    // 使用轮询检查状态直到找到有效值
+    const checkState = () => {
+      const quickSettings = document.querySelector('quick-settings');
+      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+        this.isDesktop = quickSettings.isDesktop;
+        console.log(`ActionBox: Found QuickSettings state via polling, isDesktop = ${this.isDesktop}`);
+        return;
+      }
+      
+      if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+        this.isDesktop = window.wallpaperManager.isDesktop;
+        console.log(`ActionBox: Found wallpaperManager state via polling, isDesktop = ${this.isDesktop}`);
+        return;
+      }
+      
+      // 继续轮询
+      setTimeout(checkState, 100);
+    };
     
-    // 最后的后备方案：检查屏幕尺寸来判断（桌面模式通常屏幕更大）
-    return window.innerWidth > 768;
+    // 开始轮询
+    setTimeout(checkState, 100);
+    
+    // 如果都不可用，等待相关事件
+    window.addEventListener('wallpaper-manager-ready', () => {
+      if (window.wallpaperManager) {
+        this.isDesktop = window.wallpaperManager.isDesktop;
+        console.log(`ActionBox: Initialized after wallpaper-manager-ready, isDesktop = ${this.isDesktop}`);
+      }
+    }, { once: true });
+    
+    // 也监听 quick-settings-connected 事件
+    document.addEventListener('quick-settings-connected', () => {
+      const quickSettings = document.querySelector('quick-settings');
+      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+        this.isDesktop = quickSettings.isDesktop;
+        console.log(`ActionBox: Initialized after quick-settings-connected, isDesktop = ${this.isDesktop}`);
+      }
+    }, { once: true });
+  }
+
+  // 检查是否为桌面模式 - 使用本地缓存的状态
+  isDesktopMode() {
+    // 如果本地状态还未设置，从 wallpaperManager 获取
+    if (this.isDesktop === undefined) {
+      const wallpaperManager = window.wallpaperManager;
+      if (wallpaperManager) {
+        this.isDesktop = wallpaperManager.isDesktop;
+      }
+    }
+    return this.isDesktop;
   }
 
   // 显示上下文菜单
   showContextMenu(event) {
     // 隐藏任何现有的上下文菜单
     this.hideAllContextMenus();
+    
+    // 根据当前模式设置菜单样式类
+    this.contextMenu.className = 'context-menu';
+    if (this.isDesktopMode()) {
+      this.contextMenu.classList.add('desktop-mode');
+    } else {
+      this.contextMenu.classList.add('mobile-mode');
+    }
     
     // 显示当前的上下文菜单
     this.contextMenu.classList.remove("hidden");
@@ -227,33 +287,31 @@ class ActionBox extends HTMLElement {
       this.cancelClick = false;
       return;
     } else if (event.type === "pointerdown") {
-      // 只在非桌面模式下启用长按功能
-      if (!this.isDesktopMode()) {
-        this.shadowRoot.addEventListener("pointerup", this, { once: true });
-        let startPos = { x: event.screenX, y: event.screenY };
-        let capturedPointerId = event.pointerId;
+      // 在两种模式下都启用长按功能，用于拖动重排
+      this.shadowRoot.addEventListener("pointerup", this, { once: true });
+      let startPos = { x: event.screenX, y: event.screenY };
+      let capturedPointerId = event.pointerId;
 
-        this.timer = window.setTimeout(() => {
-          this.setPointerCapture(capturedPointerId);
-          this.cancelClick = true;
-          this.dispatchEvent(
-            new CustomEvent("long-press", { bubbles: true, detail: startPos })
-          );
-        }, kLongPressDelay);
-      }
+      this.timer = window.setTimeout(() => {
+        this.setPointerCapture(capturedPointerId);
+        this.cancelClick = true;
+        this.dispatchEvent(
+          new CustomEvent("long-press", { bubbles: true, detail: startPos })
+        );
+      }, kLongPressDelay);
     } else if (event.type === "pointerup") {
       if (this.timer) {
         window.clearTimeout(this.timer);
       }
     } else if (event.type === "contextmenu") {
       event.preventDefault();
-      // 检查是否为桌面模式
-      if (this.isDesktopMode()) {
-        console.log('Desktop mode detected, showing context menu');
-        this.showContextMenu(event);
-      } else {
-        console.log('Mobile mode detected, context menu disabled');
-      }
+      // 添加调试信息
+      console.log(`ActionBox: Right-click detected, isDesktop = ${this.isDesktop}, isDesktopMode() = ${this.isDesktopMode()}`);
+      
+      // 无论是否为桌面模式都显示上下文菜单
+      // 但在不同模式下菜单的样式和位置可能不同
+      console.log('Right-click detected, showing context menu');
+      this.showContextMenu(event);
     } else {
       console.error(`<action-box> handled unexpected event: ${event.type}`);
     }

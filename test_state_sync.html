@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>状态同步测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .status { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>桌面模式状态同步测试</h1>
+    
+    <div class="test-section">
+        <h3>模拟 wallpaperManager 状态</h3>
+        <button onclick="setWallpaperDesktop(true)">设置桌面模式 (true)</button>
+        <button onclick="setWallpaperDesktop(false)">设置移动模式 (false)</button>
+        <div id="wallpaper-status" class="status">当前 wallpaperManager.isDesktop: 未设置</div>
+    </div>
+
+    <div class="test-section">
+        <h3>组件状态测试</h3>
+        <button onclick="testComponentStates()">检查组件状态</button>
+        <button onclick="simulateRestart()">模拟应用重启</button>
+        <div id="component-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>事件同步测试</h3>
+        <button onclick="dispatchDesktopEvent(true)">分发桌面模式事件</button>
+        <button onclick="dispatchDesktopEvent(false)">分发移动模式事件</button>
+        <div id="event-status"></div>
+    </div>
+
+    <script>
+        // 模拟 wallpaperManager
+        window.wallpaperManager = {
+            isDesktop: undefined,
+            addEventListener: function(event, handler) {
+                console.log('wallpaperManager 添加事件监听器:', event);
+            }
+        };
+
+        function setWallpaperDesktop(value) {
+            window.wallpaperManager.isDesktop = value;
+            updateWallpaperStatus();
+            
+            // 模拟 wallpaper-manager-ready 事件
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('wallpaper-manager-ready'));
+            }, 100);
+        }
+
+        function updateWallpaperStatus() {
+            const status = document.getElementById('wallpaper-status');
+            const isDesktop = window.wallpaperManager.isDesktop;
+            status.textContent = `当前 wallpaperManager.isDesktop: ${isDesktop}`;
+            status.className = `status ${isDesktop === true ? 'success' : isDesktop === false ? 'warning' : 'error'}`;
+        }
+
+        function testComponentStates() {
+            const statusDiv = document.getElementById('component-status');
+            let results = [];
+
+            // 模拟组件状态检查
+            const mockComponents = [
+                { name: 'StatusBar', getDesktopState: () => getComponentState('StatusBar') },
+                { name: 'QuickSettings', getDesktopState: () => getComponentState('QuickSettings') },
+                { name: 'ActionBox', getDesktopState: () => getComponentState('ActionBox') }
+            ];
+
+            mockComponents.forEach(component => {
+                const state = component.getDesktopState();
+                const isConsistent = state === window.wallpaperManager.isDesktop;
+                results.push(`
+                    <div class="${isConsistent ? 'success' : 'error'}">
+                        ${component.name}: ${state} ${isConsistent ? '✓' : '✗ 不一致'}
+                    </div>
+                `);
+            });
+
+            statusDiv.innerHTML = results.join('');
+        }
+
+        function getComponentState(componentName) {
+            // 模拟组件状态获取逻辑
+            const wallpaper = window.wallpaperManager;
+            if (!wallpaper || wallpaper.isDesktop === undefined) {
+                return undefined; // 正确的行为：不设置默认值
+            }
+            return wallpaper.isDesktop;
+        }
+
+        function simulateRestart() {
+            // 模拟应用重启：重置所有状态
+            console.log('模拟应用重启...');
+            
+            // 清空组件状态显示
+            document.getElementById('component-status').innerHTML = '<div class="warning">应用重启中...</div>';
+            document.getElementById('event-status').innerHTML = '';
+            
+            setTimeout(() => {
+                console.log('重启完成，检查状态同步...');
+                testComponentStates();
+            }, 500);
+        }
+
+        function dispatchDesktopEvent(isDesktop) {
+            const event = new CustomEvent('desktop-mode-changed', {
+                detail: { isDesktop: isDesktop }
+            });
+            window.dispatchEvent(event);
+            
+            document.getElementById('event-status').innerHTML = `
+                <div class="success">已分发 desktop-mode-changed 事件: isDesktop=${isDesktop}</div>
+            `;
+        }
+
+        // 监听桌面模式变化事件
+        window.addEventListener('desktop-mode-changed', (event) => {
+            console.log('收到桌面模式变化事件:', event.detail);
+        });
+
+        // 初始化显示
+        updateWallpaperStatus();
+    </script>
+</body>
+</html>

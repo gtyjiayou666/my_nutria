@@ -83,7 +83,7 @@
   border: 2px dashed red;
 }
 
-/* 上下文菜单样式 - 类似 Windows 右键菜单 */
+/* 上下文菜单样式 - 适应不同模式 */
 :host .context-menu {
   position: fixed;
   background: #ffffff;
@@ -96,6 +96,23 @@
   font-family: system-ui, -apple-system, sans-serif;
   user-select: none;
   backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* 移动模式下的上下文菜单样式 */
+:host(.mobile-mode) .context-menu {
+  border-radius: 12px;
+  min-width: 160px;
+  padding: 8px 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), 0 3px 6px rgba(0, 0, 0, 0.15);
+  background-color: rgba(255, 255, 255, 0.98);
+}
+
+/* 桌面模式下的上下文菜单样式 */
+:host(.desktop-mode) .context-menu {
+  border-radius: 4px;
+  min-width: 120px;
+  padding: 4px 0;
   background-color: rgba(255, 255, 255, 0.95);
 }
 

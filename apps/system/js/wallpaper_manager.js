@@ -28,12 +28,15 @@ class ColorUtil {
 class WallpaperManager extends EventTarget {
   constructor() {
     super();
-    this.isDesktop = true; // 默认桌面模式
+    this.isDesktop = undefined; // 不设置默认值，等待从存储中加载实际状态
     this.mobileWallpaper = null;
     this.desktopWallpaper = null;
     this.isReady = false; // 添加准备状态标志
     
-    this.loadOrUseDefault().then(() => {
+    // 在初始化时加载桌面模式设置
+    this.initializeDesktopMode().then(() => {
+      return this.loadOrUseDefault();
+    }).then(() => {
       this.log(`ready`);
       this.updateBackground();
       this.isReady = true;
@@ -314,6 +317,49 @@ class WallpaperManager extends EventTarget {
     return this.isReady;
   }
 
+  // 初始化桌面模式状态 - 从设置服务加载保存的状态
+  async initializeDesktopMode() {
+    try {
+      // 获取设置服务
+      const settings = await apiDaemon.getSettings();
+      
+      // 从设置中加载桌面模式状态
+      try {
+        const result = await settings.get("nutria.desktop.mode");
+        this.isDesktop = result.value === true;
+        this.log(`Desktop mode loaded from settings: ${this.isDesktop}`);
+      } catch (e) {
+        // 如果设置不存在，默认为移动模式
+        this.isDesktop = false;
+        this.log(`No desktop mode setting found, defaulting to mobile mode`);
+        
+        // 保存默认设置
+        await settings.set([{
+          name: "nutria.desktop.mode",
+          value: false
+        }]);
+      }
+    } catch (e) {
+      this.error(`Failed to initialize desktop mode: ${e}`);
+      // 如果无法访问设置服务，默认为移动模式
+      this.isDesktop = false;
+    }
+  }
+
+  // 保存桌面模式状态到设置
+  async saveDesktopMode(isDesktop) {
+    try {
+      const settings = await apiDaemon.getSettings();
+      await settings.set([{
+        name: "nutria.desktop.mode",
+        value: isDesktop
+      }]);
+      this.log(`Desktop mode saved to settings: ${isDesktop}`);
+    } catch (e) {
+      this.error(`Failed to save desktop mode: ${e}`);
+    }
+  }
+
   // 切换桌面/移动模式的壁纸
   async switchWallpaper(isDesktop) {
     this.log(`switchWallpaper to ${isDesktop ? 'desktop' : 'mobile'} mode`);
@@ -323,6 +369,9 @@ class WallpaperManager extends EventTarget {
     this.isDesktop = isDesktop;
     
     console.log(`WallpaperManager: Switching from ${wasDesktop} to ${isDesktop}`);
+    
+    // 保存新的桌面模式状态到设置
+    await this.saveDesktopMode(isDesktop);
     
     // 立即发送桌面模式切换事件，即使壁纸还未加载完成
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {

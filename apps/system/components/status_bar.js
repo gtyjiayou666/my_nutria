@@ -586,33 +586,39 @@ class StatusBar extends HTMLElement {
   }
 
   initializeDesktopMode() {
-    // 设置默认状态，与 wallpaperManager 保持一致（默认桌面模式）
+    // 不设置默认状态，等待 wallpaperManager 提供正确的初始状态
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
     
     // 检查 wallpaperManager 是否已加载并获取当前状态
-    let currentIsDesktop = window.wallpaperManager ? window.wallpaperManager.isDesktop : true; // 默认桌面模式
-    
-    // 立即设置正确的状态
-    this.updateQuicklaunchPosition(currentIsDesktop);
-    
-    // 监听桌面模式状态变化
-    if (window.wallpaperManager) {
+    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+      let currentIsDesktop = window.wallpaperManager.isDesktop;
+      console.log(`StatusBar: wallpaperManager ready, isDesktop = ${currentIsDesktop}`);
+      // 立即设置正确的状态
+      this.updateQuicklaunchPosition(currentIsDesktop);
+      
       // 监听桌面模式切换事件
       window.addEventListener('desktop-mode-changed', (event) => {
         console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
         this.updateQuicklaunchPosition(event.detail.isDesktop);
       });
     } else {
-      // 如果 wallpaperManager 还未加载，等待其加载完成
+      // 如果 wallpaperManager 还未加载，等待其加载完成，不设置任何默认状态
+      console.log(`StatusBar: Waiting for wallpaperManager to be ready...`);
+      
       window.addEventListener('wallpaper-manager-ready', () => {
-        console.log(`StatusBar: WallpaperManager ready, setting desktop mode to ${window.wallpaperManager.isDesktop}`);
-        this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
-        window.addEventListener('desktop-mode-changed', (event) => {
-          console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
-          this.updateQuicklaunchPosition(event.detail.isDesktop);
-        });
+        if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+          let currentIsDesktop = window.wallpaperManager.isDesktop;
+          console.log(`StatusBar: WallpaperManager ready, setting desktop mode to ${currentIsDesktop}`);
+          this.updateQuicklaunchPosition(currentIsDesktop);
+        }
+      }, { once: true });
+      
+      // 也监听桌面模式切换事件
+      window.addEventListener('desktop-mode-changed', (event) => {
+        console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
+        this.updateQuicklaunchPosition(event.detail.isDesktop);
       });
     }
   }

@@ -102,17 +102,24 @@ class QuickSettings extends HTMLElement {
   }
 
   initializeDesktopState() {
-    // 与 wallpaperManager 保持同步
-    if (window.wallpaperManager) {
+    // 与 wallpaperManager 保持同步，不设置默认值
+    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
       this.isDesktop = window.wallpaperManager.isDesktop;
+      console.log(`QuickSettings: wallpaperManager ready, isDesktop = ${this.isDesktop}`);
     } else {
-      // 如果 wallpaperManager 还未加载，设置默认值并等待同步
-      this.isDesktop = true; // 默认桌面模式
+      // 如果 wallpaperManager 还未加载，等待同步，不设置默认值
+      console.log(`QuickSettings: Waiting for wallpaperManager to be ready...`);
       window.addEventListener('wallpaper-manager-ready', () => {
-        this.isDesktop = window.wallpaperManager.isDesktop;
-        // 确保首次同步后状态一致
-        console.log(`QuickSettings: Desktop state synchronized to ${this.isDesktop}`);
-      });
+        if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+          this.isDesktop = window.wallpaperManager.isDesktop;
+          console.log(`QuickSettings: Desktop state synchronized to ${this.isDesktop}`);
+          
+          // 确保状态同步后，通知其他组件
+          window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
+            detail: { isDesktop: this.isDesktop }
+          }));
+        }
+      }, { once: true });
     }
   }
 
