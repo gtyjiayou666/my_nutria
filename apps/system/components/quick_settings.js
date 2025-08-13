@@ -101,18 +101,38 @@ class QuickSettings extends HTMLElement {
     };
   }
 
-  initializeDesktopState() {
-    // 与 wallpaperManager 保持同步
-    if (window.wallpaperManager) {
-      this.isDesktop = window.wallpaperManager.isDesktop;
-    } else {
-      // 如果 wallpaperManager 还未加载，设置默认值并等待同步
+  async initializeDesktopState() {
+    try {
+      // 从设置中读取桌面模式状态
+      const settings = await apiDaemon.getSettings();
+      let savedDesktopState;
+      try {
+        const result = await settings.get("ui.desktop-mode");
+        savedDesktopState = result.value;
+        console.log(`QuickSettings: Loaded desktop state from settings: ${savedDesktopState}`);
+      } catch (e) {
+        // 如果设置不存在，使用默认值
+        savedDesktopState = true; // 默认桌面模式
+        console.log(`QuickSettings: No saved desktop state found, using default: ${savedDesktopState}`);
+      }
+      
+      this.isDesktop = savedDesktopState;
+      
+      // 与 wallpaperManager 保持同步
+      if (window.wallpaperManager) {
+        window.wallpaperManager.isDesktop = this.isDesktop;
+      } else {
+        // 如果 wallpaperManager 还未加载，等待其准备就绪后同步状态
+        window.addEventListener('wallpaper-manager-ready', () => {
+          window.wallpaperManager.isDesktop = this.isDesktop;
+          console.log(`QuickSettings: Synchronized state to wallpaperManager: ${this.isDesktop}`);
+        });
+      }
+      
+      console.log(`QuickSettings: Desktop state initialized to ${this.isDesktop}`);
+    } catch (e) {
+      console.error(`QuickSettings: Failed to initialize desktop state: ${e}`);
       this.isDesktop = true; // 默认桌面模式
-      window.addEventListener('wallpaper-manager-ready', () => {
-        this.isDesktop = window.wallpaperManager.isDesktop;
-        // 确保首次同步后状态一致
-        console.log(`QuickSettings: Desktop state synchronized to ${this.isDesktop}`);
-      });
     }
   }
 
@@ -613,7 +633,7 @@ class QuickSettings extends HTMLElement {
     this.displayPreferences.show();
   }
 
-  handleNewFeatureClick() {
+  async handleNewFeatureClick() {
     const overlay = document.getElementById("blackOverlay");
     overlay.style.display = "block";
     overlay.style.opacity = "1"
@@ -631,6 +651,15 @@ class QuickSettings extends HTMLElement {
     // 切换到新状态
     let newIsDesktop = !currentIsDesktop;
     this.isDesktop = newIsDesktop;
+    
+    // 保存新状态到设置中
+    try {
+      const settings = await apiDaemon.getSettings();
+      await settings.set([{ name: "ui.desktop-mode", value: newIsDesktop }]);
+      console.log(`QuickSettings: Saved desktop state to settings: ${newIsDesktop}`);
+    } catch (e) {
+      console.error(`QuickSettings: Failed to save desktop state: ${e}`);
+    }
     
     if (!newIsDesktop) {
       h = window.screen.height;

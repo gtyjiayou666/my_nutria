@@ -28,12 +28,14 @@ class ColorUtil {
 class WallpaperManager extends EventTarget {
   constructor() {
     super();
-    this.isDesktop = true; // 默认桌面模式
+    this.isDesktop = true; // 临时默认值，将从设置中加载
     this.mobileWallpaper = null;
     this.desktopWallpaper = null;
     this.isReady = false; // 添加准备状态标志
     
-    this.loadOrUseDefault().then(() => {
+    this.initializeDesktopState().then(() => {
+      return this.loadOrUseDefault();
+    }).then(() => {
       this.log(`ready`);
       this.updateBackground();
       this.isReady = true;
@@ -168,6 +170,29 @@ class WallpaperManager extends EventTarget {
 
   error(msg) {
     console.error(`WallpaperManager: ${msg}`);
+  }
+
+  async initializeDesktopState() {
+    try {
+      // 从设置中读取桌面模式状态
+      const settings = await apiDaemon.getSettings();
+      let savedDesktopState;
+      try {
+        const result = await settings.get("ui.desktop-mode");
+        savedDesktopState = result.value;
+        console.log(`WallpaperManager: Loaded desktop state from settings: ${savedDesktopState}`);
+      } catch (e) {
+        // 如果设置不存在，使用默认值
+        savedDesktopState = true; // 默认桌面模式
+        console.log(`WallpaperManager: No saved desktop state found, using default: ${savedDesktopState}`);
+      }
+      
+      this.isDesktop = savedDesktopState;
+      console.log(`WallpaperManager: Desktop state initialized to ${this.isDesktop}`);
+    } catch (e) {
+      console.error(`WallpaperManager: Failed to initialize desktop state: ${e}`);
+      this.isDesktop = true; // 默认桌面模式
+    }
   }
 
   fetchAsBlob(url) {
