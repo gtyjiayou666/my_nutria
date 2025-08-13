@@ -642,6 +642,11 @@ class QuickSettings extends HTMLElement {
     
     console.log(`Switching desktop mode from ${currentIsDesktop} to ${newIsDesktop}`);
     
+    // 发送桌面模式切换事件
+    window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
+      detail: { isDesktop: newIsDesktop }
+    }));
+    
     // 切换壁纸
     if (window.wallpaperManager) {
       window.wallpaperManager.switchWallpaper(newIsDesktop);

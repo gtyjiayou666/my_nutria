@@ -316,6 +316,13 @@ class StatusBar extends HTMLElement {
     let now = this.displayLocalTime();
     if (force || now !== this.lastClock) {
       this.getElem(".left-text").textContent = now;
+      
+      // 同时更新桌面模式的时钟
+      const desktopClock = this.shadow.querySelector('.desktop-clock');
+      if (desktopClock) {
+        desktopClock.textContent = now;
+      }
+      
       this.lastClock = now;
     }
   }
@@ -618,7 +625,8 @@ class StatusBar extends HTMLElement {
     console.log(`StatusBar: updateQuicklaunchPosition to ${isDesktop ? 'desktop' : 'mobile'} mode`);
     
     if (isDesktop) {
-      // 桌面模式：显示左侧图标，隐藏中心图标，添加桌面模式样式
+      // 桌面模式：重新组织状态栏布局
+      this.enableDesktopTaskbar();
       if (mobileQuicklaunch) {
         mobileQuicklaunch.style.display = 'none';
       }
@@ -631,7 +639,8 @@ class StatusBar extends HTMLElement {
         screenElement.classList.add('desktop-mode');
       }
     } else {
-      // 移动模式：显示中心图标，隐藏左侧图标，移除桌面模式样式
+      // 移动模式：恢复原始布局
+      this.disableDesktopTaskbar();
       if (mobileQuicklaunch) {
         mobileQuicklaunch.style.display = 'initial';
       }
@@ -644,6 +653,145 @@ class StatusBar extends HTMLElement {
         screenElement.classList.remove('desktop-mode');
       }
     }
+  }
+
+  enableDesktopTaskbar() {
+    // 重新组织容器为 Windows 任务栏风格
+    const container = this.getElem('.container');
+    container.classList.add('desktop-taskbar');
+    
+    // 添加开始按钮区域
+    this.createStartButton();
+    
+    // 重新组织现有元素
+    this.reorganizeForDesktop();
+    
+    // 添加系统托盘区域
+    this.createSystemTray();
+  }
+
+  disableDesktopTaskbar() {
+    // 恢复移动模式布局
+    const container = this.getElem('.container');
+    container.classList.remove('desktop-taskbar');
+    
+    // 移除桌面模式特有的元素
+    this.removeDesktopElements();
+    
+    // 恢复原始布局
+    this.restoreOriginalLayout();
+  }
+
+  createStartButton() {
+    // 创建开始按钮（如果不存在）
+    let startButton = this.shadow.querySelector('.start-button');
+    if (!startButton) {
+      startButton = document.createElement('div');
+      startButton.className = 'start-button desktop-only';
+      startButton.innerHTML = `
+        <sl-icon name="grid-3x3" class="start-icon"></sl-icon>
+        <span class="start-text">开始</span>
+      `;
+      
+      // 添加点击事件
+      startButton.onclick = () => {
+        if (this.isCarouselOpen) {
+          actionsDispatcher.dispatch("close-carousel");
+        }
+        document.getElementById("apps-list").toggle();
+      };
+      
+      // 插入到容器的开始位置
+      const container = this.getElem('.container');
+      container.prepend(startButton);
+    }
+  }
+
+  createSystemTray() {
+    // 创建系统托盘区域（如果不存在）
+    let systemTray = this.shadow.querySelector('.system-tray');
+    if (!systemTray) {
+      systemTray = document.createElement('div');
+      systemTray.className = 'system-tray desktop-only';
+      
+      // 移动时间和电池图标到系统托盘
+      const batteryIcon = this.getElem('.battery-icon');
+      const clockElement = document.createElement('div');
+      clockElement.className = 'desktop-clock';
+      clockElement.textContent = this.displayLocalTime();
+      
+      systemTray.appendChild(batteryIcon.cloneNode(true));
+      systemTray.appendChild(clockElement);
+      
+      // 添加到容器末尾
+      const container = this.getElem('.container');
+      container.appendChild(systemTray);
+      
+      // 隐藏原来的电池图标
+      batteryIcon.style.display = 'none';
+    }
+  }
+
+  reorganizeForDesktop() {
+    // 重新组织中间区域为任务栏
+    const frameList = this.getElem('.frame-list');
+    const left = this.getElem('.left');
+    const center = this.getElem('.center');
+    const right = this.getElem('.right');
+    
+    // 隐藏移动模式的元素
+    if (center) center.style.display = 'none';
+    
+    // 重新组织左侧区域
+    if (left) {
+      left.classList.add('desktop-left');
+      // 隐藏移动模式特有的元素
+      const leftText = this.getElem('.left-text');
+      const favicon = this.getElem('.favicon');
+      if (leftText) leftText.style.display = 'none';
+      if (favicon) favicon.style.display = 'none';
+    }
+    
+    // 重新组织右侧区域为工具栏
+    if (right) {
+      right.classList.add('desktop-right');
+    }
+    
+    // 将任务栏移到中心位置
+    if (frameList) {
+      frameList.classList.add('desktop-taskbar-items');
+    }
+  }
+
+  removeDesktopElements() {
+    // 移除桌面模式特有的元素
+    const startButton = this.shadow.querySelector('.start-button');
+    const systemTray = this.shadow.querySelector('.system-tray');
+    
+    if (startButton) startButton.remove();
+    if (systemTray) systemTray.remove();
+  }
+
+  restoreOriginalLayout() {
+    // 恢复原始布局
+    const left = this.getElem('.left');
+    const center = this.getElem('.center');
+    const right = this.getElem('.right');
+    const frameList = this.getElem('.frame-list');
+    const batteryIcon = this.getElem('.battery-icon');
+    const leftText = this.getElem('.left-text');
+    const favicon = this.getElem('.favicon');
+    
+    // 恢复显示移动模式元素
+    if (center) center.style.display = '';
+    if (leftText) leftText.style.display = '';
+    if (favicon) favicon.style.display = '';
+    if (batteryIcon) batteryIcon.style.display = '';
+    
+    // 移除桌面模式类
+    if (left) left.classList.remove('desktop-left');
+    if (right) right.classList.remove('desktop-right');
+    if (frameList) frameList.classList.remove('desktop-taskbar-items');
   }
 
   updateState(_name, state) {

@@ -7,6 +7,11 @@
   transition: background-color 0.25s;
   --pb-color: #8000d7;
   --pb-background: rgb(37, 0, 62);
+  
+  /* Desktop mode variables */
+  --statusbar-desktop-height: 48px;
+  --statusbar-desktop-background: rgba(240, 240, 240, 0.95);
+  --statusbar-desktop-text-color: #333;
 }
 
 :host .homescreen.session-desktop .left > *:not(.desktop-mode) {
@@ -30,69 +35,279 @@
   background-color: var(--pb-background);
 }
 
-/* Desktop mode statusbar styling */
+/* Desktop mode statusbar styling - Windows-like taskbar */
 :host(.desktop-mode) {
-  background-color: var(--statusbar-desktop-background);
-  color: var(--statusbar-desktop-text-color);
-  backdrop-filter: blur(10px);
-  border-radius: 8px 8px 0 0;
-  margin: 0 8px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.8) 0%, 
+    rgba(240, 240, 240, 0.9) 50%, 
+    rgba(220, 220, 220, 0.95) 100%);
+  color: #333;
+  backdrop-filter: blur(15px) saturate(1.2);
+  border-radius: 0;
+  margin: 0;
+  box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.2), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
   border-bottom: none;
-  height: var(--statusbar-desktop-height);
+  height: var(--statusbar-desktop-height, 48px);
+  position: relative;
+}
+
+:host(.desktop-mode):before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.6) 20%, 
+    rgba(255, 255, 255, 0.6) 80%, 
+    transparent 100%);
 }
 
 :host(.desktop-mode) .container {
-  height: 100%; /* Ensure container fills the new height */
-  align-items: center; /* Keep items vertically centered */
+  height: 100%;
+  align-items: center;
+  padding: 0 8px;
+  display: flex;
+  justify-content: space-between;
+  grid-template-columns: none; /* 重置网格布局 */
 }
 
+:host(.desktop-mode) .container.desktop-taskbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 开始按钮样式 */
+:host(.desktop-mode) .start-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, 
+    rgba(70, 130, 255, 0.9) 0%, 
+    rgba(50, 100, 220, 1) 100%);
+  color: white;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3),
+              0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 80px;
+  justify-content: center;
+}
+
+:host(.desktop-mode) .start-button:hover {
+  background: linear-gradient(180deg, 
+    rgba(80, 140, 255, 0.95) 0%, 
+    rgba(60, 110, 230, 1) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
+              0 3px 6px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+:host(.desktop-mode) .start-button:active {
+  background: linear-gradient(180deg, 
+    rgba(50, 100, 220, 1) 0%, 
+    rgba(40, 80, 200, 1) 100%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(0);
+}
+
+:host(.desktop-mode) .start-icon {
+  font-size: 18px;
+}
+
+:host(.desktop-mode) .start-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 任务栏项目区域 */
+:host(.desktop-mode) .desktop-taskbar-items {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 60%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border: none;
+  padding: 0 8px;
+}
+
+:host(.desktop-mode) .desktop-taskbar-items::-webkit-scrollbar {
+  display: none;
+}
+
+:host(.desktop-mode) .desktop-taskbar-items div {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin: 0 2px;
+  min-width: 120px;
+  max-width: 200px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:host(.desktop-mode) .desktop-taskbar-items div:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+:host(.desktop-mode) .desktop-taskbar-items div.active {
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.9) 0%, 
+    rgba(240, 240, 240, 1) 100%);
+  border-color: rgba(70, 130, 255, 0.5);
+  box-shadow: inset 0 1px 3px rgba(70, 130, 255, 0.2),
+              0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* 系统托盘样式 */
+:host(.desktop-mode) .system-tray {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+:host(.desktop-mode) .desktop-clock {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* 隐藏移动模式元素 */
+:host(.desktop-mode) .desktop-only {
+  display: flex;
+}
+
+:host(:not(.desktop-mode)) .desktop-only {
+  display: none;
+}
+
+/* 调整桌面模式下的图标大小 */
 :host(.desktop-mode) sl-icon {
-  font-size: 2.25rem; /* 1.5 times the normal size */
-  color: var(--statusbar-desktop-text-color);
+  font-size: 20px;
+  color: #333;
 }
 
 :host(.desktop-mode) .quicklaunch.desktop-mode {
-  width: 2.25rem; /* 1.5 times the normal size for SVG */
-  height: 2.25rem;
-  fill: var(--statusbar-desktop-text-color);
+  width: 20px;
+  height: 20px;
+  fill: #333;
 }
 
 :host(.desktop-mode) sl-badge[variant="neutral"]::part(base) {
-  color: var(--statusbar-desktop-text-color);
-  background-color: rgba(255, 255, 255, 0.1);
-  font-size: 1.5rem; /* Scale badge text too */
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+:host(.desktop-mode) sl-badge[variant="primary"]::part(base) {
+  background: linear-gradient(180deg, 
+    rgba(255, 140, 0, 0.9) 0%, 
+    rgba(255, 100, 0, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
 }
 
 :host(.desktop-mode) .battery-icon {
-  color: var(--statusbar-desktop-text-color);
-  font-size: 2.25rem;
+  color: #333;
+  font-size: 18px;
 }
 
 :host(.desktop-mode) .favicon {
-  filter: brightness(1.2);
-  width: 2.25em; /* Scale favicon */
-  height: 2.25em;
+  filter: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* 桌面模式下的左右区域 */
+:host(.desktop-mode) .desktop-left,
+:host(.desktop-mode) .desktop-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:host(.desktop-mode) .desktop-right {
+  margin-left: auto;
+}
+:host(.desktop-mode) sl-icon {
+  font-size: 20px;
+  color: #333;
+}
+
+:host(.desktop-mode) .quicklaunch.desktop-mode {
+  width: 20px;
+  height: 20px;
+  fill: #333;
+}
+
+:host(.desktop-mode) sl-badge[variant="neutral"]::part(base) {
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+:host(.desktop-mode) .battery-icon {
+  color: #333;
+  font-size: 18px;
+}
+
+:host(.desktop-mode) .favicon {
+  filter: none;
+  width: 18px;
+  height: 18px;
 }
 
 :host(.desktop-mode) .left-text {
-  font-size: 1.5rem; /* Scale text */
+  font-size: 14px;
 }
 
 :host(.desktop-mode) .left,
 :host(.desktop-mode) .center,
 :host(.desktop-mode) .right {
-  align-items: center; /* Ensure all sections stay centered */
+  align-items: center;
 }
 
 :host(.desktop-mode) .frame-list {
-  gap: 0.375em; /* Increase gap proportionally */
+  gap: 4px;
 }
 
 :host(.desktop-mode) .frame-list div {
-  padding-left: 0.375em;
-  padding-right: 0.375em;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 :host .container {

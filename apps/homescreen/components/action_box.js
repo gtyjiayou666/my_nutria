@@ -1,6 +1,6 @@
 // <action-box> custom element, representing an item on the homescreen.
 
-const kLongPressMinMs = 200;
+const kLongPressDelay = 200;
 
 class ActionBox extends HTMLElement {
   // 在 ActionBox 类中添加
@@ -78,16 +78,22 @@ class ActionBox extends HTMLElement {
     );
   }
 
-  // 检查是否为桌面模式
+  // 检查是否为桌面模式 - 与 QuickSettings 的逻辑保持一致
   isDesktopMode() {
-    // 首先检查 wallpaperManager 是否存在且准备就绪
+    // 首先检查 QuickSettings 的桌面模式状态
+    const quickSettings = document.querySelector('quick-settings');
+    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+      return quickSettings.isDesktop;
+    }
+    
+    // 如果 QuickSettings 不可用，检查 wallpaperManager
     if (window.wallpaperManager && window.wallpaperManager.isWallpaperManagerReady()) {
       return window.wallpaperManager.isDesktop;
     }
     
     // 如果 wallpaperManager 不可用，检查其他可能的状态指示器
     if (window.wallpaperManager) {
-      return window.wallpaperManager.isDesktop;
+      return window.wallpaperManager.getCurrentDesktopState();
     }
     
     // 最后的后备方案：检查屏幕尺寸来判断（桌面模式通常屏幕更大）
@@ -233,7 +239,7 @@ class ActionBox extends HTMLElement {
           this.dispatchEvent(
             new CustomEvent("long-press", { bubbles: true, detail: startPos })
           );
-        }, kLongPressMinMs);
+        }, kLongPressDelay);
       }
     } else if (event.type === "pointerup") {
       if (this.timer) {
