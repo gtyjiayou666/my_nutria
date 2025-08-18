@@ -669,9 +669,6 @@ class StatusBar extends HTMLElement {
     const container = this.getElem('.container');
     container.classList.add('desktop-taskbar');
     
-    // 添加开始按钮区域
-    this.createStartButton();
-    
     // 重新组织现有元素
     this.reorganizeForDesktop();
     
@@ -689,31 +686,6 @@ class StatusBar extends HTMLElement {
     
     // 恢复原始布局
     this.restoreOriginalLayout();
-  }
-
-  createStartButton() {
-    // 创建开始按钮（如果不存在）
-    let startButton = this.shadow.querySelector('.start-button');
-    if (!startButton) {
-      startButton = document.createElement('div');
-      startButton.className = 'start-button desktop-only';
-      startButton.innerHTML = `
-        <sl-icon name="grid-3x3" class="start-icon"></sl-icon>
-        <span class="start-text">开始</span>
-      `;
-      
-      // 添加点击事件
-      startButton.onclick = () => {
-        if (this.isCarouselOpen) {
-          actionsDispatcher.dispatch("close-carousel");
-        }
-        document.getElementById("apps-list").toggle();
-      };
-      
-      // 插入到容器的开始位置
-      const container = this.getElem('.container');
-      container.prepend(startButton);
-    }
   }
 
   createSystemTray() {
@@ -774,10 +746,7 @@ class StatusBar extends HTMLElement {
 
   removeDesktopElements() {
     // 移除桌面模式特有的元素
-    const startButton = this.shadow.querySelector('.start-button');
     const systemTray = this.shadow.querySelector('.system-tray');
-    
-    if (startButton) startButton.remove();
     if (systemTray) systemTray.remove();
   }
 
