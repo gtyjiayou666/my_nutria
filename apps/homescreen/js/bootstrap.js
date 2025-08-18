@@ -410,6 +410,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   let actionsPanel = document.getElementById("actions-panel");
   let searchBox = document.getElementById("search-box");
 
+  // 监听桌面模式切换事件
+  window.addEventListener('desktop-mode-changed', (event) => {
+    const isDesktop = event.detail.isDesktop;
+    if (document.activeElement === searchBox) {
+      if (isDesktop) {
+        // 桌面模式：设置 inputmode 为 none 防止虚拟键盘
+        searchBox.setAttribute('inputmode', 'none');
+      } else {
+        // 移动模式：移除 inputmode 属性允许虚拟键盘
+        searchBox.removeAttribute('inputmode');
+      }
+    }
+  });
+
   let panelManager = null;
 
   async function ensurePanelManager() {
@@ -444,6 +458,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   searchBox.addEventListener("focus", () => {
     // console.log("Search Box: focus");
     openSearchPanel();
+    
+    // 检查当前是否为桌面模式，如果是则防止虚拟键盘弹出
+    if (window.embedder && !window.embedder.useVirtualKeyboard) {
+      // 桌面模式下，确保不会触发虚拟键盘
+      searchBox.setAttribute('inputmode', 'none');
+    } else {
+      // 移动模式下，允许虚拟键盘
+      searchBox.removeAttribute('inputmode');
+    }
   });
 
   searchBox.addEventListener("keydown", (event) => {

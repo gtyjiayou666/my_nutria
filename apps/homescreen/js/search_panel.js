@@ -21,6 +21,11 @@ export class SearchPanel {
       this.privateBrowsing.classList.toggle("active");
     });
 
+    // 监听桌面模式切换事件
+    window.addEventListener('desktop-mode-changed', (event) => {
+      this.handleDesktopModeChange(event.detail.isDesktop);
+    });
+
     this.sources = [
       new MediaSource("media"),
       new PlacesSource("places"),
@@ -32,6 +37,27 @@ export class SearchPanel {
       // new FendConverterSource("fend-converter"),
       // new OpenSearchSource("suggestions"),
     ];
+  }
+
+  handleDesktopModeChange(isDesktop) {
+    // 如果搜索框当前有焦点，根据桌面模式状态处理虚拟键盘
+    if (document.activeElement === this.searchBox) {
+      if (isDesktop) {
+        // 桌面模式：强制关闭虚拟键盘（如果有的话）
+        this.searchBox.blur();
+        // 延迟重新聚焦，避免触发虚拟键盘
+        setTimeout(() => {
+          this.searchBox.focus();
+        }, 100);
+      } else {
+        // 移动模式：确保虚拟键盘能够正常显示
+        // 重新触发焦点以确保虚拟键盘显示
+        this.searchBox.blur();
+        setTimeout(() => {
+          this.searchBox.focus();
+        }, 100);
+      }
+    }
   }
 
   onOpen() {

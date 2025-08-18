@@ -676,6 +676,21 @@ class QuickSettings extends HTMLElement {
       detail: { isDesktop: newIsDesktop }
     }));
     
+    // 根据桌面模式状态控制虚拟键盘
+    if (newIsDesktop) {
+      // 桌面模式：禁用虚拟键盘
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", false);
+      embedder.useVirtualKeyboard = false;
+      // 如果当前有虚拟键盘打开，强制关闭
+      if (window.inputMethod && window.inputMethod.opened) {
+        window.inputMethod.close();
+      }
+    } else {
+      // 移动模式：启用虚拟键盘
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
+      embedder.useVirtualKeyboard = true;
+    }
+    
     // 切换壁纸
     if (window.wallpaperManager) {
       window.wallpaperManager.switchWallpaper(newIsDesktop);

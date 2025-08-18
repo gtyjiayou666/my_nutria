@@ -18,6 +18,13 @@ export class InputMethod {
 
     actionsDispatcher.addListener("ime-focus-changed", (_name, data) => {
       this.log(`ime-focus-changed ${JSON.stringify(data)}`);
+      
+      // 检查是否应该使用虚拟键盘
+      if (!embedder.useVirtualKeyboard) {
+        this.log(`Virtual keyboard disabled, ignoring ime-focus-changed`);
+        return;
+      }
+      
       if (data.isFocus === true) {
         if (data.type === "SELECT") {
           // Delegate to the <select-ui> for this content frame.
@@ -60,6 +67,12 @@ export class InputMethod {
 
   open() {
     try {
+      // 再次检查虚拟键盘是否启用
+      if (!embedder.useVirtualKeyboard) {
+        this.log(`Virtual keyboard disabled, not opening`);
+        return;
+      }
+      
       if (!this.inputMethod) {
         this.inputMethod = document.querySelector("input-method");
       }
