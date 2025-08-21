@@ -691,6 +691,12 @@ class QuickSettings extends HTMLElement {
       embedder.useVirtualKeyboard = true;
     }
     
+    // 更新AppsList的桌面模式状态
+    const appsList = document.querySelector('apps-list');
+    if (appsList && typeof appsList.updateDesktopMode === 'function') {
+      appsList.updateDesktopMode(newIsDesktop);
+    }
+    
     // 切换壁纸
     if (window.wallpaperManager) {
       window.wallpaperManager.switchWallpaper(newIsDesktop);

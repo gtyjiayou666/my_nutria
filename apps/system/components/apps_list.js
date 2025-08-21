@@ -66,6 +66,9 @@ class AppsList extends LitElement {
     
     // 绑定全局点击处理器
     this.globalClickHandler = this.handleGlobalClick.bind(this);
+    
+    // 监听桌面模式状态变化
+    this.initializeDesktopMode();
   }
 
   static get properties() {
@@ -76,6 +79,37 @@ class AppsList extends LitElement {
 
   log(msg) {
     console.log(`AppsList: ${msg}`);
+  }
+
+  initializeDesktopMode() {
+    // 监听桌面模式状态变化
+    window.addEventListener('desktop-mode-changed', (event) => {
+      this.updateDesktopMode(event.detail.isDesktop);
+    });
+    
+    // 初始状态检查
+    // 从QuickSettings获取当前桌面模式状态
+    const quickSettings = document.querySelector('quick-settings');
+    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+      this.updateDesktopMode(quickSettings.isDesktop);
+    } else {
+      // 如果QuickSettings还未初始化，等待其准备就绪
+      window.addEventListener('quick-settings-connected', () => {
+        const quickSettings = document.querySelector('quick-settings');
+        if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+          this.updateDesktopMode(quickSettings.isDesktop);
+        }
+      });
+    }
+  }
+
+  updateDesktopMode(isDesktop) {
+    console.log(`AppsList: Updating desktop mode to ${isDesktop}`);
+    if (isDesktop) {
+      this.classList.add('desktop-mode');
+    } else {
+      this.classList.remove('desktop-mode');
+    }
   }
 
   handleGlobalClick(event) {

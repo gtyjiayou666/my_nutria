@@ -23,16 +23,62 @@
   transition: all 0.3s;
 }
 
-/* Desktop mode */
+/* Desktop mode - 当应用桌面模式类时 */
+:host(.desktop-mode) {
+  width: 350px; /* 固定宽度，类似Windows开始菜单 */
+  height: 500px; /* 固定高度 */
+  left: 0; /* 贴左边 */
+  bottom: 60px; /* 距离底部状态栏60px */
+  top: auto; /* 取消top定位 */
+  margin-left: 10px; /* 左侧留一点边距 */
+}
+
+:host(.desktop-mode.open) {
+  height: 500px;
+}
+
+/* 桌面模式下的响应式适配 */
+@media (max-width: 400px) {
+  :host(.desktop-mode) {
+    width: calc(100vw - 20px); /* 小屏幕时占满宽度，留边距 */
+    left: 10px;
+    margin-left: 0;
+  }
+}
+
+@media (max-height: 600px) {
+  :host(.desktop-mode) {
+    height: calc(100vh - 120px); /* 小屏幕时适应高度 */
+    bottom: 60px;
+  }
+  
+  :host(.desktop-mode.open) {
+    height: calc(100vh - 120px);
+  }
+}
+
+/* 超大屏幕适配 */
+@media (min-width: 1200px) {
+  :host(.desktop-mode) {
+    width: 400px; /* 大屏幕时稍微增加宽度 */
+    height: 600px; /* 大屏幕时增加高度 */
+  }
+  
+  :host(.desktop-mode.open) {
+    height: 600px;
+  }
+}
+
+/* 移动模式保持原有的响应式设计 */
 @media (min-width: 800px) {
-  :host {
+  :host:not(.desktop-mode) {
     width: 70vw;
     left: 15vw;
     height: 80vh;
     top: 10vh;
   }
 
-  :host(.open) {
+  :host:not(.desktop-mode.open) {
     height: 80vh;
   }
 }
