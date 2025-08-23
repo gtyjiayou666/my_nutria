@@ -108,7 +108,6 @@ class StatusBar extends HTMLElement {
   constructor() {
     super();
 
-    console.info(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     this.shadow = this.attachShadow({ mode: "open" });
 
     this.carouselIcon =
@@ -336,8 +335,11 @@ class StatusBar extends HTMLElement {
 
 
 
+
+
     this.keyBindings = new KeyBindings();
     this.actionsPanel = this.shadow.getElementById("actions-panel");
+    this.actionsWall = this.shadow.getElementById("actions-wall");
     this.searchPanel = this.shadow.getElementById("search-panel");
     this.clearSearch = this.shadow.getElementById("clear-search");
     this.privateBrowsing = this.shadow.getElementById("private-browsing");
@@ -406,8 +408,6 @@ class StatusBar extends HTMLElement {
 
 
 
-    console.info(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
     // Initialize desktop mode state after all event listeners are set
     this.initializeDesktopMode();
 
@@ -422,7 +422,7 @@ class StatusBar extends HTMLElement {
   async openSearchPanel() {
     if (!this.panelManager) {
       this.panelManager = await ensurePanelManager();
-      this.panelManager.init(this.searchPanel, this.searchBox, this.clearSearch, this.privateBrowsing, this.searchResults, this.defaultSearchResults);
+      this.panelManager.init(this.searchPanel, this.searchBox, this.clearSearch, this.privateBrowsing, this.searchResults, this.defaultSearchResults, this.actionsWall);
     }
     this.panelManager.onOpen();
     this.actionsPanel.classList.add("hide");
