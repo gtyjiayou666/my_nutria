@@ -221,10 +221,9 @@ class SkillsSearch {
 }
 
 class SkillsSource extends SearchSource {
-  constructor(sectionName, SkillsSource, actionsWall) {
+  constructor(sectionName, SkillsSource) {
     super(sectionName, new SkillsSearch(), SkillsSource);
     this.preserveCase = true;
-    this.actionsWall = actionsWall;
   }
 
   domForResult(result) {
@@ -265,7 +264,6 @@ class SkillsSource extends SearchSource {
               result.icon ||
               `http://branding.localhost:${location.port}/resources/logo.webp`,
           };
-          this.actionsWall.addNewAction(action);
         },
         { once: true, capture: true }
       );

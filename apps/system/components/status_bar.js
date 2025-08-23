@@ -334,7 +334,6 @@ class StatusBar extends HTMLElement {
 
 
     this.keyBindings = new KeyBindings();
-    this.actionsWall = this.shadow.getElementById("actions-wall");
     this.searchPanel = this.shadow.getElementById("search-panel");
     this.clearSearch = this.shadow.getElementById("clear-search");
     this.privateBrowsing = this.shadow.getElementById("private-browsing");
@@ -416,7 +415,7 @@ class StatusBar extends HTMLElement {
   async openSearchPanel() {
     if (!this.panelManager) {
       this.panelManager = await ensurePanelManager();
-      this.panelManager.init(this.searchPanel, this.searchBox, this.clearSearch, this.privateBrowsing, this.searchResults, this.defaultSearchResults, this.actionsWall);
+      this.panelManager.init(this.searchPanel, this.searchBox, this.clearSearch, this.privateBrowsing, this.searchResults, this.defaultSearchResults);
     }
     this.panelManager.onOpen();
   }

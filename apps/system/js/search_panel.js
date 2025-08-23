@@ -1,7 +1,7 @@
 // Manages the search panel.
 
 export class SearchPanel {
-  init(panel, searchBox, clearSearch, privateBrowsing, searchResults, defaultSearchResults, actionsWall) {
+  init(panel, searchBox, clearSearch, privateBrowsing, searchResults, defaultSearchResults) {
     console.info("SearchPanel   is     loading")
     this.panel = panel;
     this.searchBox = searchBox;
@@ -15,7 +15,6 @@ export class SearchPanel {
       this.searchBox.value = "";
       this.clearAllResults();
     });
-    this.actionsWall = actionsWall;
     this.privateBrowsing = privateBrowsing;
     this.privateBrowsing.addEventListener("pointerdown", (event) => {
       event.preventDefault();
@@ -31,7 +30,7 @@ export class SearchPanel {
     this.sources = [
       new MediaSource("media", searchResults),
       new PlacesSource("places", searchResults),
-      new SkillsSource("skills", searchResults, this.actionsWall),
+      new SkillsSource("skills", searchResults),
       new ContactsSource("contacts", searchResults),
       new AppsSource("apps", searchResults),
       new TopSitesSource("top-sites", searchResults),
