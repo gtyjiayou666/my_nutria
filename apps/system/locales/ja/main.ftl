@@ -1,3 +1,20 @@
+# Search box
+search-box-placeholder =
+    .placeholder = 閲覧、検索、質問…
+    .aria-label = 閲覧、検索、質問
+
+# Search sections titles
+top-sites-title = トップサイト
+suggestions-title = 検索候補
+apps-title = アプリ
+skills-title = スキル
+contacts-title = 連絡先
+fend-converter-title = ユニバーサルコンバーター
+places-title = 履歴
+media-title = メディア
+activities-title = その他
+
+
 # Generic actions
 button-ok = OK
 button-cancel = キャンセル

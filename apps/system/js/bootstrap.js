@@ -487,6 +487,91 @@ function configureTopStatus() {
   window.actionsDispatcher?.dispatch("top-status-bar-changed", enableTopStatus);
 }
 
+
+class KeyBindings {
+  constructor() {
+    this.isModifierDown = false;
+    window.addEventListener("keydown", this, true);
+    window.addEventListener("keyup", this, true);
+  }
+
+  handleEvent(event) {
+    if (event.key == kBindingsModifier) {
+      this.isModifierDown = event.type === "keydown";
+    }
+
+    // [Ctrl]+[l] opens the search box.
+    if (this.isModifierDown && event.type === "keydown" && event.key === "l") {
+      openSearchBox();
+    }
+  }
+}
+
+function openSearchBox() {
+  let searchPanel = document.getElementById("search-panel");
+  if (!searchPanel.classList.contains("open")) {
+    let searchBox = document.getElementById("search-box");
+    searchBox.focus();
+  }
+}
+
+
+function isPrivateBrowsing() {
+  let elem = document.getElementById("private-browsing");
+  return elem.classList.contains("active");
+}
+
+function maybeOpenURL(url, details = {}) {
+  console.log(`maybeOpenURL ${url}`);
+  if (!url || url.length == 0) {
+    return false;
+  }
+
+  details.privatebrowsing = isPrivateBrowsing();
+
+  let isUrl = false;
+  try {
+    let a = new URL(url);
+    isUrl = true;
+  } catch (e) { }
+
+  if (url.startsWith("about:")) {
+    let act = new WebActivity("open-about", { url });
+    act.start();
+    return true;
+  }
+
+  const isFileUrl = url.startsWith("file://");
+  console.log(`maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
+
+  try {
+    // No "." in the url that is not a file:// or ipfs:// one, return false since this
+    // is likely a keyword search.
+    if (!url.includes(".") && !isUrl) {
+      return false;
+    }
+
+    if (
+      !isFileUrl &&
+      !url.startsWith("http") &&
+      !url.startsWith("ipfs://") &&
+      !url.startsWith("ipns://") &&
+      !url.startsWith("tile://")
+    ) {
+      url = `https://${url}`;
+    }
+
+    let encoded = encodeURIComponent(JSON.stringify(details));
+    window.open(url, "_blank", `details=${encoded}`);
+    console.log(`maybeOpenURL called window.open(${url})`);
+  } catch (e) {
+    console.log(`maybeOpenUrl oops ${e}`);
+  }
+  return true;
+}
+
+
+var graph;
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
@@ -512,10 +597,10 @@ document.addEventListener(
     addStylesheet(
       `http://shared.localhost:${window.config.port}/style/themes/default/theme.css`
     );
-    
+
     await depGraphLoaded();
     let platform = embedder.isGonk() ? "gonk" : "linux";
-    let graph = new ParallelGraphLoader(addShoelaceDeps(kDeps), customRunner, {
+    graph = new ParallelGraphLoader(addShoelaceDeps(kDeps), customRunner, {
       platform,
     });
     // Start with the lock screen on before we load the homescreen to avoid a
@@ -534,6 +619,85 @@ document.addEventListener(
     setupTelephony();
 
     await graph.waitForDeps("audio volume");
+
+    let keyBindings = new KeyBindings();
+    let actionsPanel = document.getElementById("actions-panel");
+    let searchBox = document.getElementById("search-box");
+
+    let panelManager = null;
+    async function ensurePanelManager() {
+      // Lazy loading of dependencies for the search panel.
+      if (panelManager) {
+        return;
+      }
+      let result = await graph.waitForDeps("search");
+      let module = result.get("search panel");
+      panelManager = new module.SearchPanel();
+      panelManager.init();
+    }
+
+    async function openSearchPanel() {
+      await ensurePanelManager();
+      panelManager.onOpen();
+      actionsPanel.classList.add("hide");
+    }
+
+    function closeSearchPanel() {
+      actionsPanel.classList.remove("hide");
+      searchBox.value = "";
+      panelManager.onClose();
+    }
+
+    searchBox.addEventListener("blur", () => {
+      // console.log("Search Box: blur");
+      closeSearchPanel();
+      panelManager.clearAllResults();
+    });
+
+    searchBox.addEventListener("focus", () => {
+      // console.log("Search Box: focus");
+      openSearchPanel();
+
+      // 检查当前是否为桌面模式，如果是则防止虚拟键盘弹出
+      if (window.embedder && !window.embedder.useVirtualKeyboard) {
+        // 桌面模式下，确保不会触发虚拟键盘
+        searchBox.setAttribute('inputmode', 'none');
+      } else {
+        // 移动模式下，允许虚拟键盘
+        searchBox.removeAttribute('inputmode');
+      }
+    });
+
+    searchBox.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        searchBox.blur();
+      }
+
+      if (event.key === "Tab") {
+        document.getElementById("default-search-results").onTabKey(event);
+        event.preventDefault();
+      }
+    });
+
+    let opensearchEngine;
+    searchBox.addEventListener("keypress", (event) => {
+      opensearchEngine = opensearchEngine || new OpenSearch();
+      console.log(`SearchBox: keypress ${event.key}`);
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      if (document.getElementById("default-search-results").onEnterKey()) {
+        return;
+      }
+
+      let input = searchBox.value.trim();
+      searchBox.blur();
+      if (!maybeOpenURL(input)) {
+        // Keyword search, redirect to the current search engine.
+        maybeOpenURL(opensearchEngine.getSearchUrlFor(input), { search: input });
+      }
+    });
 
     embedder.addEventListener("headphones-status-changed", async (event) => {
       console.log(`headphone status is now ${event.detail}`);

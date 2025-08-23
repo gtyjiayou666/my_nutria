@@ -16,10 +16,10 @@ function debounce(func, wait) {
 // 检查 app 图标是否在可视区域外或超出网格边界
 function isAppOutsideViewport(appElement, container, perLine) {
   if (!appElement || !container) return false;
-  
+
   const appRect = appElement.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
-  
+
   // 基本的视口检测
   const outsideViewport = (
     appRect.right > containerRect.right ||
@@ -27,7 +27,7 @@ function isAppOutsideViewport(appElement, container, perLine) {
     appRect.bottom > containerRect.bottom ||
     appRect.top < containerRect.top
   );
-  
+
   // 如果有网格信息，也检查是否超出网格边界
   if (perLine && window.actionsStore) {
     const actionId = getActionIdFromElement(appElement);
@@ -41,7 +41,7 @@ function isAppOutsideViewport(appElement, container, perLine) {
       }
     }
   }
-  
+
   return outsideViewport;
 }
 
@@ -49,7 +49,7 @@ function isAppOutsideViewport(appElement, container, perLine) {
 function getAllAppElements() {
   const actionsWall = document.getElementById('actions-wall');
   if (!actionsWall) return [];
-  
+
   // 查找所有 action-box 或 action-bookmark 元素
   const appElements = Array.from(actionsWall.querySelectorAll('action-box, action-bookmark'));
   return appElements;
@@ -58,15 +58,15 @@ function getAllAppElements() {
 // 从 DOM 元素获取对应的 action ID
 function getActionIdFromElement(element) {
   // 尝试多种方式获取 action ID
-  const id = element.getAttribute('data-id') || 
-            element.getAttribute('id') ||
-            element.getAttribute('data-action-id');
-  
+  const id = element.getAttribute('data-id') ||
+    element.getAttribute('id') ||
+    element.getAttribute('data-action-id');
+
   // 如果直接属性没有，检查是否有 action 对象
   if (!id && element.action) {
     return element.action.id;
   }
-  
+
   return id;
 }
 
@@ -74,9 +74,9 @@ function getActionIdFromElement(element) {
 function rearrangeOutsideApps(actionsStore, newPerLine) {
   const container = document.getElementById('actions-panel');
   const appElements = getAllAppElements();
-  
+
   if (!container || !actionsStore || appElements.length === 0) return;
-  
+
   // 找出所有超出窗口的 app
   const outsideApps = [];
   appElements.forEach(appElement => {
@@ -87,14 +87,14 @@ function rearrangeOutsideApps(actionsStore, newPerLine) {
       }
     }
   });
-  
+
   if (outsideApps.length === 0) {
     return;
   }
-  
+
   // 获取空闲位置
   const emptySlots = actionsStore.getEmptySlots(newPerLine);
-  
+
   // 将超出窗口的 app 移动到空闲位置
   const emptySlotArray = Array.from(emptySlots);
   outsideApps.forEach((app, index) => {
@@ -103,7 +103,7 @@ function rearrangeOutsideApps(actionsStore, newPerLine) {
       actionsStore.updatePositionFor(app.id, newPosition);
     }
   });
-  
+
   // 如果空闲位置不够，重新排列所有 app
   if (outsideApps.length > emptySlotArray.length) {
     rearrangeAllApps(actionsStore, newPerLine);
@@ -123,7 +123,7 @@ function getWidgetSize(action) {
       return { width: 1, height: 2 };
     }
   }
-  
+
   // 尝试从 action.size 属性获取
   if (action.size) {
     if (action.size === '2x2') {
@@ -134,7 +134,7 @@ function getWidgetSize(action) {
       return { width: 1, height: 2 };
     }
   }
-  
+
   // 默认为 1x1
   return { width: 1, height: 1 };
 }
@@ -145,7 +145,7 @@ function canPlaceWidget(grid, x, y, width, height, perLine, maxRows) {
   if (x + width > perLine || y + height > maxRows) {
     return false;
   }
-  
+
   // 检查所有需要占用的格子是否空闲
   for (let dy = 0; dy < height; dy++) {
     for (let dx = 0; dx < width; dx++) {
@@ -154,7 +154,7 @@ function canPlaceWidget(grid, x, y, width, height, perLine, maxRows) {
       }
     }
   }
-  
+
   return true;
 }
 
@@ -173,36 +173,36 @@ function markGridOccupied(grid, x, y, width, height, actionId) {
 // 重新排列所有 app 图标（支持多格 widget，以底部为基准）
 function rearrangeAllApps(actionsStore, perLine) {
   if (!actionsStore || !actionsStore.actions) return;
-  
+
   // 按照当前位置排序（保持相对顺序）
   const sortedActions = [...actionsStore.actions].sort((a, b) => {
     const [aX, aY] = a.position.split(',').map(n => parseInt(n));
     const [bX, bY] = b.position.split(',').map(n => parseInt(n));
-    
+
     // 先按行排序，再按列排序
     if (aY !== bY) return aY - bY;
     return aX - bX;
   });
-  
+
   // 创建网格来跟踪占用情况
   const grid = [];
   const maxRows = Math.ceil(sortedActions.length * 4 / perLine) + 10; // 预留足够空间
-  
+
   // 从底部开始逐行填充
   let currentRow = 0; // 从底行开始（y=0代表最底行）
   let currentCol = 0;
   let maxUsedRow = 0; // 记录实际使用的最高行
-  
+
   // 逐个放置 widget
   sortedActions.forEach((action) => {
     const size = getWidgetSize(action);
-    
+
     let placed = false;
-    
+
     // 从当前位置开始寻找合适的位置
     for (let row = currentRow; row < maxRows && !placed; row++) {
       let startCol = (row === currentRow) ? currentCol : 0;
-      
+
       for (let col = startCol; col <= perLine - size.width && !placed; col++) {
         if (canPlaceWidget(grid, col, row, size.width, size.height, perLine, maxRows)) {
           // 找到合适位置
@@ -210,14 +210,14 @@ function rearrangeAllApps(actionsStore, perLine) {
           if (action.position !== newPosition) {
             actionsStore.updatePositionFor(action.id, newPosition);
           }
-          
+
           // 在网格中标记占用
           markGridOccupied(grid, col, row, size.width, size.height, action.id);
           placed = true;
-          
+
           // 更新最高使用行
           maxUsedRow = Math.max(maxUsedRow, row + size.height - 1);
-          
+
           // 更新下一个放置的起始位置
           currentCol = col + size.width;
           if (currentCol >= perLine) {
@@ -228,19 +228,19 @@ function rearrangeAllApps(actionsStore, perLine) {
           }
         }
       }
-      
+
       // 如果这一行放不下，移动到下一行
       if (!placed && row === currentRow) {
         currentRow = row + 1;
         currentCol = 0;
       }
     }
-    
+
     if (!placed) {
       console.warn(`无法为 widget ${action.id} (${size.width}x${size.height}) 找到合适位置`);
     }
   });
-  
+
   // 设置actions-wall的高度以容纳所有图标
   const actionsWall = document.getElementById('actions-wall');
   if (actionsWall) {
@@ -256,12 +256,12 @@ function updateActionLayout() {
   if (!container) return;
 
   const containerWidth = container.clientWidth;
-  
+
   // 尝试从 CSS 变量获取实际的 action box 宽度
   const computedStyle = getComputedStyle(root);
   const actionBoxWidthStr = computedStyle.getPropertyValue('--action-box-width').trim();
   let actionBoxWidth = 80; // 默认值
-  
+
   if (actionBoxWidthStr) {
     // 如果是 em 单位，需要转换为像素
     if (actionBoxWidthStr.endsWith('em')) {
@@ -272,18 +272,18 @@ function updateActionLayout() {
       actionBoxWidth = parseFloat(actionBoxWidthStr);
     }
   }
-  
+
   // 添加一些额外的间距来计算每行的数量
   const gapValue = parseFloat(computedStyle.getPropertyValue('gap')) || 10;
   const effectiveWidth = actionBoxWidth + gapValue;
 
   const newPerLine = Math.max(1, Math.floor(containerWidth / effectiveWidth));
   const currentPerLine = parseInt(computedStyle.getPropertyValue('--action-per-line')) || 4;
-  
-  
+
+
   // 更新 CSS 变量
   root.style.setProperty('--action-per-line', newPerLine);
-  
+
   // 如果每行数量发生变化，重新排列所有 app 图标
   if (newPerLine !== currentPerLine) {
     // 延迟一点时间等待 DOM 更新
@@ -362,7 +362,7 @@ function maybeOpenURL(url, details = {}) {
   try {
     let a = new URL(url);
     isUrl = true;
-  } catch (e) {}
+  } catch (e) { }
 
   if (url.startsWith("about:")) {
     let act = new WebActivity("open-about", { url });
@@ -391,13 +391,73 @@ function maybeOpenURL(url, details = {}) {
     }
 
     let encoded = encodeURIComponent(JSON.stringify(details));
-    window.open(url, "_blank", `details=${encoded}`);
+    let a = window.open(url, "_blank", `details=${encoded}`);
+    if (a == null) {
+      console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    }
     console.log(`maybeOpenURL called window.open(${url})`);
   } catch (e) {
     console.log(`maybeOpenUrl oops ${e}`);
   }
   return true;
 }
+
+
+function handleHashChange() {
+  // 获取当前的 hash (去掉 '#' 号)
+  const hash = window.location.hash.substring(1); 
+
+  if (!hash) {
+    console.log("No hash present.");
+    return;
+  }
+  
+  console.log("Hash changed:", hash);
+  
+  try {
+    // 2. 解码并解析 hash 中的 JSON 数据
+    const data = JSON.parse(decodeURIComponent(hash));
+    
+    // 3. 验证数据结构和 action
+    if (!data.action) {
+      console.warn("Received hash data without 'action' field:", data);
+      return;
+    }
+    
+    // 4. 根据 action 执行相应操作
+    switch(data.action) {
+      case "maybeOpenURL":
+        console.log("Hash command: openNewTab received. isDesktop =", data.url);
+        this.maybeOpenURL(data.url); 
+        break;
+        
+      // case "closeTab":
+      //   closeTab();
+      //   break;
+      
+      default:
+        console.warn("Unknown action received via hash:", data.action, data);
+    }
+    
+  } catch (error) {
+    // 如果解析 JSON 失败（例如 hash 格式错误），捕获错误
+    console.error("Failed to parse hash data:", hash, error);
+  }
+}
+
+// --- 2. 监听 hashchange 事件 ---
+// 当 URL 的 hash 部分发生变化时，这个事件会被触发
+window.addEventListener('hashchange', handleHashChange);
+
+
+
+// window.parent.addEventListener('maybeOpenURL', (event) => {
+//   console.log(`window.addEventListener('maybeOpenURL', function(event)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+//   maybeOpenURL(event.detail.url);
+// });
+
+
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   await depGraphLoaded;
@@ -409,20 +469,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let actionsPanel = document.getElementById("actions-panel");
   let searchBox = document.getElementById("search-box");
-
-  // 监听桌面模式切换事件
-  window.addEventListener('desktop-mode-changed', (event) => {
-    const isDesktop = event.detail.isDesktop;
-    if (document.activeElement === searchBox) {
-      if (isDesktop) {
-        // 桌面模式：设置 inputmode 为 none 防止虚拟键盘
-        searchBox.setAttribute('inputmode', 'none');
-      } else {
-        // 移动模式：移除 inputmode 属性允许虚拟键盘
-        searchBox.removeAttribute('inputmode');
-      }
-    }
-  });
 
   let panelManager = null;
 
@@ -458,7 +504,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   searchBox.addEventListener("focus", () => {
     // console.log("Search Box: focus");
     openSearchPanel();
-    
+
     // 检查当前是否为桌面模式，如果是则防止虚拟键盘弹出
     if (window.embedder && !window.embedder.useVirtualKeyboard) {
       // 桌面模式下，确保不会触发虚拟键盘
@@ -505,7 +551,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "add-to-home": addToHome,
   });
 
-  let keyBindings = new KeyBindings();
+  // let keyBindings = new KeyBindings();
 
   document.getElementById("qr-code").onclick = () => {
     let activity = new WebActivity("scan-qr-code");

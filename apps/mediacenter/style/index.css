@@ -58,7 +58,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: scroll;
-  /* color: white; */
+  color: white;
 }
 
 #search-panel.open {

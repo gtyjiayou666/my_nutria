@@ -94,7 +94,7 @@ class QuickSettings extends HTMLElement {
 
     // 初始化桌面模式状态，与 wallpaperManager 保持同步
     this.initializeDesktopState();
-    
+
     shadow.querySelector("#new-feature-icon").onclick = () => {
       this.drawer.hide();
       this.handleNewFeatureClick();
@@ -115,9 +115,9 @@ class QuickSettings extends HTMLElement {
         savedDesktopState = true; // 默认桌面模式
         console.log(`QuickSettings: No saved desktop state found, using default: ${savedDesktopState}`);
       }
-      
+
       this.isDesktop = savedDesktopState;
-      
+
       // 与 wallpaperManager 保持同步
       if (window.wallpaperManager) {
         window.wallpaperManager.isDesktop = this.isDesktop;
@@ -128,7 +128,7 @@ class QuickSettings extends HTMLElement {
           console.log(`QuickSettings: Synchronized state to wallpaperManager: ${this.isDesktop}`);
         });
       }
-      
+
       console.log(`QuickSettings: Desktop state initialized to ${this.isDesktop}`);
     } catch (e) {
       console.error(`QuickSettings: Failed to initialize desktop state: ${e}`);
@@ -639,7 +639,7 @@ class QuickSettings extends HTMLElement {
     overlay.style.opacity = "1"
     var w = 0;
     var h = 0;
-    
+
     // 获取当前实际的 isDesktop 状态
     let currentIsDesktop = this.isDesktop;
     if (window.wallpaperManager && window.wallpaperManager.isDesktop !== this.isDesktop) {
@@ -647,11 +647,11 @@ class QuickSettings extends HTMLElement {
       currentIsDesktop = window.wallpaperManager.isDesktop;
       this.isDesktop = currentIsDesktop;
     }
-    
+
     // 切换到新状态
     let newIsDesktop = !currentIsDesktop;
     this.isDesktop = newIsDesktop;
-    
+
     // 保存新状态到设置中
     try {
       const settings = await apiDaemon.getSettings();
@@ -660,7 +660,7 @@ class QuickSettings extends HTMLElement {
     } catch (e) {
       console.error(`QuickSettings: Failed to save desktop state: ${e}`);
     }
-    
+
     if (!newIsDesktop) {
       h = window.screen.height;
       w = Math.min(h / 1.5, window.screen.width);
@@ -668,14 +668,14 @@ class QuickSettings extends HTMLElement {
       w = window.screen.width;
       h = window.screen.height;
     }
-    
+
     console.log(`Switching desktop mode from ${currentIsDesktop} to ${newIsDesktop}`);
-    
+
     // 发送桌面模式切换事件
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
       detail: { isDesktop: newIsDesktop }
     }));
-    
+
     // 根据桌面模式状态控制虚拟键盘
     if (newIsDesktop) {
       // 桌面模式：禁用虚拟键盘
@@ -690,18 +690,18 @@ class QuickSettings extends HTMLElement {
       Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
       embedder.useVirtualKeyboard = true;
     }
-    
+
     // 更新AppsList的桌面模式状态
     const appsList = document.querySelector('apps-list');
     if (appsList && typeof appsList.updateDesktopMode === 'function') {
       appsList.updateDesktopMode(newIsDesktop);
     }
-    
+
     // 切换壁纸
     if (window.wallpaperManager) {
       window.wallpaperManager.switchWallpaper(newIsDesktop);
     }
-    
+
     setTimeout(() => {
       window.top.dispatchEvent(new CustomEvent("changeSize", {
         detail: {

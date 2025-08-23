@@ -374,7 +374,7 @@ class WindowManager extends HTMLElement {
           if (this.expectedActiveFrame && this.expectedActiveFrame == frameId) {
             foundExpected = true;
           }
-          
+
           // Ensure previous frame is properly deactivated before activating new one
           if (this.activeFrame && this.activeFrame !== frameId) {
             let prevFrame = this.frames[this.activeFrame];
@@ -382,7 +382,7 @@ class WindowManager extends HTMLElement {
               prevFrame.deactivate();
             }
           }
-          
+
           frame.activate();
           if (this.activeFrame != frameId) {
             actionsDispatcher.dispatch("close-url-editor");
@@ -420,7 +420,38 @@ class WindowManager extends HTMLElement {
     this.activeFrame = null;
     this.startedAt = {};
     this.isCarouselOpen = false;
+    actionsDispatcher.addListener("maybeOpenURL", (_name, data_url) => {
+      console.log("WindowManager: Received 'maybeOpenURL' command from system");
+      // 直接调用 homescreen.js 暴露的函数
+      const homescreenFrame = this.homescreenFrame();
+      if (homescreenFrame && homescreenFrame.webView) {
+        // 1. 获取当前的 src URL
+        let currentSrc = homescreenFrame.webView.src;
 
+        // 2. 创建一个 URL 对象
+        const url = new URL(currentSrc);
+
+        // 3. 构造要发送的数据对象
+        const messageData = {
+          action: "maybeOpenURL",
+          url: data_url,
+        };
+
+        const newHash = encodeURIComponent(JSON.stringify(messageData));
+        url.hash = newHash;
+
+        const newSrc = url.toString();
+
+        if (newSrc !== currentSrc) {
+          console.log("Updating webView src to send message via hash:", newSrc);
+          homescreenFrame.webView.setAttribute('src', newSrc);
+        } else {
+          console.log("Hash is already up-to-date.");
+        }
+
+        return;
+      }
+    });
     actionsDispatcher.addListener("go-back", this.goBack.bind(this));
     actionsDispatcher.addListener("go-forward", this.goForward.bind(this));
     actionsDispatcher.addListener("go-home", this.goHome.bind(this));
@@ -559,7 +590,7 @@ class WindowManager extends HTMLElement {
       startId &&
       this.frames[startId] &&
       !!config.details?.privatebrowsing ==
-        this.frames[startId].state.privatebrowsing;
+      this.frames[startId].state.privatebrowsing;
     if (reuse) {
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
@@ -1078,8 +1109,7 @@ class WindowManager extends HTMLElement {
       screenshot.classList.add("screenshot");
       screenshot.innerHTML = `
       <div class="head">
-        <img class="favicon" src="${
-          frame.state.icon || window.config.brandLogo
+        <img class="favicon" src="${frame.state.icon || window.config.brandLogo
         }" />
         <div class="flex-fill"></div>
         <footer>
@@ -1250,7 +1280,7 @@ class WindowManager extends HTMLElement {
     this.windows.classList.remove("hidden");
     this.carousel.classList.add("hidden");
     this.isCarouselOpen = false;
-    
+
     // Ensure proper frame visibility after closing carousel
     this.ensureActiveFrameVisibility();
   }

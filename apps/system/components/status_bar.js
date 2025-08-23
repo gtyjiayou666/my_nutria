@@ -273,6 +273,7 @@ class StatusBar extends HTMLElement {
 
     // Initialize desktop mode state after all event listeners are set
     this.initializeDesktopMode();
+    
   }
 
   setupSwipeDetector() {

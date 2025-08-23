@@ -1061,10 +1061,32 @@ class ContentWindow extends HTMLElement {
       this.gotTheme = true;
       this.state.backgroundColor = window.getComputedStyle(x).color;
       this.dispatchStateUpdate();
-    } catch (e) {}
+    } catch (e) { }
     x.remove();
   }
 
+
+  // invokeContentFunction(functionName, args = []) {
+  //   console.log("webView object:", this.webView);
+  //   console.dir(this.webView);
+  //   // 安全检查
+
+  //   try {
+  //     // 使用 postMessage 发送指令
+  //     // 注意：这里我们假设即使 remote=true, contentWindow 在这个上下文中是可访问的
+  //     // 如果不行，则需要使用更复杂的 IPC 机制，但这超出了标准 Web 范围。
+  //     this.webView.dispatchEvent(new CustomEvent('maybeOpenURL', {
+  //       detail: { isDesktop: this.isDesktop }
+  //     }));
+  //     console.log(`ContentWindow: Invoked function '${functionName}' in content with args:`, args);
+  //   } catch (error) {
+  //     console.error("ContentWindow::invokeContentFunction() failed to postMessage:", error);
+  //     // 如果 postMessage 失败（很可能因为 remote=true），可以考虑回退到 hash 方法
+  //     this.fallbackToHash(functionName, args);
+  //   }
+
+  // }
+  
   hideLoader() {
     this.loader.classList.remove("running");
     this.loader.classList.add("hidden");
@@ -1347,8 +1369,7 @@ class ContentWindow extends HTMLElement {
         break;
       default:
         console.error(
-          `${event.type} ============ for ${
-            this.webView.currentURI || "about:blank"
+          `${event.type} ============ for ${this.webView.currentURI || "about:blank"
           } : ${JSON.stringify(detail)}`
         );
         break;
