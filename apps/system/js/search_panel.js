@@ -1,13 +1,14 @@
 // Manages the search panel.
 
 export class SearchPanel {
-  init() {
+  init(panel, searchBox, clearSearch, privateBrowsing, searchResults, defaultSearchResults) {
     console.info("SearchPanel   is     loading")
-    this.panel = document.getElementById("search-panel");
-    this.searchBox = document.getElementById("search-box");
+    this.panel = panel;
+    this.searchBox = searchBox;
     this.searchBox.addEventListener("input", this);
-
-    this.clearSearch = document.getElementById("clear-search");
+    this.searchResults = searchResults;
+    this.clearSearch = clearSearch;
+    this.defaultSearchResults = defaultSearchResults;
     this.clearSearch.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -15,7 +16,7 @@ export class SearchPanel {
       this.clearAllResults();
     });
 
-    this.privateBrowsing = document.getElementById("private-browsing");
+    this.privateBrowsing = privateBrowsing;
     this.privateBrowsing.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -28,13 +29,13 @@ export class SearchPanel {
     });
 
     this.sources = [
-      new MediaSource("media"),
-      new PlacesSource("places"),
-      new SkillsSource("skills"),
-      new ContactsSource("contacts"),
-      new AppsSource("apps"),
-      new TopSitesSource("top-sites"),
-      new SearchActivitySource("activities"),
+      new MediaSource("media", searchResults),
+      new PlacesSource("places", searchResults),
+      new SkillsSource("skills", searchResults),
+      new ContactsSource("contacts", searchResults),
+      new AppsSource("apps", searchResults),
+      new TopSitesSource("top-sites", searchResults),
+      new SearchActivitySource("activities", searchResults),
       // new FendConverterSource("fend-converter"),
       // new OpenSearchSource("suggestions"),
     ];
@@ -67,7 +68,7 @@ export class SearchPanel {
     this.clearSearch.classList.remove("hidden");
     this.privateBrowsing.classList.remove("hidden");
     this.privateBrowsing.classList.remove("active");
-    document.getElementById("search-results").classList.remove("hidden");
+    this.searchResults.classList.remove("hidden");
     this.panel.addEventListener(
       "transitionend",
       () => {
@@ -86,7 +87,7 @@ export class SearchPanel {
     this.panel.classList.remove("open");
     this.clearSearch.classList.add("hidden");
     this.privateBrowsing.classList.add("hidden");
-    document.getElementById("search-results").classList.add("hidden");
+    this.searchResults.classList.add("hidden");
     document
       .getElementById("theme-color")
       .setAttribute("content", "transparent");
@@ -146,9 +147,8 @@ export class SearchPanel {
 
     if (what.length < 2) {
       // Clear top frecency results if any.
-      let defaultResults = document.getElementById("default-search-results");
-      defaultResults.classList.add("hidden");
-      defaultResults.clear();
+      this.defaultSearchResults.classList.add("hidden");
+      this.defaultSearchResults.clear();
 
       // Clear search results in case we had some from
       // a longer search term.
@@ -187,8 +187,7 @@ export class SearchPanel {
 
   async getTopFrecencyResults() {
     // console.log(`getTopFrecencyResults`);
-    let defaultResults = document.getElementById("default-search-results");
-    defaultResults.classList.remove("hidden");
-    defaultResults.refresh();
+    this.defaultSearchResults.classList.remove("hidden");
+    this.defaultSearchResults.refresh();
   }
 }

@@ -22,8 +22,8 @@ class SearchActivity {
 }
 
 class SearchActivitySource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new SearchActivity());
+  constructor(sectionName, searchResults) {
+    super(sectionName, new SearchActivity(), searchResults);
     this.preserveCase = true;
   }
 

@@ -21,8 +21,8 @@ class Media {
 }
 
 class MediaSource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new Media());
+  constructor(sectionName, searchResults) {
+    super(sectionName, new Media(), searchResults);
   }
 
   domForResult(result) {
@@ -41,6 +41,7 @@ class MediaSource extends SearchSource {
 // Define a custom element for our content.
 class MediaItem extends HTMLElement {
   constructor(data) {
+    console.info("MediaItem@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     super();
     this.data = data;
     this.revokable = [];

@@ -221,8 +221,8 @@ class SkillsSearch {
 }
 
 class SkillsSource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new SkillsSearch());
+  constructor(sectionName, SkillsSource) {
+    super(sectionName, new SkillsSearch(), SkillsSource);
     this.preserveCase = true;
   }
 

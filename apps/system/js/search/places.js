@@ -1,64 +1,5 @@
 // Top places search module.
 
-function isPrivateBrowsing() {
-  let elem = document.getElementById("private-browsing");
-  return elem.classList.contains("active");
-}
-
-// Helper to decide how to process an window.open url parameter.
-// Returns true if window.open() was called, false otherwise.
-function maybeOpenURL(url, details = {}) {
-  console.log(`maybeOpenURL ${url}`);
-  if (!url || url.length == 0) {
-    return false;
-  }
-
-  details.privatebrowsing = isPrivateBrowsing();
-
-  let isUrl = false;
-  try {
-    let a = new URL(url);
-    isUrl = true;
-  } catch (e) { }
-
-  if (url.startsWith("about:")) {
-    let act = new WebActivity("open-about", { url });
-    act.start();
-    return true;
-  }
-
-  const isFileUrl = url.startsWith("file://");
-  console.log(`maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
-
-  try {
-    // No "." in the url that is not a file:// or ipfs:// one, return false since this
-    // is likely a keyword search.
-    if (!url.includes(".") && !isUrl) {
-      return false;
-    }
-
-    if (
-      !isFileUrl &&
-      !url.startsWith("http") &&
-      !url.startsWith("ipfs://") &&
-      !url.startsWith("ipns://") &&
-      !url.startsWith("tile://")
-    ) {
-      url = `https://${url}`;
-    }
-
-    let encoded = encodeURIComponent(JSON.stringify(details));
-    let a = window.open(url, "_blank", `details=${encoded}`);
-    if (a == null) {
-      console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    }
-    console.log(`maybeOpenURL called window.open(${url})`);
-  } catch (e) {
-    console.log(`maybeOpenUrl oops ${e}`);
-  }
-  return true;
-}
-
 class Places {
   // Returns a Promise that resolves to a result set.
   async search(query, count) {
@@ -79,8 +20,8 @@ class Places {
 }
 
 class PlacesSource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new Places());
+  constructor(sectionName, searchResults) {
+    super(sectionName, new Places(), searchResults);
   }
 
   domForResult(result) {
@@ -98,6 +39,7 @@ class PlacesSource extends SearchSource {
 class PlacesItemSearch extends LitElement {
   // data is { meta, variants }
   constructor(data) {
+    console.info("PlacesItemSearch@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     super();
     this.data = data;
     this.revokable = [];

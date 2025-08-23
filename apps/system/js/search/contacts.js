@@ -30,8 +30,8 @@ class ContactsSearch {
 }
 
 class ContactsSource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new ContactsSearch());
+  constructor(sectionName, searchResults) {
+    super(sectionName, new ContactsSearch(), searchResults);
   }
 
   domForResult(result) {

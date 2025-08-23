@@ -62,8 +62,8 @@ class AppsSearch {
 }
 
 class AppsSource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new AppsSearch());
+  constructor(sectionName, searchResults) {
+    super(sectionName, new AppsSearch(), searchResults);
   }
 
   domForResult(result) {

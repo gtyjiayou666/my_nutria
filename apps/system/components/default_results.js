@@ -27,6 +27,7 @@ class DefaultResults extends LitElement {
   }
 
   render() {
+    console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     let isFrecency = this.mode === "activity";
     let isHistory = this.mode === "history";
     let isFolder = this.mode === "folder";

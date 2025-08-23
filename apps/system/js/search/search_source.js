@@ -2,7 +2,7 @@
 // Each search source is tied to a section of the results panel.
 
 class SearchSource {
-  constructor(sourceName, engine) {
+  constructor(sourceName, engine, searchResults) {
     this.name = sourceName;
     this.engine = engine;
 
@@ -22,8 +22,8 @@ class SearchSource {
     this.title.classList.add("no-blur");
     this.title.classList.add("hidden");
 
-    window["search-results"].appendChild(this.results);
-    window["search-results"].appendChild(this.title);
+    searchResults.appendChild(this.results);
+    searchResults.appendChild(this.title);
   }
 
   static closeSearch() {

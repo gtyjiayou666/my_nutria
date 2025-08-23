@@ -48,8 +48,8 @@ class TopSites {
 }
 
 class TopSitesSource extends SearchSource {
-  constructor(sectionName) {
-    super(sectionName, new TopSites());
+  constructor(sectionName, searchResults) {
+    super(sectionName, new TopSites(), searchResults);
   }
 
   domForResult(result) {

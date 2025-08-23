@@ -66,10 +66,49 @@ class SwipeDetector extends EventTarget {
   }
 }
 
+
+
+
+
+
+
+
+
+const kBindingsModifier = "Control";
+class KeyBindings {
+  constructor() {
+    this.isModifierDown = false;
+    window.addEventListener("keydown", this, true);
+    window.addEventListener("keyup", this, true);
+  }
+
+  handleEvent(event) {
+    if (event.key == kBindingsModifier) {
+      this.isModifierDown = event.type === "keydown";
+    }
+
+    // [Ctrl]+[l] opens the search box.
+    if (this.isModifierDown && event.type === "keydown" && event.key === "l") {
+      openSearchBox();
+    }
+  }
+}
+
+
+
+
+
+
+
+
+import { ensurePanelManager } from '../js/bootstrap.js';
+
+
 class StatusBar extends HTMLElement {
   constructor() {
     super();
 
+    console.info(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     this.shadow = this.attachShadow({ mode: "open" });
 
     this.carouselIcon =
@@ -88,6 +127,28 @@ class StatusBar extends HTMLElement {
             <rect x="3" y="13" width="8" height="8" rx="1"/>
             <rect x="13" y="13" width="8" height="8" rx="1"/>
           </svg>
+    <section id="actions-panel">
+      <actions-wall id="actions-wall">
+      </actions-wall>
+    </section>
+    <section id="search-panel">
+      <div class="input no-blur">
+        <input data-l10n-id="search-box-placeholder" id="search-box" />
+        <sl-icon
+          id="private-browsing"
+          name="venetian-mask"
+          class="hidden"
+        ></sl-icon>
+        <sl-icon id="qr-code" name="qr-code"></sl-icon>
+        <sl-icon id="clear-search" name="x-circle" class="hidden"></sl-icon>
+      </div>
+      <div id="search-results" class="hidden">
+        <default-results
+          id="default-search-results"
+          class="no-blur hidden"
+        ></default-results>
+      </div>
+    </section>
         </div>
         <div class="center">
           <sl-icon name="circle-ellipsis" class="quicklaunch homescreen-icon mobile-mode"></sl-icon>
@@ -271,10 +332,165 @@ class StatusBar extends HTMLElement {
       };
     }
 
+
+
+
+
+    this.keyBindings = new KeyBindings();
+    this.actionsPanel = this.shadow.getElementById("actions-panel");
+    this.searchPanel = this.shadow.getElementById("search-panel");
+    this.clearSearch = this.shadow.getElementById("clear-search");
+    this.privateBrowsing = this.shadow.getElementById("private-browsing");
+    this.searchResults = this.shadow.getElementById("search-results");
+    this.defaultSearchResults = this.shadow.getElementById("default-search-results");
+    if (!this.searchPanel) {
+      console.error("search-panel not found in main document.");
+      return;
+    }
+    this.searchBox = this.shadow.getElementById('search-box');
+    this.panelManager = null;
+
+
+    this.searchBox.addEventListener("blur", () => {
+      // console.log("Search Box: blur");
+      this.closeSearchPanel();
+      this.panelManager.clearAllResults();
+    });
+
+    this.searchBox.addEventListener("focus", () => {
+      // console.log("Search Box: focus");
+      this.openSearchPanel();
+
+      // 检查当前是否为桌面模式，如果是则防止虚拟键盘弹出
+      if (window.embedder && !window.embedder.useVirtualKeyboard) {
+        // 桌面模式下，确保不会触发虚拟键盘
+        this.searchBox.setAttribute('inputmode', 'none');
+      } else {
+        // 移动模式下，允许虚拟键盘
+        this.searchBox.removeAttribute('inputmode');
+      }
+    });
+
+    this.searchBox.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        this.searchBox.blur();
+      }
+
+      if (event.key === "Tab") {
+        this.defaultSearchResults.onTabKey(event);
+        this.event.preventDefault();
+      }
+    });
+
+    this.opensearchEngine = null;
+    this.searchBox.addEventListener("keypress", (event) => {
+      this.opensearchEngine = this.opensearchEngine || new OpenSearch();
+      console.log(`SearchBox: keypress ${event.key}`);
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      if (this.defaultSearchResults.onEnterKey()) {
+        return;
+      }
+
+      let input = this.searchBox.value.trim();
+      this.searchBox.blur();
+      if (!this.maybeOpenURL(input)) {
+        // Keyword search, redirect to the current search engine.
+        this.maybeOpenURL(this.opensearchEngine.getSearchUrlFor(input), { search: input });
+      }
+    });
+
+
+
+
+
+    console.info(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
     // Initialize desktop mode state after all event listeners are set
     this.initializeDesktopMode();
-    
+
   }
+
+
+  closeSearchPanel() {
+    this.actionsPanel.classList.remove("hide");
+    this.searchBox.value = "";
+    this.panelManager.onClose();
+  }
+  async openSearchPanel() {
+    if (!this.panelManager) {
+      this.panelManager = await ensurePanelManager();
+      this.panelManager.init(this.searchPanel, this.searchBox, this.clearSearch, this.privateBrowsing, this.searchResults, this.defaultSearchResults);
+    }
+    this.panelManager.onOpen();
+    this.actionsPanel.classList.add("hide");
+  }
+  openSearchBox() {
+    if (!this.searchPanel.classList.contains("open")) {
+      this.searchBox.focus();
+    }
+  }
+
+
+  isPrivateBrowsing() {
+    let elem = this.shadow.getElementById("private-browsing");
+    return elem.classList.contains("active");
+  }
+
+  maybeOpenURL(url, details = {}) {
+    console.log(`maybeOpenURL ${url}`);
+    if (!url || url.length == 0) {
+      return false;
+    }
+
+    details.privatebrowsing = isPrivateBrowsing();
+
+    let isUrl = false;
+    try {
+      let a = new URL(url);
+      isUrl = true;
+    } catch (e) { }
+
+    if (url.startsWith("about:")) {
+      let act = new WebActivity("open-about", { url });
+      act.start();
+      return true;
+    }
+
+    const isFileUrl = url.startsWith("file://");
+    console.log(`maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
+
+    try {
+      // No "." in the url that is not a file:// or ipfs:// one, return false since this
+      // is likely a keyword search.
+      if (!url.includes(".") && !isUrl) {
+        return false;
+      }
+
+      if (
+        !isFileUrl &&
+        !url.startsWith("http") &&
+        !url.startsWith("ipfs://") &&
+        !url.startsWith("ipns://") &&
+        !url.startsWith("tile://")
+      ) {
+        url = `https://${url}`;
+      }
+
+      let encoded = encodeURIComponent(JSON.stringify(details));
+      window.open(url, "_blank", `details=${encoded}`);
+      console.log(`maybeOpenURL called window.open(${url})`);
+    } catch (e) {
+      console.log(`maybeOpenUrl oops ${e}`);
+    }
+    return true;
+  }
+
+
+
+
 
   setupSwipeDetector() {
     const swipeDetector = new SwipeDetector(this);
@@ -317,13 +533,13 @@ class StatusBar extends HTMLElement {
     let now = this.displayLocalTime();
     if (force || now !== this.lastClock) {
       this.getElem(".left-text").textContent = now;
-      
+
       // 同时更新桌面模式的时钟
       const desktopClock = this.shadow.querySelector('.desktop-clock');
       if (desktopClock) {
         desktopClock.textContent = now;
       }
-      
+
       this.lastClock = now;
     }
   }
@@ -343,9 +559,8 @@ class StatusBar extends HTMLElement {
       content += `<div class="${iconClass}" id="shortcut-${frame.id}">
                     <img class="favicon" src="${icon}" title="${frame.title}" alt="${frame.title}"/>`;
       if (frame.isPlayingAudio) {
-        content += `<sl-icon name="${
-          frame.audioMuted ? "volume-x" : "volume-1"
-        }" class="content-icon homescreen-icon"></sl-icon>`;
+        content += `<sl-icon name="${frame.audioMuted ? "volume-x" : "volume-1"
+          }" class="content-icon homescreen-icon"></sl-icon>`;
       }
       content += "</div>";
     });
@@ -591,13 +806,13 @@ class StatusBar extends HTMLElement {
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
-    
+
     // 检查 wallpaperManager 是否已加载并获取当前状态
     let currentIsDesktop = window.wallpaperManager ? window.wallpaperManager.isDesktop : true; // 默认桌面模式
-    
+
     // 立即设置正确的状态
     this.updateQuicklaunchPosition(currentIsDesktop);
-    
+
     // 监听桌面模式状态变化
     if (window.wallpaperManager) {
       // 监听桌面模式切换事件
@@ -622,10 +837,10 @@ class StatusBar extends HTMLElement {
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
-    
+
     console.log(`StatusBar: updateQuicklaunchPosition to ${isDesktop ? 'desktop' : 'mobile'} mode`);
     console.log(`StatusBar: Current classes before update:`, this.className);
-    
+
     if (isDesktop) {
       // 桌面模式：重新组织状态栏布局
       this.enableDesktopTaskbar();
@@ -654,13 +869,13 @@ class StatusBar extends HTMLElement {
       if (screenElement) {
         screenElement.classList.remove('desktop-mode');
       }
-      
+
       // 确保移动模式下status bar是可见的
       this.style.display = '';
       this.classList.remove('fullscreen');
       console.log(`StatusBar: Mobile mode restored, display:`, this.style.display);
     }
-    
+
     console.log(`StatusBar: Current classes after update:`, this.className);
     console.log(`StatusBar: Status bar visibility:`, window.getComputedStyle(this).display);
   }
@@ -669,10 +884,10 @@ class StatusBar extends HTMLElement {
     // 重新组织容器为 Windows 任务栏风格
     const container = this.getElem('.container');
     container.classList.add('desktop-taskbar');
-    
+
     // 重新组织现有元素
     this.reorganizeForDesktop();
-    
+
     // 添加系统托盘区域
     this.createSystemTray();
   }
@@ -681,10 +896,10 @@ class StatusBar extends HTMLElement {
     // 恢复移动模式布局
     const container = this.getElem('.container');
     container.classList.remove('desktop-taskbar');
-    
+
     // 移除桌面模式特有的元素
     this.removeDesktopElements();
-    
+
     // 恢复原始布局
     this.restoreOriginalLayout();
   }
@@ -695,20 +910,20 @@ class StatusBar extends HTMLElement {
     if (!systemTray) {
       systemTray = document.createElement('div');
       systemTray.className = 'system-tray desktop-only';
-      
+
       // 移动时间和电池图标到系统托盘
       const batteryIcon = this.getElem('.battery-icon');
       const clockElement = document.createElement('div');
       clockElement.className = 'desktop-clock';
       clockElement.textContent = this.displayLocalTime();
-      
+
       systemTray.appendChild(batteryIcon.cloneNode(true));
       systemTray.appendChild(clockElement);
-      
+
       // 添加到容器末尾
       const container = this.getElem('.container');
       container.appendChild(systemTray);
-      
+
       // 隐藏原来的电池图标
       batteryIcon.style.display = 'none';
     }
@@ -720,10 +935,10 @@ class StatusBar extends HTMLElement {
     const left = this.getElem('.left');
     const center = this.getElem('.center');
     const right = this.getElem('.right');
-    
+
     // 隐藏移动模式的元素
     if (center) center.style.display = 'none';
-    
+
     // 重新组织左侧区域
     if (left) {
       left.classList.add('desktop-left');
@@ -733,12 +948,12 @@ class StatusBar extends HTMLElement {
       if (leftText) leftText.style.display = 'none';
       if (favicon) favicon.style.display = 'none';
     }
-    
+
     // 重新组织右侧区域为工具栏
     if (right) {
       right.classList.add('desktop-right');
     }
-    
+
     // 将任务栏移到中心位置
     if (frameList) {
       frameList.classList.add('desktop-taskbar-items');
@@ -760,9 +975,9 @@ class StatusBar extends HTMLElement {
     const batteryIcon = this.getElem('.battery-icon');
     const leftText = this.getElem('.left-text');
     const favicon = this.getElem('.favicon');
-    
+
     console.log('StatusBar: Restoring original mobile layout');
-    
+
     // 恢复显示移动模式元素
     if (center) {
       center.style.display = '';
@@ -780,12 +995,12 @@ class StatusBar extends HTMLElement {
       batteryIcon.style.display = '';
       console.log('StatusBar: Battery icon restored');
     }
-    
+
     // 移除桌面模式类
     if (left) left.classList.remove('desktop-left');
     if (right) right.classList.remove('desktop-right');
     if (frameList) frameList.classList.remove('desktop-taskbar-items');
-    
+
     // 确保状态栏容器本身是可见的
     const container = this.getElem('.container');
     if (container) {
@@ -793,7 +1008,7 @@ class StatusBar extends HTMLElement {
       container.classList.remove('desktop-taskbar');
       console.log('StatusBar: Container restored');
     }
-    
+
     console.log('StatusBar: Original layout restoration complete');
   }
 
