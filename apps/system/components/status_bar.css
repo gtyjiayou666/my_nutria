@@ -17,6 +17,14 @@
   display: block;
 }
 
+/* 当搜索面板打开时，主机元素允许溢出 */
+:host(.search-panel-open) {
+  overflow: visible !important;
+  height: auto !important;
+  contain: none !important;
+  z-index: 99998 !important;
+}
+
 /* 移除过于宽泛的隐藏规则，改为针对性隐藏 */
 
 /* 移动模式样式确保正确显示 */
@@ -74,6 +82,24 @@
   border-bottom: none;
   height: var(--statusbar-desktop-height, 48px);
   position: relative;
+}
+
+/* 当搜索面板打开时，允许桌面模式的主机元素扩展 */
+:host(.desktop-mode):has(#search-panel.open) {
+  height: 100vh !important;
+  overflow: visible !important;
+}
+
+/* 备用方案：通过类名控制 */
+:host(.desktop-mode.search-panel-open) {
+  height: 100vh !important;
+  overflow: visible !important;
+  z-index: 9998 !important;
+}
+
+:host(.desktop-mode.search-panel-open) .container {
+  height: var(--statusbar-desktop-height, 48px) !important;
+  overflow: visible !important;
 }
 
 :host(.desktop-mode):before {
@@ -531,4 +557,291 @@ sl-badge[variant="primary"]::part(base) {
 
 .container.homescreen .frame-list .favicon {
   display: initial;
+}
+
+/* 搜索面板样式 - 确保不阻挡按钮点击 */
+#search-panel {
+  height: 3.5em;
+  padding: 0.5em;
+  position: relative;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  transition: all 0.3s;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  background: transparent;
+  pointer-events: none;
+}
+
+#search-panel .input {
+  pointer-events: all;
+}
+
+/* 移动模式下隐藏搜索面板 */
+:host:not(.desktop-mode) #search-panel {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 桌面模式下确保搜索面板可见 */
+:host(.desktop-mode) #search-panel {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#search-panel.open {
+  height: 100vh !important;
+  width: 100vw !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  transition: all 0.3s;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 99999 !important;
+  pointer-events: all;
+  padding-bottom: 4em;
+  box-sizing: border-box;
+  transform: translateZ(0);
+  margin: 0 !important;
+  overflow: visible !important;
+  contain: none !important;
+}
+
+/* 强制确保搜索面板打开时覆盖所有限制 */
+:host(.search-panel-open) #search-panel.open {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 999999 !important;
+  transform: none !important;
+}
+
+/* 当搜索面板打开时，确保父容器不限制其显示 */
+.left:has(#search-panel.open) {
+  overflow: visible !important;
+  position: static !important;
+}
+
+:host:has(#search-panel.open) .container {
+  overflow: visible !important;
+}
+
+/* 确保底部栏区域不被搜索面板阻挡 */
+#search-panel.open::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4em;
+  pointer-events: none;
+  z-index: -1;
+}
+
+#search-panel .input {
+  display: flex;
+  align-items: center;
+  width: 27%;
+  margin-left: 36.5%;
+  font-size: 1rem;
+  background-color: white;
+  color: black;
+  border-radius: 8px;
+  padding: 0.5em;
+  gap: 0.25em;
+}
+
+#search-panel .input sl-icon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: black;
+}
+
+#search-panel input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: black;
+  outline: none;
+  font-family: var(--sl-font-sans);
+}
+
+#search-results-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(15px);
+  border-radius: 12px;
+  margin: 1em 0.5em;
+  padding: 0.5em;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  position: relative;
+  pointer-events: auto;
+}
+
+#search-results-container.hidden {
+  display: none !important;
+}
+
+/* 确保搜索面板未打开时容器不显示 */
+#search-panel:not(.open) #search-results-container {
+  display: none !important;
+}
+
+#search-results {
+  display: flex;
+  flex-direction: column-reverse;
+  color: white;
+  flex: 1;
+  overflow-y: scroll;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.25em;
+}
+
+#search-results.hidden {
+  display: none !important;
+}
+
+/* 确保搜索面板未打开时结果不显示 */
+#search-panel:not(.open) #search-results {
+  display: none !important;
+}
+
+/* 确保默认搜索结果在未打开时不显示 */
+#search-panel:not(.open) default-results {
+  display: none !important;
+}
+
+#search-results h4 {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 100%
+  );
+  border-bottom: 2px solid #007acc;
+  margin-bottom: 0.5em;
+  margin-top: 0.5em;
+  padding: 0.5em;
+  border-radius: 4px;
+  color: white;
+}
+
+#search-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#search-results li {
+  padding: 0.5em;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+#search-results li:hover,
+#search-results li:active {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.hidden {
+  display: none;
+}
+
+/* Desktop mode */
+@media (min-width: 800px) {
+  #search-panel .input {
+    width: 50%;
+    margin: auto;
+  }
+
+  #search-results-container {
+    width: 70%;
+    margin: 1em auto;
+  }
+}
+
+/* 搜索结果项目样式 */
+.suggestion {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  white-space: nowrap;
+  padding: 0.5em;
+  margin: 0.25em 0;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.suggestion:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.skill {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 0.5em;
+  margin: 0.25em 0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.skill:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.contact {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 0.5em;
+  margin: 0.25em 0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  cursor: pointer;
+}
+
+.contact:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Apps results */
+#apps-results {
+  display: flex;
+  padding: 0.25em 0;
+  gap: 0.5em;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+
+#apps-results action-bookmark {
+  flex: 0 0 auto;
+  width: 4em;
+}
+
+.flex-fill {
+  flex: 1;
 }

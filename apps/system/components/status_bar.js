@@ -346,15 +346,19 @@ class StatusBar extends HTMLElement {
     this.searchBox = this.shadow.getElementById('search-box');
     this.panelManager = null;
 
+    console.log("StatusBar: searchBox found:", this.searchBox);
+    console.log("StatusBar: searchBox style:", this.searchBox ? window.getComputedStyle(this.searchBox) : "not found");
+
 
     this.searchBox.addEventListener("blur", () => {
       // console.log("Search Box: blur");
-      this.closeSearchPanel();
-      this.panelManager.clearAllResults();
+      // 注释掉自动关闭，因为我们现在使用主文档中的搜索面板
+      // this.closeSearchPanel();
+      // this.panelManager.clearAllResults();
     });
 
     this.searchBox.addEventListener("focus", () => {
-      // console.log("Search Box: focus");
+      console.log("Search Box: focus event triggered");
       this.openSearchPanel();
 
       // 检查当前是否为桌面模式，如果是则防止虚拟键盘弹出
@@ -366,6 +370,23 @@ class StatusBar extends HTMLElement {
         this.searchBox.removeAttribute('inputmode');
       }
     });
+
+    // 添加点击事件作为备用方案
+    this.searchBox.addEventListener("click", () => {
+      console.log("Search Box: click event triggered");
+      this.searchBox.focus(); // 确保获得焦点，这会触发focus事件
+    });
+
+    // 为整个搜索输入容器添加点击事件
+    const searchInput = this.shadow.querySelector('#search-panel .input');
+    if (searchInput) {
+      searchInput.addEventListener("click", (e) => {
+        console.log("Search Input Container: click event triggered");
+        if (e.target !== this.searchBox) {
+          this.searchBox.focus();
+        }
+      });
+    }
 
     this.searchBox.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
@@ -409,15 +430,243 @@ class StatusBar extends HTMLElement {
 
 
   closeSearchPanel() {
+    console.log("closeSearchPanel called");
+    
+    // 关闭主文档中的搜索面板
+    const mainSearchPanel = document.getElementById('main-search-panel');
+    if (mainSearchPanel) {
+      mainSearchPanel.classList.remove('open');
+      
+      // 移除事件监听器
+      if (mainSearchPanel._closeHandler) {
+        mainSearchPanel.removeEventListener('click', mainSearchPanel._closeHandler);
+        document.removeEventListener('keydown', mainSearchPanel._closeHandler);
+      }
+    }
+    
+    // 清空搜索框
     this.searchBox.value = "";
-    this.panelManager.onClose();
+    if (mainSearchPanel) {
+      const mainSearchBox = mainSearchPanel.querySelector('#main-search-box');
+      if (mainSearchBox) {
+        mainSearchBox.value = "";
+      }
+    }
+    
+    if (this.panelManager) {
+      this.panelManager.onClose();
+    }
+    
+    // 移除搜索面板打开状态类名
+    this.classList.remove("search-panel-open");
+    console.log("Removed search-panel-open class");
   }
   async openSearchPanel() {
+    console.log("openSearchPanel called");
+    
+    // 检查是否已经存在主文档中的搜索面板
+    let mainSearchPanel = document.getElementById('main-search-panel');
+    if (!mainSearchPanel) {
+      // 在主文档中创建搜索面板
+      mainSearchPanel = document.createElement('div');
+      mainSearchPanel.id = 'main-search-panel';
+      mainSearchPanel.innerHTML = `
+        <div class="search-panel-overlay">
+          <div class="search-input-container">
+            <div class="search-input">
+              <input type="text" id="main-search-box" placeholder="搜索..." />
+              <sl-icon id="main-private-browsing" name="venetian-mask" class="private-btn hidden"></sl-icon>
+              <sl-icon id="main-clear-search" name="x-circle" class="clear-btn"></sl-icon>
+              <sl-icon id="main-close-search" name="x" class="close-btn"></sl-icon>
+            </div>
+          </div>
+          <div id="main-search-results" class="search-results">
+            <default-results id="main-default-search-results" class="hidden"></default-results>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(mainSearchPanel);
+      
+      // 添加样式
+      if (!document.getElementById('main-search-panel-styles')) {
+        const style = document.createElement('style');
+        style.id = 'main-search-panel-styles';
+        style.textContent = `
+          #main-search-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10vh;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+          }
+          
+          #main-search-panel.open {
+            opacity: 1;
+            pointer-events: all;
+          }
+          
+          #main-search-panel .search-input-container {
+            width: 90%;
+            max-width: 600px;
+            margin-bottom: 2em;
+          }
+          
+          #main-search-panel .search-input {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            padding: 0.5em;
+            gap: 0.25em;
+          }
+          
+          #main-search-panel .search-input input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            background: none;
+            color: black;
+          }
+          
+          #main-search-panel .search-input sl-icon {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+          }
+          
+          #main-search-panel .search-input .close-btn {
+            color: #999;
+          }
+          
+          #main-search-panel .search-input .clear-btn {
+            color: #666;
+          }
+          
+          #main-search-panel .search-input .private-btn {
+            color: #8000d7;
+          }
+          
+          #main-search-panel .search-input .clear-btn.hidden,
+          #main-search-panel .search-input .private-btn.hidden {
+            display: none;
+          }
+          
+          #main-search-panel .search-results {
+            width: 90%;
+            max-width: 600px;
+            background-color: rgba(0, 0, 0, 0.95);
+            border-radius: 12px;
+            padding: 1em;
+            max-height: 60vh;
+            overflow-y: auto;
+            color: white;
+          }
+          
+          #main-search-panel .hidden {
+            display: none;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+    
+    // 显示搜索面板
+    mainSearchPanel.classList.add('open');
+    
+    // 聚焦搜索框
+    const searchBox = mainSearchPanel.querySelector('#main-search-box');
+    if (searchBox) {
+      searchBox.focus();
+      // 复制原搜索框的值
+      searchBox.value = this.searchBox.value;
+      
+      // 添加输入事件监听器
+      if (!searchBox._inputHandler) {
+        searchBox._inputHandler = (e) => {
+          // 同步到原搜索框，以便搜索管理器能够正常工作
+          this.searchBox.value = e.target.value;
+          // 触发原搜索框的输入事件
+          this.searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // 控制清除按钮的显示
+          const clearBtn = mainSearchPanel.querySelector('#main-clear-search');
+          if (clearBtn) {
+            if (e.target.value.length > 0) {
+              clearBtn.classList.remove('hidden');
+            } else {
+              clearBtn.classList.add('hidden');
+            }
+          }
+        };
+        searchBox.addEventListener('input', searchBox._inputHandler);
+      }
+      
+      // 添加清除按钮事件监听器
+      const clearBtn = mainSearchPanel.querySelector('#main-clear-search');
+      if (clearBtn && !clearBtn._clickHandler) {
+        clearBtn._clickHandler = () => {
+          searchBox.value = '';
+          this.searchBox.value = '';
+          clearBtn.classList.add('hidden');
+          // 触发输入事件以清空搜索结果
+          this.searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        clearBtn.addEventListener('click', clearBtn._clickHandler);
+      }
+      
+      // 添加关闭按钮事件监听器
+      const closeBtn = mainSearchPanel.querySelector('#main-close-search');
+      if (closeBtn && !closeBtn._clickHandler) {
+        closeBtn._clickHandler = () => {
+          this.closeSearchPanel();
+        };
+        closeBtn.addEventListener('click', closeBtn._clickHandler);
+      }
+    }
+    
+    // 初始化搜索功能
     if (!this.panelManager) {
       this.panelManager = await ensurePanelManager();
-      this.panelManager.init(this.searchPanel, this.searchBox, this.clearSearch, this.privateBrowsing, this.searchResults, this.defaultSearchResults);
     }
+    
+    // 使用主文档中的元素初始化
+    const mainClearSearch = mainSearchPanel.querySelector('#main-clear-search');
+    const mainPrivateBrowsing = mainSearchPanel.querySelector('#main-private-browsing');
+    const mainSearchResults = mainSearchPanel.querySelector('#main-search-results');
+    const mainDefaultSearchResults = mainSearchPanel.querySelector('#main-default-search-results');
+    
+    // 重新初始化搜索面板管理器，使用新的搜索结果容器
+    this.panelManager.init(mainSearchPanel, searchBox, mainClearSearch, mainPrivateBrowsing, mainSearchResults, mainDefaultSearchResults);
     this.panelManager.onOpen();
+    
+    // 添加搜索面板打开状态类名
+    this.classList.add("search-panel-open");
+    console.log("Added search-panel-open class, classes:", this.className);
+    
+    // 添加关闭事件监听
+    const closePanel = (e) => {
+      if (e.type === 'click' && e.target === mainSearchPanel) {
+        this.closeSearchPanel();
+      } else if (e.type === 'keydown' && e.key === 'Escape') {
+        this.closeSearchPanel();
+      }
+    };
+    
+    mainSearchPanel.addEventListener('click', closePanel);
+    document.addEventListener('keydown', closePanel);
+    
+    // 存储事件监听器引用以便后续移除
+    mainSearchPanel._closeHandler = closePanel;
   }
   openSearchBox() {
     if (!this.searchPanel.classList.contains("open")) {
@@ -847,6 +1096,15 @@ class StatusBar extends HTMLElement {
       if (screenElement) {
         screenElement.classList.add('desktop-mode');
       }
+      
+      // 显示搜索面板
+      if (this.searchPanel) {
+        this.searchPanel.style.display = 'flex';
+        this.searchPanel.style.visibility = 'visible';
+        this.searchPanel.style.opacity = '1';
+      }
+      
+      console.log(`StatusBar: Added desktop-mode class, current classes:`, this.className);
     } else {
       // 移动模式：恢复原始布局
       this.disableDesktopTaskbar();
@@ -862,9 +1120,26 @@ class StatusBar extends HTMLElement {
         screenElement.classList.remove('desktop-mode');
       }
 
+      console.log(`StatusBar: Removed desktop-mode class, current classes:`, this.className);
+      console.log(`StatusBar: Search panel element:`, this.searchPanel);
+
+      // 隐藏搜索面板
+      if (this.searchPanel) {
+        this.searchPanel.style.display = 'none';
+        this.searchPanel.style.visibility = 'hidden';
+        this.searchPanel.style.opacity = '0';
+      }
+
       // 确保移动模式下status bar是可见的
       this.style.display = '';
       this.classList.remove('fullscreen');
+      
+      // 在移动模式下，如果搜索面板是打开的，则关闭它
+      const mainSearchPanel = document.getElementById('main-search-panel');
+      if (mainSearchPanel && mainSearchPanel.classList.contains('open')) {
+        this.closeSearchPanel();
+      }
+      
       console.log(`StatusBar: Mobile mode restored, display:`, this.style.display);
     }
 

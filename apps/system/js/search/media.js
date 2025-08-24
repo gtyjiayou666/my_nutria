@@ -80,6 +80,8 @@ class MediaItem extends HTMLElement {
     } else if (content.backgroundColor) {
       shadow.host.style.backgroundColor = content.backgroundColor;
     }
+    
+    this.activate();
   }
 
   disconnectedCallback() {

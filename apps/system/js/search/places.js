@@ -76,6 +76,11 @@ class PlacesItemSearch extends LitElement {
       </div>`;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.activate();
+  }
+
   disconnectedCallback() {
     super.disconnectedCallback();
     this.revokable.forEach(URL.revokeObjectURL);

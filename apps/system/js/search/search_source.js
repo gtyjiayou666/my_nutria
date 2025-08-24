@@ -27,7 +27,21 @@ class SearchSource {
   }
 
   static closeSearch() {
-    window["search-box"].blur();
+    // 首先尝试主文档中的搜索面板
+    const mainSearchPanel = document.getElementById('main-search-panel');
+    if (mainSearchPanel && mainSearchPanel.classList.contains('open')) {
+      const statusBar = document.querySelector("status-bar");
+      if (statusBar) {
+        statusBar.closeSearchPanel();
+      }
+      return;
+    }
+    
+    // 备用方案：访问Shadow DOM中的搜索框
+    let searchBox = document.querySelector("status-bar").shadowRoot.getElementById("search-box");
+    if (searchBox) {
+      searchBox.blur();
+    }
   }
 
   get resultsNode() {
