@@ -16,17 +16,29 @@ body {
   pointer-events: none;
 }
 
+
+#container {
+  height: 260px;
+  /* Same as keyboard-height in shared/style/themes/default/theme.css */
+  width: 100%;
+  /* pointer-events: auto; */
+  pointer-events: none;
+}
+
+
+
 #vkb {
   font-family: sans-serif;
   background: rgb(233, 237, 244);
   user-select: none;
   pointer-events: auto;
-  height: 180px; /* Same as keyboard-height in shared/style/themes/default/theme.css */
+  height: 180px;
   width: 100%;
 
   display: flex;
   flex-direction: column;
   justify-content: center;
+  /* justify-content: flex-end; */
 }
 
 #vkb div {
@@ -92,6 +104,7 @@ body {
   0% {
     color: rgba(0, 0, 0, 1);
   }
+
   100% {
     color: rgba(0, 0, 0, 0.25);
   }
@@ -101,4 +114,118 @@ body {
   position: absolute;
   background-color: rgb(30, 34, 41);
   color: white;
+}
+
+
+#input-preview-bar {
+  width: 100%;
+  height: 70px;
+  border-bottom: 1px solid #ddd;
+  padding: 0 10px;
+  box-sizing: border-box;
+  overflow-y: hidden;
+  position: relative;
+  /* pointer-events: auto; */
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* 确保候选栏在底部 */
+}
+
+
+#candidate-bar {
+  background: rgba(255, 255, 255);
+  display: flex;     
+  overflow-x: auto;   
+  pointer-events: auto;  
+  white-space: nowrap; 
+  width: 100%;             
+  max-width: 100%;   
+  padding-bottom: 4px;
+  margin-top: auto;
+  user-select: none;
+  touch-action: pan-x;
+  gap: 6px;         
+}
+
+#input-preview-bar::-webkit-scrollbar {
+  display: none;
+  /* Safari and Chrome */
+}
+
+#selected-text-badge {
+  /* 绝对定位 */
+  position: absolute;
+  top: 8px;
+  /* 微调：距离 input-preview-bar 顶部 8px */
+  left: 12px;
+  /* 微调：与父容器左侧 padding 对齐，并留出一点间距 */
+
+  /* 其他样式保持不变 */
+  display: inline-block;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  z-index: 10;
+  
+  pointer-events: auto;
+}
+
+#selected-text-badge:empty {
+  display: none;
+}
+
+/* .candidate-item {
+  display: inline-block;
+  padding: 4px 8px;
+  margin: 0 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background-color .3s;
+} */
+.candidate-item {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: 0 2px;
+  border-radius: 4px;
+}
+
+
+.candidate-item:hover,
+.candidate-item:focus {
+  background-color: #f0f0f0;
+}
+
+.candidate-item.highlighted {
+  background-color: #007acc;
+  color: white;
+}
+
+
+
+#input-preview-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 12px;
+  /* 与 padding 一致 */
+  width: 16px;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.15), transparent);
+  pointer-events: none;
+  z-index: 1;
+  /* 默认显示，提示可滑动 */
+}
+
+/* 当无法向右滚动时，隐藏右侧阴影 */
+#input-preview-bar.no-scroll-right::after {
+  display: none;
 }

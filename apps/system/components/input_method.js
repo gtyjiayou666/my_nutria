@@ -3,7 +3,7 @@
 class InputMethod extends HTMLElement {
   constructor() {
     super();
-
+    this.flag = true;
     this.loaded = false;
     // 1s timer used to delay deactivation. This avoids changing the state
     // needlessly when navigating from a field to another.
@@ -48,11 +48,12 @@ class InputMethod extends HTMLElement {
   }
 
   deactivate() {
+    this.sendMessage({ deactivate: this.flag });
+    this.flag = !this.flag;
     if (this.timer) {
       window.clearTimeout(this.timer);
       this.timer = null;
     }
-
     this.timer = window.setTimeout(() => {
       this.webView.active = false;
       this.activated = false;
@@ -61,6 +62,11 @@ class InputMethod extends HTMLElement {
       }
       this.timer = null;
     }, 1000 /* 1s delay */);
+  }
+
+  sendMessage(data) {
+    const hash = new URLSearchParams(data).toString();
+    this.webView.src = this.webView.src.split("#")[0] + "#" + hash;
   }
 
   init() {
