@@ -121,7 +121,7 @@ body {
   text-align: center;
   transition: all 0.3s;
   z-index: 100;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   color: white;
 }

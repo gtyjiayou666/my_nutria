@@ -575,6 +575,7 @@ sl-badge[variant="primary"]::part(base) {
   color: white;
   background: transparent;
   pointer-events: none;
+  justify-content: flex-end;
 }
 
 #search-panel .input {
@@ -614,6 +615,9 @@ sl-badge[variant="primary"]::part(base) {
   margin: 0 !important;
   overflow: visible !important;
   contain: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
 }
 
 /* 强制确保搜索面板打开时覆盖所有限制 */
@@ -678,19 +682,24 @@ sl-badge[variant="primary"]::part(base) {
 }
 
 #search-results-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(15px);
   border-radius: 12px;
-  margin: 1em 0.5em;
+  margin: 0 !important;
   padding: 0.5em;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  position: relative;
+  position: fixed !important;
   pointer-events: auto;
+  max-height: calc(100vh - 8em) !important;
+  bottom: 5em !important;
+  left: 0.5em !important;
+  right: 0.5em !important;
+  top: 1em !important;
+  z-index: 100000 !important;
 }
 
 #search-results-container.hidden {
@@ -700,6 +709,17 @@ sl-badge[variant="primary"]::part(base) {
 /* 确保搜索面板未打开时容器不显示 */
 #search-panel:not(.open) #search-results-container {
   display: none !important;
+}
+
+/* 强制搜索面板打开时的结果容器定位 */
+#search-panel.open #search-results-container {
+  position: absolute !important;
+  top: 1em !important;
+  bottom: 5em !important;
+  left: 0.5em !important;
+  right: 0.5em !important;
+  margin: 0 !important;
+  transform: none !important;
 }
 
 #search-results {
@@ -774,8 +794,14 @@ sl-badge[variant="primary"]::part(base) {
   }
 
   #search-results-container {
-    width: 70%;
-    margin: 1em auto;
+    width: 70% !important;
+    left: 15% !important;
+    right: 15% !important;
+    margin: 0 !important;
+    top: 1em !important;
+    bottom: 5em !important;
+    position: fixed !important;
+    z-index: 100000 !important;
   }
 }
 

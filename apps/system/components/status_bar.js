@@ -502,8 +502,8 @@ class StatusBar extends HTMLElement {
             z-index: 9999;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding-top: 10vh;
+            justify-content: flex-end;
+            padding-bottom: 4em;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -517,7 +517,7 @@ class StatusBar extends HTMLElement {
           #main-search-panel .search-input-container {
             width: 90%;
             max-width: 600px;
-            margin-bottom: 2em;
+            margin: 0 0 2em 2em;
           }
           
           #main-search-panel .search-input {
@@ -564,12 +564,14 @@ class StatusBar extends HTMLElement {
           #main-search-panel .search-results {
             width: 90%;
             max-width: 600px;
+            margin: 0 0 0 2em;
             background-color: rgba(0, 0, 0, 0.95);
             border-radius: 12px;
             padding: 1em;
-            max-height: 60vh;
+            max-height: calc(100vh - 12em);
             overflow-y: auto;
             color: white;
+            flex: 1;
           }
           
           #main-search-panel .hidden {
