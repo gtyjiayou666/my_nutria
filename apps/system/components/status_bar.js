@@ -657,7 +657,20 @@ class StatusBar extends HTMLElement {
     
     // 添加关闭事件监听
     const closePanel = (e) => {
-      if (e.type === 'click' && e.target === mainSearchPanel) {
+      if (e.type === 'click') {
+        // 检查点击是否在搜索输入区域或搜索结果区域内
+        const searchInputContainer = mainSearchPanel.querySelector('.search-input-container');
+        const searchResults = mainSearchPanel.querySelector('.search-results');
+        
+        // 如果点击的是搜索输入区域或搜索结果区域内的元素，不关闭面板
+        if (searchInputContainer && (searchInputContainer.contains(e.target) || searchInputContainer === e.target)) {
+          return;
+        }
+        if (searchResults && (searchResults.contains(e.target) || searchResults === e.target)) {
+          return;
+        }
+        
+        // 其他区域的点击都关闭搜索面板
         this.closeSearchPanel();
       } else if (e.type === 'keydown' && e.key === 'Escape') {
         this.closeSearchPanel();
