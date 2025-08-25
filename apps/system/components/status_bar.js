@@ -325,6 +325,29 @@ class StatusBar extends HTMLElement {
             console.log(`Unexpected frame-list target: ${localName}`);
         }
       };
+
+      // Add right-click context menu for frame list items
+      this.getElem(`.frame-list`).oncontextmenu = (event) => {
+        // Only show context menu in desktop mode
+        const isDesktop = this.classList.contains('desktop-mode');
+        if (!isDesktop) {
+          return; // Allow default context menu behavior in mobile mode
+        }
+        
+        event.preventDefault();
+        let localName = event.target.localName;
+        let target = event.target;
+        
+        // Find the frame div element
+        if (localName === "img") {
+          target = target.parentElement;
+        }
+        
+        if (localName === "div" || (localName === "img" && target.localName === "div")) {
+          let frameId = target.getAttribute("id").split("-")[1];
+          this.showTaskbarContextMenu(event, frameId);
+        }
+      };
     }
 
 
@@ -1403,6 +1426,120 @@ class StatusBar extends HTMLElement {
     }
 
     this.updateBackgroundColor(state.backgroundColor);
+  }
+
+  showTaskbarContextMenu(event, frameId) {
+    // Check if we're in desktop mode - in mobile mode, we shouldn't show taskbar context menu
+    const isDesktop = this.classList.contains('desktop-mode');
+    if (!isDesktop) {
+      return; // Don't show context menu in mobile mode
+    }
+
+    // Remove any existing taskbar context menu
+    const existingMenu = document.querySelector('.taskbar-context-menu');
+    if (existingMenu) {
+      existingMenu.remove();
+    }
+
+    // Create context menu element
+    const menu = document.createElement('div');
+    menu.className = 'taskbar-context-menu';
+    menu.style.position = 'fixed';
+    menu.style.zIndex = '10000';
+    menu.style.background = 'rgba(255, 255, 255, 0.95)';
+    menu.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+    menu.style.borderRadius = '6px';
+    menu.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    menu.style.padding = '4px 0';
+    menu.style.minWidth = '120px';
+    menu.style.backdropFilter = 'blur(10px)';
+
+    // Get frame information
+    const frameInfo = window.wm.frames[frameId];
+    const isActive = this.currentActive === frameId;
+
+    // Create menu items
+    const menuItems = [
+      {
+        label: isActive ? '已激活' : '切换到此窗口',
+        action: () => {
+          if (!isActive) {
+            window.wm.switchToFrame(frameId);
+          }
+        },
+        disabled: isActive
+      },
+      {
+        label: '关闭窗口',
+        action: () => {
+          window.wm.closeFrame(frameId);
+        },
+        style: 'color: #dc2626;'
+      }
+    ];
+
+    // Add menu items to the menu
+    menuItems.forEach((item, index) => {
+      const menuItem = document.createElement('div');
+      menuItem.style.padding = '8px 12px';
+      menuItem.style.cursor = item.disabled ? 'default' : 'pointer';
+      menuItem.style.fontSize = '13px';
+      menuItem.style.color = item.disabled ? '#9ca3af' : '#1f2937';
+      if (item.style) {
+        menuItem.style.cssText += item.style;
+      }
+      
+      menuItem.textContent = item.label;
+      
+      if (!item.disabled) {
+        menuItem.addEventListener('mouseenter', () => {
+          menuItem.style.backgroundColor = '#e5f3ff';
+        });
+        
+        menuItem.addEventListener('mouseleave', () => {
+          menuItem.style.backgroundColor = '';
+        });
+        
+        menuItem.addEventListener('click', () => {
+          item.action();
+          menu.remove();
+          document.removeEventListener('click', hideMenu);
+        });
+      }
+      
+      menu.appendChild(menuItem);
+    });
+
+    // Position the menu
+    let left = event.clientX;
+    let top = event.clientY;
+
+    // Add menu to document to get dimensions
+    document.body.appendChild(menu);
+    const menuRect = menu.getBoundingClientRect();
+
+    // Adjust position to keep menu on screen
+    if (left + menuRect.width > window.innerWidth) {
+      left = window.innerWidth - menuRect.width - 10;
+    }
+    if (top + menuRect.height > window.innerHeight) {
+      top = event.clientY - menuRect.height;
+    }
+    
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+
+    // Hide menu when clicking outside
+    const hideMenu = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('click', hideMenu);
+      }
+    };
+    
+    setTimeout(() => {
+      document.addEventListener('click', hideMenu);
+    }, 100);
   }
 }
 
