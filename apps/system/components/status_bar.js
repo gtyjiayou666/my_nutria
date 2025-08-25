@@ -1446,13 +1446,29 @@ class StatusBar extends HTMLElement {
     menu.className = 'taskbar-context-menu';
     menu.style.position = 'fixed';
     menu.style.zIndex = '10000';
-    menu.style.background = 'rgba(255, 255, 255, 0.95)';
-    menu.style.border = '1px solid rgba(0, 0, 0, 0.1)';
-    menu.style.borderRadius = '6px';
-    menu.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-    menu.style.padding = '4px 0';
-    menu.style.minWidth = '120px';
-    menu.style.backdropFilter = 'blur(10px)';
+    menu.style.background = 'rgba(255, 255, 255, 0.98)';
+    menu.style.border = '1px solid rgba(0, 0, 0, 0.12)';
+    menu.style.borderRadius = '8px';
+    menu.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1)';
+    menu.style.padding = '6px 0';
+    menu.style.minWidth = '140px';
+    menu.style.backdropFilter = 'blur(12px)';
+    menu.style.transition = 'all 0.15s ease-out';
+    menu.style.transform = 'scale(0.95)';
+    menu.style.opacity = '0';
+    
+    // 添加一个小指示器来显示菜单是活跃的
+    const indicator = document.createElement('div');
+    indicator.style.position = 'absolute';
+    indicator.style.top = '-2px';
+    indicator.style.left = '50%';
+    indicator.style.transform = 'translateX(-50%)';
+    indicator.style.width = '20px';
+    indicator.style.height = '3px';
+    indicator.style.background = 'linear-gradient(90deg, #3b82f6, #06b6d4)';
+    indicator.style.borderRadius = '2px';
+    indicator.style.boxShadow = '0 0 6px rgba(59, 130, 246, 0.4)';
+    menu.appendChild(indicator);
 
     // Get frame information
     const frameInfo = window.wm.frames[frameId];
@@ -1481,30 +1497,69 @@ class StatusBar extends HTMLElement {
     // Add menu items to the menu
     menuItems.forEach((item, index) => {
       const menuItem = document.createElement('div');
-      menuItem.style.padding = '8px 12px';
+      menuItem.style.padding = '12px 16px';
       menuItem.style.cursor = item.disabled ? 'default' : 'pointer';
-      menuItem.style.fontSize = '13px';
+      menuItem.style.fontSize = '14px';
+      menuItem.style.fontWeight = '500';
       menuItem.style.color = item.disabled ? '#9ca3af' : '#1f2937';
+      menuItem.style.transition = 'all 0.15s ease';
+      menuItem.style.position = 'relative';
+      menuItem.style.userSelect = 'none';
+      
       if (item.style) {
         menuItem.style.cssText += item.style;
       }
       
-      menuItem.textContent = item.label;
+      // 添加图标
+      const icon = document.createElement('span');
+      icon.style.marginRight = '8px';
+      icon.style.fontSize = '16px';
+      if (item.label.includes('切换') || item.label.includes('已激活')) {
+        icon.textContent = '🔄';
+      } else if (item.label.includes('关闭')) {
+        icon.textContent = '❌';
+      }
+      
+      menuItem.appendChild(icon);
+      const textSpan = document.createElement('span');
+      textSpan.textContent = item.label;
+      menuItem.appendChild(textSpan);
       
       if (!item.disabled) {
         menuItem.addEventListener('mouseenter', () => {
-          menuItem.style.backgroundColor = '#e5f3ff';
+          menuItem.style.backgroundColor = '#f0f9ff';
+          menuItem.style.borderRadius = '4px';
+          menuItem.style.transform = 'translateX(2px)';
         });
         
         menuItem.addEventListener('mouseleave', () => {
           menuItem.style.backgroundColor = '';
+          menuItem.style.borderRadius = '';
+          menuItem.style.transform = '';
         });
         
-        menuItem.addEventListener('click', () => {
-          item.action();
-          menu.remove();
-          document.removeEventListener('click', hideMenu);
+        menuItem.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // 添加点击效果
+          menuItem.style.transform = 'scale(0.98)';
+          setTimeout(() => {
+            item.action();
+            menu.style.transform = 'scale(0.95)';
+            menu.style.opacity = '0';
+            setTimeout(() => {
+              if (document.body.contains(menu)) {
+                menu.remove();
+              }
+              document.removeEventListener('click', hideMenu);
+              document.removeEventListener('contextmenu', hideMenu);
+            }, 150);
+          }, 100);
         });
+      } else {
+        // 禁用状态的样式
+        menuItem.style.opacity = '0.6';
       }
       
       menu.appendChild(menuItem);
@@ -1528,18 +1583,72 @@ class StatusBar extends HTMLElement {
     
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
+    
+    // 启动进入动画
+    requestAnimationFrame(() => {
+      menu.style.transform = 'scale(1)';
+      menu.style.opacity = '1';
+    });
 
-    // Hide menu when clicking outside
+    // 优化菜单隐藏逻辑 - 让菜单更稳定，更容易操作
+    let menuHideTimeout = null;
+    let isMouseOverMenu = false;
+    
+    // 鼠标进入菜单时清除隐藏计时器
+    menu.addEventListener('mouseenter', () => {
+      isMouseOverMenu = true;
+      if (menuHideTimeout) {
+        clearTimeout(menuHideTimeout);
+        menuHideTimeout = null;
+      }
+    });
+    
+    // 鼠标离开菜单时设置延迟隐藏
+    menu.addEventListener('mouseleave', () => {
+      isMouseOverMenu = false;
+      menuHideTimeout = setTimeout(() => {
+        if (!isMouseOverMenu) {
+          menu.remove();
+          document.removeEventListener('click', hideMenu);
+          document.removeEventListener('contextmenu', hideMenu);
+        }
+      }, 1500); // 1.5秒后隐藏
+    });
+
+    // 点击菜单外部时隐藏菜单
     const hideMenu = (e) => {
-      if (!menu.contains(e.target)) {
-        menu.remove();
-        document.removeEventListener('click', hideMenu);
+      // 如果点击的是菜单内部，不隐藏
+      if (menu.contains(e.target)) {
+        return;
+      }
+      
+      // 如果鼠标在菜单上，延迟隐藏
+      if (isMouseOverMenu) {
+        return;
+      }
+      
+      menu.remove();
+      document.removeEventListener('click', hideMenu);
+      document.removeEventListener('contextmenu', hideMenu);
+      if (menuHideTimeout) {
+        clearTimeout(menuHideTimeout);
       }
     };
     
+    // 延迟添加点击监听器，避免立即触发
     setTimeout(() => {
       document.addEventListener('click', hideMenu);
-    }, 100);
+      document.addEventListener('contextmenu', hideMenu); // 右键也会隐藏菜单
+    }, 200);
+    
+    // 添加自动隐藏计时器（保险措施）
+    setTimeout(() => {
+      if (document.body.contains(menu) && !isMouseOverMenu) {
+        menu.remove();
+        document.removeEventListener('click', hideMenu);
+        document.removeEventListener('contextmenu', hideMenu);
+      }
+    }, 10000); // 10秒后强制隐藏
   }
 }
 
