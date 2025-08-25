@@ -388,6 +388,17 @@ class StatusBar extends HTMLElement {
       });
     }
 
+    this.searchBox.addEventListener("input", (e) => {
+      // 当底部栏搜索框内容改变时，同步到主搜索面板
+      const mainSearchPanel = document.getElementById('main-search-panel');
+      if (mainSearchPanel) {
+        const mainSearchBox = mainSearchPanel.querySelector('#main-search-box');
+        if (mainSearchBox && mainSearchBox.value !== e.target.value) {
+          mainSearchBox.value = e.target.value;
+        }
+      }
+    });
+
     this.searchBox.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         this.searchBox.blur();
@@ -444,6 +455,9 @@ class StatusBar extends HTMLElement {
       }
     }
     
+    // 移除body的class
+    document.body.classList.remove('search-panel-open');
+    
     // 清空搜索框
     this.searchBox.value = "";
     if (mainSearchPanel) {
@@ -497,13 +511,13 @@ class StatusBar extends HTMLElement {
             top: 0;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            bottom: 4em; /* 使用bottom属性确保不覆盖底部栏 */
             background-color: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
+            z-index: 1000; /* 确保比statusbar的z-index低 */
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding-bottom: 4em;
+            padding-bottom: 1em;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -514,10 +528,24 @@ class StatusBar extends HTMLElement {
             pointer-events: all;
           }
           
+          /* 确保底部状态栏在搜索面板打开时仍然可见，不被覆盖 */
+          system-statusbar {
+            z-index: 9999 !important;
+            position: relative !important;
+          }
+          
+          body.search-panel-open system-statusbar {
+            z-index: 9999 !important;
+            position: relative !important;
+          }
+          
           #main-search-panel .search-input-container {
             width: 90%;
             max-width: 600px;
-            margin: 0 0 2em 2em;
+            margin: 0 0 1em 2em; /* 恢复左下角位置 */
+            /* 隐藏主搜索输入框，让用户只看到底部栏的输入 */
+            opacity: 0.3;
+            pointer-events: none;
           }
           
           #main-search-panel .search-input {
@@ -564,11 +592,11 @@ class StatusBar extends HTMLElement {
           #main-search-panel .search-results {
             width: 90%;
             max-width: 600px;
-            margin: 0 0 0 2em;
+            margin: 0 0 1em 2em; /* 与搜索输入框对齐，位于左下角 */
             background-color: rgba(0, 0, 0, 0.95);
             border-radius: 12px;
             padding: 1em;
-            max-height: calc(100vh - 12em);
+            max-height: 50vh;
             overflow-y: auto;
             color: white;
             flex: 1;
@@ -584,12 +612,14 @@ class StatusBar extends HTMLElement {
     
     // 显示搜索面板
     mainSearchPanel.classList.add('open');
+    document.body.classList.add('search-panel-open');
     
-    // 聚焦搜索框
+    // 聚焦搜索框 - 这里我们聚焦底部栏的搜索框而不是主面板的
+    this.searchBox.focus();
+    
     const searchBox = mainSearchPanel.querySelector('#main-search-box');
     if (searchBox) {
-      searchBox.focus();
-      // 复制原搜索框的值
+      // 复制原搜索框的值到主面板搜索框
       searchBox.value = this.searchBox.value;
       
       // 添加输入事件监听器
@@ -597,6 +627,13 @@ class StatusBar extends HTMLElement {
         searchBox._inputHandler = (e) => {
           // 同步到原搜索框，以便搜索管理器能够正常工作
           this.searchBox.value = e.target.value;
+          
+          // 也要更新主搜索面板中的搜索框显示（如果它不是当前焦点）
+          const mainSearchBox = mainSearchPanel.querySelector('#main-search-box');
+          if (mainSearchBox && mainSearchBox !== e.target) {
+            mainSearchBox.value = e.target.value;
+          }
+          
           // 触发原搜索框的输入事件
           this.searchBox.dispatchEvent(new Event('input', { bubbles: true }));
           
