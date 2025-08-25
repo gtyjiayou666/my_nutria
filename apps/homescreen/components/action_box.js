@@ -361,17 +361,11 @@ class ActionBox extends HTMLElement {
           console.log('First click in desktop mode - waiting for potential double-click');
           this.lastClickTime = now;
           
-          // 清除之前的timeout
-          if (this.clickTimeout) {
-            clearTimeout(this.clickTimeout);
-          }
-          
+          // 设置延时，如果在doubleClickDelay时间内没有第二次点击，就高亮应用
           this.clickTimeout = setTimeout(() => {
-            // 单击处理（在桌面模式下不打开应用，只是选中效果）
-            console.log('Single-click timeout - highlighting app');
+            console.log('No double-click detected - highlighting application');
             this.highlightApp();
-            this.clickTimeout = null;
-            this.lastClickTime = 0; // 重置点击时间，为下次双击做准备
+            this.lastClickTime = 0; // 重置点击时间
           }, this.doubleClickDelay);
         }
       } else {
