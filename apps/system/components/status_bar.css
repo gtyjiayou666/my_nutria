@@ -150,7 +150,10 @@
   font-weight: 500;
   transition: all 0.2s ease;
   min-width: 80px;
+  max-width: 120px; /* 限制最大宽度 */
   justify-content: center;
+  flex-shrink: 0; /* 防止收缩 */
+  white-space: nowrap; /* 防止文字换行 */
 }
 
 :host(.desktop-mode) .start-button:hover {
@@ -664,6 +667,9 @@ sl-badge[variant="primary"]::part(base) {
   border-radius: 8px;
   padding: 0.5em;
   gap: 0.25em;
+  min-width: 200px; /* 设置最小宽度 */
+  max-width: 400px; /* 设置最大宽度，防止过度扩展 */
+  box-sizing: border-box; /* 确保padding包含在宽度内 */
 }
 
 #search-panel .input sl-icon {
@@ -679,6 +685,11 @@ sl-badge[variant="primary"]::part(base) {
   color: black;
   outline: none;
   font-family: var(--sl-font-sans);
+  min-width: 0; /* 允许flex item收缩 */
+  max-width: 100%; /* 防止超出容器 */
+  overflow: hidden; /* 隐藏溢出内容 */
+  text-overflow: ellipsis; /* 显示省略号 */
+  white-space: nowrap; /* 防止换行 */
 }
 
 #search-results-container {
