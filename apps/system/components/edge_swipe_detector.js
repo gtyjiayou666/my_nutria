@@ -33,6 +33,10 @@ class EdgeSwipeDetector extends EventTarget {
     this.lastGestureTime = 0;
     this.gestureDebounceTime = 400; // 400ms内不允许重复触发
     
+    // 滑动指示器相关
+    this.swipeIndicator = null;
+    this.swipeDirection = null;
+    
     this.init();
   }
   
@@ -144,6 +148,10 @@ class EdgeSwipeDetector extends EventTarget {
       this.startY = clientY;
       this.startTime = now;
       this.currentPointerId = pointerId;
+      this.swipeDirection = isFromLeftEdge ? 'right' : 'left';
+      
+      // 创建并显示滑动箭头提示
+      this.createSwipeIndicator(clientX, clientY, this.swipeDirection);
       
       this.log(`Edge swipe started from ${isFromLeftEdge ? 'left' : 'right'} edge at (${clientX}, ${clientY})`);
       
@@ -168,6 +176,7 @@ class EdgeSwipeDetector extends EventTarget {
     // 检查时间是否超限
     if (elapsed > this.maxSwipeTime) {
       this.log('Gesture timeout, canceling');
+      this.removeSwipeIndicator();
       this.reset();
       return;
     }
@@ -175,9 +184,13 @@ class EdgeSwipeDetector extends EventTarget {
     // 检查垂直偏移是否过大
     if (deltaY > this.maxVerticalDeviation) {
       this.log('Vertical deviation too large, canceling gesture');
+      this.removeSwipeIndicator();
       this.reset();
       return;
     }
+    
+    // 更新滑动箭头位置和进度
+    this.updateSwipeIndicator(clientX, clientY, deltaX);
     
     // 检查是否达到最小滑动距离
     const distance = Math.abs(deltaX);
@@ -188,8 +201,16 @@ class EdgeSwipeDetector extends EventTarget {
       
       if (isLeftEdgeSwipeRight || isRightEdgeSwipeLeft) {
         this.log(`Valid edge swipe detected: distance=${distance}, deltaX=${deltaX}, time=${elapsed}ms`);
-        this.triggerBackGesture();
-        this.reset();
+        
+        // 显示成功动画
+        this.showSwipeSuccess();
+        
+        // 延迟触发返回手势，让用户看到成功反馈
+        setTimeout(() => {
+          this.triggerBackGesture();
+          this.removeSwipeIndicator();
+          this.reset();
+        }, 100);
       }
     }
   }
@@ -201,6 +222,7 @@ class EdgeSwipeDetector extends EventTarget {
     if (event.pointerId !== this.currentPointerId) return;
     
     this.log('Pointer up, gesture ended');
+    this.removeSwipeIndicator();
     this.reset();
   }
   
@@ -211,6 +233,7 @@ class EdgeSwipeDetector extends EventTarget {
     if (event.pointerId !== this.currentPointerId) return;
     
     this.log('Pointer canceled, gesture ended');
+    this.removeSwipeIndicator();
     this.reset();
   }
   
@@ -285,6 +308,7 @@ class EdgeSwipeDetector extends EventTarget {
     this.startY = 0;
     this.startTime = 0;
     this.currentPointerId = -1;
+    this.swipeDirection = null;
   }
   
   log(message) {
@@ -313,6 +337,172 @@ class EdgeSwipeDetector extends EventTarget {
     if (params.maxVerticalDeviation !== undefined) this.maxVerticalDeviation = params.maxVerticalDeviation;
     
     this.log(`Parameters updated: edgeWidth=${this.edgeWidth}, minSwipeDistance=${this.minSwipeDistance}`);
+  }
+  
+  // 创建滑动箭头指示器
+  createSwipeIndicator(x, y, direction) {
+    // 移除可能存在的旧指示器
+    this.removeSwipeIndicator();
+    
+    // 创建主容器
+    this.swipeIndicator = document.createElement('div');
+    this.swipeIndicator.className = 'edge-swipe-indicator';
+    this.swipeIndicator.style.cssText = `
+      position: fixed;
+      z-index: 10000;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      left: ${x - 20}px;
+      top: ${y - 20}px;
+      width: 40px;
+      height: 40px;
+    `;
+    
+    // 创建箭头图标
+    const arrow = document.createElement('div');
+    arrow.className = 'swipe-arrow';
+    arrow.style.cssText = `
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-size: 20px;
+      opacity: 0;
+      transform: scale(0.5);
+      animation: swipeIndicatorIn 0.2s ease-out forwards;
+    `;
+    
+    // 设置箭头方向
+    arrow.textContent = direction === 'right' ? '→' : '←';
+    
+    // 创建进度指示器
+    const progress = document.createElement('div');
+    progress.className = 'swipe-progress';
+    progress.style.cssText = `
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      border: 3px solid transparent;
+      border-radius: 50%;
+      border-top-color: #4CAF50;
+      transform: rotate(-90deg);
+      transition: border-top-color 0.2s ease;
+    `;
+    
+    this.swipeIndicator.appendChild(arrow);
+    this.swipeIndicator.appendChild(progress);
+    
+    // 添加CSS动画
+    if (!document.getElementById('edge-swipe-styles')) {
+      const style = document.createElement('style');
+      style.id = 'edge-swipe-styles';
+      style.textContent = `
+        @keyframes swipeIndicatorIn {
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes swipeSuccess {
+          0% { 
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: scale(1);
+          }
+          50% { 
+            background-color: rgba(76, 175, 80, 0.9);
+            transform: scale(1.2);
+          }
+          100% { 
+            background-color: rgba(76, 175, 80, 0.9);
+            transform: scale(1);
+          }
+        }
+        
+        .edge-swipe-indicator .swipe-arrow.success {
+          animation: swipeSuccess 0.3s ease-out;
+          background: rgba(76, 175, 80, 0.9) !important;
+          color: white !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(this.swipeIndicator);
+    this.log(`Swipe indicator created at (${x}, ${y}) direction: ${direction}`);
+  }
+  
+  // 更新滑动指示器位置和进度
+  updateSwipeIndicator(x, y, deltaX) {
+    if (!this.swipeIndicator) return;
+    
+    // 计算滑动进度 (0-1)
+    const progress = Math.min(Math.abs(deltaX) / this.minSwipeDistance, 1);
+    
+    // 更新位置
+    this.swipeIndicator.style.left = `${x - 20}px`;
+    this.swipeIndicator.style.top = `${y - 20}px`;
+    
+    // 更新进度指示器
+    const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
+    if (progressElement) {
+      const angle = progress * 360;
+      progressElement.style.background = `
+        conic-gradient(
+          #4CAF50 0deg ${angle}deg,
+          rgba(255, 255, 255, 0.3) ${angle}deg 360deg
+        )
+      `;
+      
+      // 当接近完成时改变颜色
+      if (progress > 0.8) {
+        progressElement.style.borderTopColor = '#4CAF50';
+        const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
+        if (arrow) {
+          arrow.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
+          arrow.style.color = 'white';
+        }
+      }
+    }
+  }
+  
+  // 显示成功动画
+  showSwipeSuccess() {
+    if (!this.swipeIndicator) return;
+    
+    const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
+    if (arrow) {
+      arrow.classList.add('success');
+      arrow.textContent = '✓';
+    }
+    
+    // 触发强烈的触觉反馈
+    if (window.hapticFeedback && window.hapticFeedback.trigger) {
+      window.hapticFeedback.trigger('heavy');
+    }
+    
+    this.log('Swipe success animation triggered');
+  }
+  
+  // 移除滑动指示器
+  removeSwipeIndicator() {
+    if (this.swipeIndicator && this.swipeIndicator.parentNode) {
+      this.swipeIndicator.style.opacity = '0';
+      this.swipeIndicator.style.transform = 'scale(0.5)';
+      
+      setTimeout(() => {
+        if (this.swipeIndicator && this.swipeIndicator.parentNode) {
+          this.swipeIndicator.parentNode.removeChild(this.swipeIndicator);
+        }
+        this.swipeIndicator = null;
+      }, 200);
+    }
   }
 }
 
