@@ -548,9 +548,8 @@ class StatusBar extends HTMLElement {
             width: 90%;
             max-width: 600px;
             margin: 0 0 1em 2em; /* 恢复左下角位置 */
-            /* 隐藏主搜索输入框，让用户只看到底部栏的输入 */
-            opacity: 0.3;
-            pointer-events: none;
+            /* 完全隐藏主搜索输入框，让用户只看到底部栏的输入 */
+            display: none;
           }
           
           #main-search-panel .search-input {
