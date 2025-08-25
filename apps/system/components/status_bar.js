@@ -397,6 +397,11 @@ class StatusBar extends HTMLElement {
           mainSearchBox.value = e.target.value;
         }
       }
+      
+      // 触发搜索功能 - 调用SearchPanel的handleEvent方法
+      if (this.panelManager && typeof this.panelManager.handleEvent === 'function') {
+        this.panelManager.handleEvent();
+      }
     });
 
     this.searchBox.addEventListener("keydown", (event) => {
@@ -684,8 +689,8 @@ class StatusBar extends HTMLElement {
     const mainSearchResults = mainSearchPanel.querySelector('#main-search-results');
     const mainDefaultSearchResults = mainSearchPanel.querySelector('#main-default-search-results');
     
-    // 重新初始化搜索面板管理器，使用新的搜索结果容器
-    this.panelManager.init(mainSearchPanel, searchBox, mainClearSearch, mainPrivateBrowsing, mainSearchResults, mainDefaultSearchResults);
+    // 重新初始化搜索面板管理器，使用底部栏的搜索框作为主要输入
+    this.panelManager.init(mainSearchPanel, this.searchBox, mainClearSearch, mainPrivateBrowsing, mainSearchResults, mainDefaultSearchResults);
     this.panelManager.onOpen();
     
     // 添加搜索面板打开状态类名
