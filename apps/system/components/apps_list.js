@@ -6,6 +6,11 @@ class AppIcon extends HTMLElement {
   constructor(data) {
     super();
     this.init(data);
+    
+    // 双击相关属性
+    this.lastClickTime = 0;
+    this.doubleClickDelay = 300; // 300ms内的第二次点击视为双击
+    this.clickTimeout = null;
   }
 
   // data = { icon, title, url }
@@ -27,19 +32,111 @@ class AppIcon extends HTMLElement {
       <span>${data.title}</span>
       `;
 
-    this.onclick = () => {
-      this.dispatchEvent(
-        new CustomEvent("open-bookmark", {
-          bubbles: true,
-          detail: {
-            url: data.url,
-            title: data.title,
-            icon: this.icon,
-            backgroundColor: data.backgroundColor,
-          },
-        })
-      );
-    };
+    // 移除简单的onclick，使用更复杂的点击处理
+    this.addEventListener('click', this.handleClick.bind(this));
+  }
+  
+  // 检查是否为桌面模式
+  isDesktopMode() {
+    // 检查父级AppsList的桌面模式状态
+    const appsList = this.closest('apps-list');
+    if (appsList) {
+      return appsList.classList.contains('desktop-mode');
+    }
+    
+    // 检查 QuickSettings 的状态
+    const quickSettings = document.querySelector('quick-settings');
+    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+      return quickSettings.isDesktop;
+    }
+    
+    // 检查 wallpaperManager
+    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+      return window.wallpaperManager.isDesktop;
+    }
+    
+    // 默认为桌面模式
+    return true;
+  }
+  
+  handleClick(event) {
+    event.preventDefault();
+    
+    if (this.isDesktopMode()) {
+      // 桌面模式：双击打开应用
+      const now = Date.now();
+      const timeSinceLastClick = now - this.lastClickTime;
+      
+      console.log(`AppIcon desktop mode click: timeSinceLastClick=${timeSinceLastClick}, doubleClickDelay=${this.doubleClickDelay}`);
+      
+      if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
+        // 双击检测到，立即打开应用
+        console.log('AppIcon double-click detected in desktop mode - opening application');
+        if (this.clickTimeout) {
+          clearTimeout(this.clickTimeout);
+          this.clickTimeout = null;
+        }
+        this.openApplication();
+        this.lastClickTime = 0; // 重置点击时间
+      } else {
+        // 第一次点击或时间间隔太长，等待可能的第二次点击
+        console.log('AppIcon first click in desktop mode - waiting for potential double-click');
+        this.lastClickTime = now;
+        
+        // 清除之前的timeout
+        if (this.clickTimeout) {
+          clearTimeout(this.clickTimeout);
+        }
+        
+        this.clickTimeout = setTimeout(() => {
+          // 单击处理（在桌面模式下显示选中效果）
+          console.log('AppIcon single-click timeout - highlighting app');
+          this.highlightApp();
+          this.clickTimeout = null;
+          this.lastClickTime = 0; // 重置点击时间，为下次双击做准备
+        }, this.doubleClickDelay);
+      }
+    } else {
+      // 移动模式：单击直接打开应用
+      console.log('AppIcon mobile mode click - opening application immediately');
+      this.openApplication();
+    }
+  }
+  
+  openApplication() {
+    console.log(`AppIcon: Opening application in ${this.isDesktopMode() ? 'desktop' : 'mobile'} mode`);
+    this.dispatchEvent(
+      new CustomEvent("open-bookmark", {
+        bubbles: true,
+        detail: {
+          url: this.data.url,
+          title: this.data.title,
+          icon: this.icon,
+          backgroundColor: this.data.backgroundColor,
+        },
+      })
+    );
+  }
+  
+  highlightApp() {
+    // 先清除所有其他应用的高亮
+    const appsList = this.closest('apps-list');
+    if (appsList) {
+      appsList.querySelectorAll('app-icon').forEach(icon => {
+        if (icon !== this) {
+          icon.classList.remove('selected');
+        }
+      });
+    }
+    
+    // 高亮当前应用
+    this.classList.add('selected');
+    console.log('AppIcon: Application highlighted');
+    
+    // 3秒后自动取消高亮
+    setTimeout(() => {
+      this.classList.remove('selected');
+    }, 3000);
   }
 
   disconnectedCallback() {

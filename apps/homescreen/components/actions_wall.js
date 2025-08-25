@@ -240,6 +240,54 @@ class ActionsWall extends HTMLElement {
     return element;
   }
 
+  // 检查是否为桌面模式
+  isDesktopMode() {
+    // 检查 QuickSettings 的状态
+    const quickSettings = document.querySelector('quick-settings');
+    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+      return quickSettings.isDesktop;
+    }
+    
+    // 检查 wallpaperManager
+    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+      return window.wallpaperManager.isDesktop;
+    }
+    
+    // 默认为桌面模式
+    return true;
+  }
+
+  // 交换两个应用的位置（桌面模式下的拖拽交换）
+  swapPositions(draggingBox, targetPosition) {
+    // 找到目标位置的应用
+    const targetBox = this.querySelector(`action-box[position="${targetPosition}"]`);
+    
+    if (targetBox && targetBox !== draggingBox) {
+      const draggingPosition = draggingBox.getAttribute("position");
+      const draggingActionId = draggingBox.actionId;
+      const targetActionId = targetBox.actionId;
+      
+      console.log(`Swapping positions: ${draggingActionId} (${draggingPosition}) <-> ${targetActionId} (${targetPosition})`);
+      
+      // 交换位置属性
+      draggingBox.setAttribute("position", targetPosition);
+      targetBox.setAttribute("position", draggingPosition);
+      
+      // 更新存储中的位置信息
+      this.store.updatePositionFor(draggingActionId, targetPosition);
+      this.store.updatePositionFor(targetActionId, draggingPosition);
+      
+      console.log(`Successfully swapped positions`);
+    } else if (!targetBox) {
+      // 如果没有找到目标应用，直接移动到目标位置
+      console.log(`No app at target position ${targetPosition}, moving directly`);
+      draggingBox.setAttribute("position", targetPosition);
+      this.store.updatePositionFor(draggingBox.actionId, targetPosition);
+    } else {
+      console.log(`Cannot swap: draggingBox and targetBox are the same`);
+    }
+  }
+
   handleEvent(event) {
     if (event.type === "pointerup") {
       this.removeEventListener("pointermove", this);
@@ -249,10 +297,38 @@ class ActionsWall extends HTMLElement {
       box.animate(false);
       box.classList.remove("no-transition");
   
-      // 只有在 dropPosition 存在且目标位置为空时才更新位置
+      // 检查是否为桌面模式
+      const isDesktopMode = this.isDesktopMode();
+      console.log(`Drag ended in ${isDesktopMode ? 'desktop' : 'mobile'} mode`);
+      
       if (this.editing.dropPosition) {
-        box.setAttribute("position", this.editing.dropPosition);
-        this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
+        const currentPosition = box.getAttribute("position");
+        console.log(`Attempting to move from ${currentPosition} to ${this.editing.dropPosition}`);
+        
+        if (isDesktopMode) {
+          // 桌面模式：直接移动到目标位置，即使位置被占用也要进行交换
+          if (this.store.isPositionOccupied(this.editing.dropPosition)) {
+            console.log('Target position occupied - swapping positions in desktop mode');
+            // 如果目标位置被占用，进行位置交换
+            this.swapPositions(box, this.editing.dropPosition);
+          } else {
+            console.log('Target position empty - moving directly in desktop mode');
+            // 目标位置空闲，直接移动
+            box.setAttribute("position", this.editing.dropPosition);
+            this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
+          }
+        } else {
+          // 移动模式：只有在目标位置为空时才更新位置
+          if (!this.store.isPositionOccupied(this.editing.dropPosition)) {
+            console.log('Moving to empty position in mobile mode');
+            box.setAttribute("position", this.editing.dropPosition);
+            this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
+          } else {
+            console.log('Target position occupied - move cancelled in mobile mode');
+          }
+        }
+      } else {
+        console.log('No valid drop position - returning to original position');
       }
   
       // 无论是否成功移动，都重置位置到原始状态
@@ -266,27 +342,39 @@ class ActionsWall extends HTMLElement {
         document.elementFromPoint(event.clientX, event.clientY)
       );
       
+      const isDesktopMode = this.isDesktopMode();
+      
       if (hover) {
-        // 检查目标位置是否已被占用（不是 ghost）
         const position = hover.getAttribute("position");
         const isOccupied = !hover.classList.contains("ghost") && 
                            this.store.isPositionOccupied(position);
         
-        if (isOccupied) {
-          // 目标位置已被占用，取消激活当前 ghost（如果有）
-          if (this.editing.activeGhost) {
-            this.editing.activeGhost.setGhostActive(false);
-            this.editing.activeGhost = null;
-          }
-          this.editing.dropPosition = null;
-        } else {
-          // 目标位置可用，正常处理
+        if (isDesktopMode) {
+          // 桌面模式：允许拖拽到任何位置，包括被占用的位置
           if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
             this.editing.activeGhost.setGhostActive(false);
           }
-          hover.setGhostActive(true);
+          hover.setGhostActive(true, true); // 在桌面模式下总是显示为可用
           this.editing.activeGhost = hover;
           this.editing.dropPosition = position;
+        } else {
+          // 移动模式：检查目标位置是否已被占用
+          if (isOccupied) {
+            // 目标位置已被占用，取消激活当前 ghost
+            if (this.editing.activeGhost) {
+              this.editing.activeGhost.setGhostActive(false);
+              this.editing.activeGhost = null;
+            }
+            this.editing.dropPosition = null;
+          } else {
+            // 目标位置可用，正常处理
+            if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
+              this.editing.activeGhost.setGhostActive(false);
+            }
+            hover.setGhostActive(true);
+            this.editing.activeGhost = hover;
+            this.editing.dropPosition = position;
+          }
         }
       }
   

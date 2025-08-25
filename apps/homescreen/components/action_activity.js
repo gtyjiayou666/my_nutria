@@ -24,17 +24,31 @@ class ActionActivity extends HTMLElement {
       </div>
       `;
 
-    shadow.querySelector(".activity").onclick = () => {
-      let activity = new WebActivity(this.activity.name, this.activity.data);
-      activity.start().then(
-        (res) => {
-          console.error(`ActionActivity Result returned by activity: ${res}`);
-        },
-        (err) => {
-          console.error(`ActionActivity Error returned by activity: ${err}`);
-        }
-      );
+    shadow.querySelector(".activity").onclick = (event) => {
+      // 检查是否为桌面模式，如果是则不直接处理点击
+      const actionBox = this.closest('action-box');
+      if (actionBox && actionBox.isDesktopMode && actionBox.isDesktopMode()) {
+        console.log('Desktop mode: action-activity delegating click to action-box');
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+      
+      // 移动模式或没有action-box包装时，直接启动活动
+      this.startActivity();
     };
+  }
+  
+  startActivity() {
+    let activity = new WebActivity(this.activity.name, this.activity.data);
+    activity.start().then(
+      (res) => {
+        console.error(`ActionActivity Result returned by activity: ${res}`);
+      },
+      (err) => {
+        console.error(`ActionActivity Error returned by activity: ${err}`);
+      }
+    );
   }
 
   disconnectedCallback() {

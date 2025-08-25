@@ -20,6 +20,12 @@ class ActionBox extends HTMLElement {
     super();
     this.contextMenuActive = false; // 初始化上下文菜单状态
     this.isDesktop = true; // 本地桌面模式状态，默认为桌面模式
+    
+    // 双击相关属性
+    this.lastClickTime = 0;
+    this.doubleClickDelay = 300; // 300ms内的第二次点击视为双击
+    this.clickTimeout = null;
+    this.isDragging = false; // 跟踪拖拽状态
   }
 
   connectedCallback() {
@@ -263,36 +269,147 @@ class ActionBox extends HTMLElement {
 
   // 打开应用
   openApplication() {
-    // 模拟点击应用图标来打开应用
+    console.log(`Opening application in ${this.isDesktopMode() ? 'desktop' : 'mobile'} mode`);
+    
+    // 查找应用图标元素
     const slotElement = this.shadowRoot.querySelector("slot").assignedNodes()[0];
-    if (slotElement && slotElement.click) {
-      slotElement.click();
-    } else {
-      // 如果没有直接的点击方法，分发点击事件
-      this.dispatchEvent(new CustomEvent('click', { bubbles: true }));
+    if (slotElement) {
+      // 如果是action-bookmark，直接调用其openBookmark方法
+      if (slotElement.tagName === 'ACTION-BOOKMARK' && slotElement.openBookmark) {
+        console.log('Calling openBookmark on action-bookmark');
+        slotElement.openBookmark();
+        return;
+      }
+      
+      // 如果是action-activity，直接调用其startActivity方法
+      if (slotElement.tagName === 'ACTION-ACTIVITY' && slotElement.startActivity) {
+        console.log('Calling startActivity on action-activity');
+        slotElement.startActivity();
+        return;
+      }
+      
+      // 如果是其他类型的元素，尝试触发点击
+      if (slotElement.click) {
+        console.log('Triggering click on slot element');
+        slotElement.click();
+      } else if (slotElement.children && slotElement.children[0] && slotElement.children[0].click) {
+        console.log('Triggering click on first child element');
+        slotElement.children[0].click();
+      }
     }
+    
+    // 如果通过slot元素无法触发，尝试查找应用相关的数据并直接打开
+    if (this.actionId) {
+      console.log(`Attempting to open app with actionId: ${this.actionId}`);
+      // 通过事件系统触发应用打开
+      this.dispatchEvent(new CustomEvent('open-app', { 
+        bubbles: true, 
+        detail: { 
+          actionId: this.actionId,
+          fromDoubleClick: this.isDesktopMode()
+        } 
+      }));
+    }
+  }
+
+  // 高亮应用（桌面模式单击效果）
+  highlightApp() {
+    // 先清除所有其他应用的高亮
+    document.querySelectorAll('action-box').forEach(box => {
+      if (box !== this) {
+        box.classList.remove('selected');
+      }
+    });
+    
+    // 高亮当前应用
+    this.classList.add('selected');
+    console.log('Application highlighted');
+    
+    // 3秒后自动取消高亮
+    setTimeout(() => {
+      this.classList.remove('selected');
+    }, 3000);
   }
 
   handleEvent(event) {
     if (event.type === "click") {
-      if (this.cancelClick) {
+      if (this.cancelClick || this.isDragging) {
         event.preventDefault();
+        this.cancelClick = false;
+        this.isDragging = false;
+        return;
       }
+
+      // 桌面模式：双击打开应用
+      if (this.isDesktopMode()) {
+        const now = Date.now();
+        const timeSinceLastClick = now - this.lastClickTime;
+        
+        console.log(`Desktop mode click: timeSinceLastClick=${timeSinceLastClick}, doubleClickDelay=${this.doubleClickDelay}`);
+        
+        if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
+          // 双击检测到，立即打开应用
+          console.log('Double-click detected in desktop mode - opening application');
+          if (this.clickTimeout) {
+            clearTimeout(this.clickTimeout);
+            this.clickTimeout = null;
+          }
+          this.openApplication();
+          this.lastClickTime = 0; // 重置点击时间
+        } else {
+          // 第一次点击或时间间隔太长，等待可能的第二次点击
+          console.log('First click in desktop mode - waiting for potential double-click');
+          this.lastClickTime = now;
+          
+          // 清除之前的timeout
+          if (this.clickTimeout) {
+            clearTimeout(this.clickTimeout);
+          }
+          
+          this.clickTimeout = setTimeout(() => {
+            // 单击处理（在桌面模式下不打开应用，只是选中效果）
+            console.log('Single-click timeout - highlighting app');
+            this.highlightApp();
+            this.clickTimeout = null;
+            this.lastClickTime = 0; // 重置点击时间，为下次双击做准备
+          }, this.doubleClickDelay);
+        }
+      } else {
+        // 移动模式：单击直接打开应用
+        console.log('Mobile mode click - opening application immediately');
+        this.openApplication();
+      }
+      
       this.cancelClick = false;
       return;
     } else if (event.type === "pointerdown") {
-      // 在两种模式下都启用长按功能，用于拖动重排
       this.shadowRoot.addEventListener("pointerup", this, { once: true });
       let startPos = { x: event.screenX, y: event.screenY };
       let capturedPointerId = event.pointerId;
+      this.isDragging = false; // 重置拖拽状态
 
-      this.timer = window.setTimeout(() => {
-        this.setPointerCapture(capturedPointerId);
-        this.cancelClick = true;
-        this.dispatchEvent(
-          new CustomEvent("long-press", { bubbles: true, detail: startPos })
-        );
-      }, kLongPressDelay);
+      // 桌面模式：立即开始拖拽（类似Windows）
+      if (this.isDesktopMode()) {
+        // 桌面模式下，缩短长按时间，更快响应拖拽
+        this.timer = window.setTimeout(() => {
+          this.setPointerCapture(capturedPointerId);
+          this.cancelClick = true;
+          this.isDragging = true; // 标记为拖拽模式
+          this.dispatchEvent(
+            new CustomEvent("long-press", { bubbles: true, detail: startPos })
+          );
+        }, 100); // 桌面模式下100ms就开始拖拽
+      } else {
+        // 移动模式：保持原有的长按时间
+        this.timer = window.setTimeout(() => {
+          this.setPointerCapture(capturedPointerId);
+          this.cancelClick = true;
+          this.isDragging = true; // 标记为拖拽模式
+          this.dispatchEvent(
+            new CustomEvent("long-press", { bubbles: true, detail: startPos })
+          );
+        }, kLongPressDelay);
+      }
     } else if (event.type === "pointerup") {
       if (this.timer) {
         window.clearTimeout(this.timer);

@@ -25,16 +25,34 @@ class ActionBookmark extends HTMLElement {
       <span>${data.title}</span>
       `;
 
-    this.onclick = () => {
-      let details = {
-        title: data.title,
-        icon: this.icon,
-        backgroundColor: data.backgroundColor,
-        display: data.display || "browser",
-      };
-      let encoded = encodeURIComponent(JSON.stringify(details));
-      window.open(data.url, "_blank", `details=${encoded}`);
+    this.onclick = (event) => {
+      // 检查是否为桌面模式，如果是则不直接处理点击
+      // 让外层的action-box来处理双击逻辑
+      const actionBox = this.closest('action-box');
+      if (actionBox && actionBox.isDesktopMode && actionBox.isDesktopMode()) {
+        console.log('Desktop mode: action-bookmark delegating click to action-box');
+        // 在桌面模式下，让action-box处理双击逻辑
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+      
+      // 移动模式或没有action-box包装时，直接打开应用
+      console.log('Mobile mode or standalone: action-bookmark opening directly');
+      this.openBookmark();
     };
+  }
+  
+  openBookmark() {
+    let data = this.data;
+    let details = {
+      title: data.title,
+      icon: this.icon,
+      backgroundColor: data.backgroundColor,
+      display: data.display || "browser",
+    };
+    let encoded = encodeURIComponent(JSON.stringify(details));
+    window.open(data.url, "_blank", `details=${encoded}`);
   }
 
   disconnectedCallback() {

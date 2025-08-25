@@ -32,6 +32,16 @@
   transform: scale(1.5);
 }
 
+/* 选中状态样式（桌面模式下单击高亮效果） */
+:host(.selected) {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+  box-shadow: 0 0 15px rgba(0, 123, 255, 0.6);
+  border: 2px solid rgba(0, 123, 255, 0.8);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
 :host:not(.no-transition) {
   transition: top 0.5s, left 0.5s;
 }
