@@ -13,6 +13,7 @@ const kDeps = [
       "shoelace-light-theme",
       "shoelace-alert",
       "shoelace-setup",
+      "edge swipe detector",
     ],
   },
   {
@@ -172,6 +173,12 @@ const kDeps = [
     kind: "module",
     param: "./components/status_bar.js",
     deps: ["battery helper", "shoelace-icon", "shoelace-badge"],
+  },
+  {
+    name: "edge swipe detector",
+    kind: "module",
+    param: "./components/edge_swipe_detector.js",
+    deps: ["actions dispatcher"],
   },
   {
     name: "wallpaper",

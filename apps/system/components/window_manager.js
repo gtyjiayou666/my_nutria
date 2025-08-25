@@ -453,6 +453,7 @@ class WindowManager extends HTMLElement {
       }
     });
     actionsDispatcher.addListener("go-back", this.goBack.bind(this));
+    actionsDispatcher.addListener("android-back", this.androidBack.bind(this));
     actionsDispatcher.addListener("go-forward", this.goForward.bind(this));
     actionsDispatcher.addListener("go-home", this.goHome.bind(this));
     actionsDispatcher.addListener(
@@ -760,6 +761,31 @@ class WindowManager extends HTMLElement {
 
   goBack() {
     this.activeFrame && this.frames[this.activeFrame].goBack();
+  }
+
+  // Android风格的返回：优先退出应用而不是页面后退
+  androidBack() {
+    if (!this.activeFrame) {
+      this.log('androidBack: No active frame');
+      return;
+    }
+
+    const currentFrame = this.frames[this.activeFrame];
+    if (!currentFrame) {
+      this.log('androidBack: No current frame found');
+      return;
+    }
+
+    // 如果当前是主屏幕，执行页面后退
+    if (currentFrame.config.isHomescreen) {
+      this.log('androidBack: On homescreen, performing page back');
+      currentFrame.goBack();
+      return;
+    }
+
+    // 如果是应用窗口，直接关闭应用返回主屏幕（Android风格）
+    this.log(`androidBack: Closing app frame ${this.activeFrame} and returning to homescreen`);
+    this.closeFrame(this.activeFrame);
   }
 
   goForward() {
