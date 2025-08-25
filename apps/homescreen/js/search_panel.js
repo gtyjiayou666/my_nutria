@@ -26,6 +26,9 @@ export class SearchPanel {
       this.handleDesktopModeChange(event.detail.isDesktop);
     });
 
+    // 初始化时设置搜索框的可见性
+    this.updateSearchPanelVisibility();
+
     this.sources = [
       new MediaSource("media"),
       new PlacesSource("places"),
@@ -40,6 +43,9 @@ export class SearchPanel {
   }
 
   handleDesktopModeChange(isDesktop) {
+    // 根据桌面模式设置搜索框的可见性
+    this.updateSearchPanelVisibility(isDesktop);
+    
     // 如果搜索框当前有焦点，根据桌面模式状态处理虚拟键盘
     if (document.activeElement === this.searchBox) {
       if (isDesktop) {
@@ -57,6 +63,23 @@ export class SearchPanel {
           this.searchBox.focus();
         }, 100);
       }
+    }
+  }
+
+  updateSearchPanelVisibility(isDesktop) {
+    if (typeof isDesktop === 'undefined') {
+      // 如果没有传入参数，尝试从全局状态获取
+      // 这里可以添加从设置或其他地方获取当前桌面模式状态的逻辑
+      // 暂时默认为桌面模式
+      isDesktop = true;
+    }
+    
+    if (isDesktop) {
+      // 桌面模式：显示搜索框
+      this.panel.style.display = "";
+    } else {
+      // 移动模式：隐藏搜索框
+      this.panel.style.display = "none";
     }
   }
 

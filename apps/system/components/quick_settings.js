@@ -93,7 +93,10 @@ class QuickSettings extends HTMLElement {
     };
 
     // 初始化桌面模式状态，与 wallpaperManager 保持同步
-    this.initializeDesktopState();
+    // 延迟初始化，确保所有组件都已经加载完成
+    setTimeout(() => {
+      this.initializeDesktopState();
+    }, 2000);
 
     shadow.querySelector("#new-feature-icon").onclick = () => {
       this.drawer.hide();
@@ -130,6 +133,16 @@ class QuickSettings extends HTMLElement {
       }
 
       console.log(`QuickSettings: Desktop state initialized to ${this.isDesktop}`);
+      
+      // 初始化完成后，发送当前桌面模式状态到homescreen
+      console.log(`QuickSettings: Sending initial desktop state to homescreen: ${this.isDesktop}`);
+      actionsDispatcher.dispatch("desktop-mode-changed", { isDesktop: this.isDesktop });
+      
+      // 发送初始的桌面模式状态
+      setTimeout(() => {
+        actionsDispatcher.dispatch("desktop-mode-changed", { isDesktop: this.isDesktop });
+        console.log(`QuickSettings: Sent initial desktop state: ${this.isDesktop}`);
+      }, 1000); // 延迟1秒，确保其他组件已经加载完成
     } catch (e) {
       console.error(`QuickSettings: Failed to initialize desktop state: ${e}`);
       this.isDesktop = true; // 默认桌面模式
@@ -675,6 +688,10 @@ class QuickSettings extends HTMLElement {
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
       detail: { isDesktop: newIsDesktop }
     }));
+
+    // 通过 actionsDispatcher 通知 homescreen 桌面模式切换
+    console.log(`QuickSettings: Dispatching desktop-mode-changed event with isDesktop=${newIsDesktop}`);
+    actionsDispatcher.dispatch("desktop-mode-changed", { isDesktop: newIsDesktop });
 
     // 根据桌面模式状态控制虚拟键盘
     if (newIsDesktop) {

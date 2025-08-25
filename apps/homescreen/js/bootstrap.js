@@ -1,5 +1,28 @@
 // Starts and attach some event listeners to open and close the search panel.
 
+// 处理搜索框可见性的函数
+function handleSearchPanelVisibility(isDesktop) {
+  const searchPanel = document.getElementById("search-panel");
+  console.log("HomeScreen: handleSearchPanelVisibility called with isDesktop =", isDesktop);
+  console.log("HomeScreen: Found search panel element:", searchPanel);
+  
+  if (searchPanel) {
+    if (isDesktop) {
+      // 桌面模式：隐藏搜索框
+      console.log("HomeScreen: Setting search panel to hidden (desktop mode)");
+      searchPanel.style.display = "none";
+      searchPanel.style.visibility = "hidden";
+    } else {
+      // 移动模式：显示搜索框
+      console.log("HomeScreen: Setting search panel to visible (mobile mode)");
+      searchPanel.style.display = "";
+      searchPanel.style.visibility = "visible";
+    }
+  } else {
+    console.error("HomeScreen: search-panel element not found!");
+  }
+}
+
 // 防抖函数，避免频繁触发布局更新
 function debounce(func, wait) {
   let timeout;
@@ -429,6 +452,23 @@ function handleHashChange() {
       case "maybeOpenURL":
         console.log("Hash command: openNewTab received. isDesktop =", data.url);
         this.maybeOpenURL(data.url); 
+        break;
+        
+      case "desktop-mode-changed":
+        console.log("Hash command: desktop-mode-changed received. isDesktop =", data.isDesktop);
+        // 触发桌面模式切换事件，让其他组件可以响应
+        window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
+          detail: { isDesktop: data.isDesktop }
+        }));
+        
+        // 确保DOM已加载后再处理搜索框
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', () => {
+            handleSearchPanelVisibility(data.isDesktop);
+          });
+        } else {
+          handleSearchPanelVisibility(data.isDesktop);
+        }
         break;
         
       // case "closeTab":

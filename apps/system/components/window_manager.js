@@ -479,6 +479,37 @@ class WindowManager extends HTMLElement {
       this.splitScreen();
     });
 
+    actionsDispatcher.addListener("desktop-mode-changed", (_name, data) => {
+      console.log("WindowManager: Received 'desktop-mode-changed' command from system");
+      // 向 homescreen 发送桌面模式切换信息
+      const homescreenFrame = this.homescreenFrame();
+      if (homescreenFrame && homescreenFrame.webView) {
+        // 获取当前的 src URL
+        let currentSrc = homescreenFrame.webView.src;
+
+        // 创建一个 URL 对象
+        const url = new URL(currentSrc);
+
+        // 构造要发送的数据对象
+        const messageData = {
+          action: "desktop-mode-changed",
+          isDesktop: data.isDesktop,
+        };
+
+        const newHash = encodeURIComponent(JSON.stringify(messageData));
+        url.hash = newHash;
+
+        const newSrc = url.toString();
+
+        if (newSrc !== currentSrc) {
+          console.log("Updating webView src to send desktop-mode-changed message via hash:", newSrc);
+          homescreenFrame.webView.setAttribute('src', newSrc);
+        } else {
+          console.log("Hash is already up-to-date.");
+        }
+      }
+    });
+
     actionsDispatcher.addListener("new-tab", async () => {
       this.goHome();
       this.homescreenFrame().focus();
