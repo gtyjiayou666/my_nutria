@@ -386,7 +386,7 @@ class WindowManager extends HTMLElement {
           deltaX = deltaY;
         }
         
-        // 增加滚动灵敏度
+        // 滚动灵敏度
         const scrollMultiplier = 3;
         const scrollAmount = deltaX * scrollMultiplier;
         
@@ -613,6 +613,8 @@ class WindowManager extends HTMLElement {
 
     actionsDispatcher.addListener("desktop-mode-changed", (_name, data) => {
       console.log("WindowManager: Received 'desktop-mode-changed' command from system");
+      console.log("WindowManager: Data received:", data);
+      
       // 向 homescreen 发送桌面模式切换信息
       const homescreenFrame = this.homescreenFrame();
       if (homescreenFrame && homescreenFrame.webView) {
@@ -639,6 +641,17 @@ class WindowManager extends HTMLElement {
         } else {
           console.log("Hash is already up-to-date.");
         }
+      }
+      
+      // 关键修复：强制刷新carousel布局以应用新的模式
+      if (this.isCarouselOpen) {
+        console.log("WindowManager: Refreshing carousel layout for mode change");
+        // 强制重新计算carousel布局
+        this.closeCarousel();
+        // 延迟重新打开，确保布局重置
+        setTimeout(() => {
+          this.openCarousel();
+        }, 100);
       }
     });
 
@@ -1176,9 +1189,13 @@ class WindowManager extends HTMLElement {
     if (verticalMode) {
       this.carousel.classList.add("vertical");
       updateCarouselAttr(frameCount);
+      // 清理桌面模式的内联样式
+      this.carousel.style.gridTemplateColumns = "";
     } else {
       this.carousel.style.gridTemplateColumns = `${marginPercent}% repeat(${frameCount}, ${screenshotPercent}%) ${marginPercent}%`;
       this.carousel.classList.remove("vertical");
+      // 清理垂直模式的类，确保样式重置
+      this.carousel.classList.remove("single-row", "two-rows", "single-column");
     }
 
     // Add the elements to the carousel.

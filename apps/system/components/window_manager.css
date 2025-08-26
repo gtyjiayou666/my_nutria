@@ -102,6 +102,7 @@ window-manager .carousel {
 
 /* 桌面模式下增强水平滚动体验 */
 @media (min-width: 800px) {
+  /* 确保只对非垂直模式的carousel应用桌面样式 */
   window-manager .carousel:not(.vertical) {
     /* 显示滚动条，让用户知道可以滚动 */
     scrollbar-width: thin;
@@ -116,6 +117,11 @@ window-manager .carousel {
     
     /* 提升滚动性能 */
     scroll-behavior: auto; /* 让JS控制滚动行为 */
+    
+    /* 确保水平布局 */
+    overflow-x: scroll;
+    overflow-y: hidden;
+    grid-auto-flow: column;
   }
 
   /* 鼠标悬停时显示更明显的滚动条 */
@@ -277,14 +283,23 @@ window-manager .hidden {
 }
 
 window-manager .carousel.vertical {
+  /* 重置桌面模式的样式 */
+  gap: var(--carousel-gap) !important;
+  padding: var(--carousel-gap) !important;
+  scrollbar-width: none !important;
+  scroll-behavior: smooth !important;
+  
+  /* 应用垂直模式布局 */
   grid-template-columns: var(--carousel-screenshot-width) var(
       --carousel-screenshot-width
     );
   grid-template-rows: repeat(auto-fill, var(--carousel-screenshot-height));
   grid-auto-flow: row;
-  gap: var(--carousel-gap);
-  padding: var(--carousel-gap);
   overflow-y: scroll;
+  overflow-x: hidden; /* 确保水平滚动被禁用 */
+  
+  /* 移除桌面模式的网格样式 */
+  grid-template-columns: var(--carousel-screenshot-width) var(--carousel-screenshot-width) !important;
 }
 
 window-manager .carousel.vertical.single-row {
