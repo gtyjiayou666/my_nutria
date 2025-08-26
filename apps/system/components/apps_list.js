@@ -34,6 +34,23 @@ class AppIcon extends HTMLElement {
 
     // 移除简单的onclick，使用更复杂的点击处理
     this.addEventListener('click', this.handleClick.bind(this));
+    
+    // 检查并应用桌面模式样式
+    this.updateDesktopMode();
+    
+    // 监听桌面模式变化
+    window.addEventListener('desktop-mode-changed', () => {
+      this.updateDesktopMode();
+    });
+  }
+  
+  // 更新桌面模式样式
+  updateDesktopMode() {
+    if (this.isDesktopMode()) {
+      this.classList.add('desktop-mode');
+    } else {
+      this.classList.remove('desktop-mode');
+    }
   }
   
   // 检查是否为桌面模式
@@ -62,8 +79,11 @@ class AppIcon extends HTMLElement {
   handleClick(event) {
     event.preventDefault();
     
-    if (this.isDesktopMode()) {
-      // 桌面模式：双击打开应用
+    // 检查是否在应用列表中
+    const isInAppsList = this.closest('apps-list') !== null;
+    
+    if (this.isDesktopMode() && !isInAppsList) {
+      // 桌面模式且不在应用列表中：双击打开应用（桌面图标行为）
       const now = Date.now();
       const timeSinceLastClick = now - this.lastClickTime;
       
@@ -97,8 +117,8 @@ class AppIcon extends HTMLElement {
         }, this.doubleClickDelay);
       }
     } else {
-      // 移动模式：单击直接打开应用
-      console.log('AppIcon mobile mode click - opening application immediately');
+      // 移动模式或在应用列表中：单击直接打开应用
+      console.log(`AppIcon ${isInAppsList ? 'in apps-list' : 'mobile mode'} click - opening application immediately`);
       this.openApplication();
     }
   }
@@ -207,6 +227,18 @@ class AppsList extends LitElement {
     } else {
       this.classList.remove('desktop-mode');
     }
+    
+    // 更新所有子应用图标的桌面模式样式
+    this.updateChildren();
+  }
+  
+  // 更新所有子元素的桌面模式样式
+  updateChildren() {
+    this.appsNodes.forEach(appIcon => {
+      if (appIcon && typeof appIcon.updateDesktopMode === 'function') {
+        appIcon.updateDesktopMode();
+      }
+    });
   }
 
   handleGlobalClick(event) {
@@ -233,10 +265,21 @@ class AppsList extends LitElement {
     }
 
     this.canOpen = false;
+    
+    // 为桌面模式添加备用计时器
+    const setCanOpenFallback = setTimeout(() => {
+      if (!this.canOpen) {
+        console.log('AppsList: Setting canOpen to true via fallback timer');
+        this.canOpen = true;
+      }
+    }, 500); // 500ms后强制设置canOpen为true
+    
     this.addEventListener(
       "transitionend",
       () => {
+        console.log('AppsList: Setting canOpen to true via transitionend');
         this.canOpen = true;
+        clearTimeout(setCanOpenFallback); // 清除备用计时器
       },
       { once: true }
     );
@@ -288,12 +331,16 @@ class AppsList extends LitElement {
   async handleEvent(event) {
     switch (event.type) {
       case "open-bookmark":
+        console.log(`AppsList: Received open-bookmark event. canOpen=${this.canOpen}, wm exists=${!!window.wm}`);
         if (this.canOpen) {
+          console.log(`AppsList: Opening frame for URL: ${event.detail.url}`);
           window.wm.openFrame(event.detail.url, {
             activate: true,
             details: event.detail,
           });
           this.close();
+        } else {
+          console.log('AppsList: Cannot open - canOpen is false');
         }
         break;
       case "contextmenu":
@@ -458,6 +505,8 @@ class AppsList extends LitElement {
 
   updated() {
     document.l10n.translateFragment(this.shadowRoot);
+    // 确保子元素在更新后保持正确的桌面模式样式
+    this.updateChildren();
   }
 
   render() {

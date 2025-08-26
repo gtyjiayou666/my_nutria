@@ -44,3 +44,47 @@
   border-radius: 40%;
   box-shadow: 2px 2px 3px black;
 }
+
+/* 桌面模式下的应用图标样式 - Windows风格水平布局 */
+:host(.desktop-mode) {
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  text-align: left !important;
+  width: 100% !important;
+  height: 48px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+:host(.desktop-mode) img {
+  width: 32px !important;
+  height: 32px !important;
+  margin-right: 12px !important;
+  margin-left: 0 !important;
+  flex-shrink: 0;
+  border-radius: 6px !important;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+:host(.desktop-mode) span {
+  flex: 1;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  font-size: 14px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: white !important;
+  text-shadow: none !important;
+  font-weight: 400;
+}
+
+:host(.desktop-mode.selected) {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: rgba(0, 120, 215, 0.3) !important;
+  border-radius: 4px !important;
+}

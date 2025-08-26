@@ -97,10 +97,48 @@
   height: calc(100% - 2em);
 }
 
+/* 桌面模式下的竖直列表布局，类似Windows开始菜单 */
+:host(.desktop-mode) .container {
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* 减少间距 */
+  padding: 0.5em;
+  place-items: stretch; /* 拉伸项目以填充宽度 */
+  grid-template-columns: none; /* 清除网格布局 */
+  grid-auto-rows: none; /* 清除网格布局 */
+  align-items: stretch; /* 确保子项拉伸填充宽度 */
+}
+
 :host .container > action-bookmark {
   width: var(--action-box-width);
   height: var(--action-box-height);
   cursor: pointer;
+}
+
+/* 桌面模式下的应用图标样式 - Windows风格水平列表 */
+:host(.desktop-mode) .container > app-icon {
+  width: 100%; /* 填充容器宽度 */
+  height: 48px; /* 固定高度，类似Windows菜单项 */
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  padding: 8px 12px;
+  margin: 0;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  min-height: 48px;
+  max-height: 48px;
+  box-sizing: border-box;
+}
+
+:host(.desktop-mode) .container > app-icon:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+:host(.desktop-mode) .container > app-icon.selected {
+  background-color: rgba(0, 120, 215, 0.3);
+  border: 1px solid rgba(0, 120, 215, 0.5);
 }
 
 :host .menu {
