@@ -131,15 +131,20 @@ class WindowManagerKeys {
       if (carousel && !carousel.classList.contains('vertical')) {
         if (event.key === "ArrowLeft" && !this.isAltDown) {
           event.preventDefault();
-          carousel.scrollBy({
-            left: -carousel.clientWidth * 0.3,
-            behavior: 'smooth'
+          // 使用更大的滚动量，提供更好的体验
+          requestAnimationFrame(() => {
+            carousel.scrollBy({
+              left: -carousel.clientWidth * 0.4,
+              behavior: 'smooth'
+            });
           });
         } else if (event.key === "ArrowRight" && !this.isAltDown) {
           event.preventDefault();
-          carousel.scrollBy({
-            left: carousel.clientWidth * 0.3,
-            behavior: 'smooth'
+          requestAnimationFrame(() => {
+            carousel.scrollBy({
+              left: carousel.clientWidth * 0.4,
+              behavior: 'smooth'
+            });
           });
         }
       }
@@ -371,13 +376,72 @@ class WindowManager extends HTMLElement {
       // 仅在桌面模式且carousel打开时处理
       if (this.isCarouselOpen && !this.carousel.classList.contains('vertical')) {
         event.preventDefault();
-        const scrollAmount = event.deltaY * 2; // 增加滚动速度
-        this.carousel.scrollBy({
-          left: scrollAmount,
-          behavior: 'smooth'
+        
+        // 检测滚动方向和强度
+        let deltaX = event.deltaX;
+        let deltaY = event.deltaY;
+        
+        // 如果主要是垂直滚动，转换为水平滚动
+        if (Math.abs(deltaY) > Math.abs(deltaX)) {
+          deltaX = deltaY;
+        }
+        
+        // 增加滚动灵敏度
+        const scrollMultiplier = 3;
+        const scrollAmount = deltaX * scrollMultiplier;
+        
+        // 使用requestAnimationFrame确保流畅性
+        requestAnimationFrame(() => {
+          this.carousel.scrollBy({
+            left: scrollAmount,
+            behavior: 'auto' // 使用auto而不是smooth，更即时响应
+          });
         });
       }
     }, { passive: false });
+
+    // 添加触摸滑动支持（如果是触摸设备）
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isHorizontalSwipe = false;
+
+    this.carousel.addEventListener('touchstart', (event) => {
+      if (this.isCarouselOpen && !this.carousel.classList.contains('vertical')) {
+        touchStartX = event.touches[0].clientX;
+        touchStartY = event.touches[0].clientY;
+        isHorizontalSwipe = false;
+      }
+    }, { passive: true });
+
+    this.carousel.addEventListener('touchmove', (event) => {
+      if (this.isCarouselOpen && !this.carousel.classList.contains('vertical')) {
+        const touchX = event.touches[0].clientX;
+        const touchY = event.touches[0].clientY;
+        const deltaX = touchX - touchStartX;
+        const deltaY = touchY - touchStartY;
+        
+        // 判断是否为水平滑动
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+          isHorizontalSwipe = true;
+          event.preventDefault();
+        }
+      }
+    }, { passive: false });
+
+    this.carousel.addEventListener('touchend', (event) => {
+      if (this.isCarouselOpen && !this.carousel.classList.contains('vertical') && isHorizontalSwipe) {
+        const touchX = event.changedTouches[0].clientX;
+        const deltaX = touchX - touchStartX;
+        
+        if (Math.abs(deltaX) > 50) { // 最小滑动距离
+          const scrollAmount = deltaX * -2; // 反向滚动
+          this.carousel.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }, { passive: true });
 
     let options = {
       root: this.windows,
