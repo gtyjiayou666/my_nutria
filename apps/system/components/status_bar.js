@@ -304,26 +304,39 @@ class StatusBar extends HTMLElement {
         this.updateFrameList.bind(this)
       );
       this.getElem(`.frame-list`).onclick = (event) => {
-        let localName = event.target.localName;
         let target = event.target;
-        switch (localName) {
-          case "img":
-            target = target.parentElement;
-          case "div":
-            let id = target.getAttribute("id").split("-")[1];
-            if (this.isCarouselOpen) {
-              actionsDispatcher.dispatch("close-carousel");
-            }
-            window.wm.switchToFrame(id);
+        let frameDiv = null;
+        
+        // 向上查找，直到找到frame div元素或到达frame-list容器
+        while (target && target !== event.currentTarget) {
+          if (target.id && target.id.startsWith('shortcut-')) {
+            frameDiv = target;
             break;
-          case "sl-icon":
-            // Toggle the muted state of the frame.
-            let frameId = target.parentElement.getAttribute("id").split("-")[1];
-            window.wm.toggleMutedState(frameId);
-            break;
-          default:
-            console.log(`Unexpected frame-list target: ${localName}`);
+          }
+          target = target.parentElement;
         }
+        
+        if (!frameDiv) {
+          console.log('No frame div found for click');
+          return;
+        }
+        
+        // 检查是否点击了音频控制图标
+        if (event.target.localName === "sl-icon" && 
+            (event.target.getAttribute("name") === "volume-1" || 
+             event.target.getAttribute("name") === "volume-x")) {
+          // Toggle the muted state of the frame
+          let frameId = frameDiv.getAttribute("id").split("-")[1];
+          window.wm.toggleMutedState(frameId);
+          return;
+        }
+        
+        // 否则切换到该frame
+        let id = frameDiv.getAttribute("id").split("-")[1];
+        if (this.isCarouselOpen) {
+          actionsDispatcher.dispatch("close-carousel");
+        }
+        window.wm.switchToFrame(id);
       };
 
       // Add right-click context menu for frame list items
@@ -335,16 +348,21 @@ class StatusBar extends HTMLElement {
         }
         
         event.preventDefault();
-        let localName = event.target.localName;
-        let target = event.target;
         
-        // Find the frame div element
-        if (localName === "img") {
+        let target = event.target;
+        let frameDiv = null;
+        
+        // 向上查找，直到找到frame div元素或到达frame-list容器
+        while (target && target !== event.currentTarget) {
+          if (target.id && target.id.startsWith('shortcut-')) {
+            frameDiv = target;
+            break;
+          }
           target = target.parentElement;
         }
         
-        if (localName === "div" || (localName === "img" && target.localName === "div")) {
-          let frameId = target.getAttribute("id").split("-")[1];
+        if (frameDiv) {
+          let frameId = frameDiv.getAttribute("id").split("-")[1];
           this.showTaskbarContextMenu(event, frameId);
         }
       };
@@ -865,25 +883,54 @@ class StatusBar extends HTMLElement {
   }
 
   updateFrameList(_name, list) {
-    if (embedder.sessionType === "mobile") {
+    // 检查当前是否为桌面模式
+    const isDesktopMode = this.classList.contains('desktop-mode');
+    
+    // 移动模式下不显示任务栏中的应用
+    if (!isDesktopMode) {
+      let frames = this.getElem(`.frame-list`);
+      if (frames) {
+        frames.innerHTML = "";
+        frames.style.display = 'none';
+      }
       return;
     }
+    
+    // 桌面模式下显示所有后台应用
     let frames = this.getElem(`.frame-list`);
+    if (!frames) {
+      return;
+    }
+    
+    // 确保frame-list在桌面模式下可见
+    frames.style.display = 'flex';
+    
     let content = "";
+    
     list.forEach((frame) => {
       let icon = frame.icon || window.config.brandLogo;
       let iconClass = frame.id == this.currentActive ? "active" : "";
       if (frame.isPlayingAudio) {
         iconClass += " audio";
       }
-      content += `<div class="${iconClass}" id="shortcut-${frame.id}">
-                    <img class="favicon" src="${icon}" title="${frame.title}" alt="${frame.title}"/>`;
+      
+      // 桌面模式：显示图标 + 应用标题，类似Windows任务栏
+      let title = frame.title || "未知应用";
+      // 限制标题长度，避免过长
+      if (title.length > 20) {
+        title = title.substring(0, 17) + "...";
+      }
+      
+      content += `<div class="${iconClass}" id="shortcut-${frame.id}" title="${frame.title || ''}">
+                    <img class="favicon" src="${icon}" alt="${frame.title || ''}"/>
+                    <span class="app-title">${title}</span>`;
       if (frame.isPlayingAudio) {
         content += `<sl-icon name="${frame.audioMuted ? "volume-x" : "volume-1"
-          }" class="content-icon homescreen-icon"></sl-icon>`;
+          }" class="content-icon homescreen-icon" style="margin-left: 4px; font-size: 16px;"></sl-icon>`;
       }
       content += "</div>";
     });
+    
     frames.innerHTML = content;
   }
 
@@ -1183,6 +1230,14 @@ class StatusBar extends HTMLElement {
         this.searchPanel.style.opacity = '1';
       }
       
+      // 桌面模式下显示任务栏应用
+      if (window.wm && window.wm.frames) {
+        // 触发frame list更新以显示后台应用
+        const frameIds = Object.keys(window.wm.frames);
+        const frameList = frameIds.map(id => window.wm.frames[id]);
+        this.updateFrameList('', frameList);
+      }
+      
       console.log(`StatusBar: Added desktop-mode class, current classes:`, this.className);
     } else {
       // 移动模式：恢复原始布局
@@ -1208,6 +1263,9 @@ class StatusBar extends HTMLElement {
         this.searchPanel.style.visibility = 'hidden';
         this.searchPanel.style.opacity = '0';
       }
+      
+      // 移动模式下隐藏任务栏应用
+      this.updateFrameList('', []);
 
       // 确保移动模式下status bar是可见的
       this.style.display = '';
@@ -1303,6 +1361,8 @@ class StatusBar extends HTMLElement {
     // 将任务栏移到中心位置
     if (frameList) {
       frameList.classList.add('desktop-taskbar-items');
+      // 桌面模式下显示frame-list
+      frameList.style.display = 'flex';
     }
   }
 
@@ -1327,34 +1387,87 @@ class StatusBar extends HTMLElement {
     // 恢复显示移动模式元素
     if (center) {
       center.style.display = '';
+      center.style.visibility = '';
+      center.style.opacity = '';
       console.log('StatusBar: Center restored');
     }
     if (leftText) {
       leftText.style.display = '';
+      leftText.style.visibility = '';
+      leftText.style.opacity = '';
       console.log('StatusBar: Left text restored');
     }
     if (favicon) {
       favicon.style.display = '';
+      favicon.style.visibility = '';
+      favicon.style.opacity = '';
       console.log('StatusBar: Favicon restored');
     }
     if (batteryIcon) {
       batteryIcon.style.display = '';
+      batteryIcon.style.visibility = '';
+      batteryIcon.style.opacity = '';
       console.log('StatusBar: Battery icon restored');
     }
 
     // 移除桌面模式类
-    if (left) left.classList.remove('desktop-left');
-    if (right) right.classList.remove('desktop-right');
-    if (frameList) frameList.classList.remove('desktop-taskbar-items');
+    if (left) {
+      left.classList.remove('desktop-left');
+      left.style.display = '';
+      left.style.flexShrink = '';
+      left.style.minWidth = '';
+    }
+    if (right) {
+      right.classList.remove('desktop-right');
+      right.style.display = '';
+      right.style.flexShrink = '';
+      right.style.minWidth = '';
+    }
+    if (frameList) {
+      frameList.classList.remove('desktop-taskbar-items');
+      frameList.style.flex = '';
+      frameList.style.maxWidth = '';
+      frameList.style.overflow = '';
+      frameList.style.overflowX = '';
+      frameList.style.overflowY = '';
+      frameList.style.border = '';
+      frameList.style.borderLeft = '';
+      frameList.style.padding = '';
+      frameList.style.margin = '';
+      frameList.style.background = '';
+      frameList.style.borderRadius = '';
+      frameList.style.scrollbarWidth = '';
+      // 移动模式下隐藏frame-list
+      frameList.style.display = 'none';
+      frameList.innerHTML = '';
+    }
 
-    // 确保状态栏容器本身是可见的
+    // 确保状态栏容器本身完全重置
     const container = this.getElem('.container');
     if (container) {
       container.style.display = '';
+      container.style.height = '';
+      container.style.alignItems = '';
+      container.style.padding = '';
+      container.style.justifyContent = '';
+      container.style.gridTemplateColumns = '';
+      container.style.gap = '';
+      container.style.flexDirection = '';
       container.classList.remove('desktop-taskbar');
       console.log('StatusBar: Container restored');
     }
 
+    // 重置状态栏主机元素的样式
+    this.style.height = '';
+    this.style.background = '';
+    this.style.backdropFilter = '';
+    this.style.borderRadius = '';
+    this.style.margin = '';
+    this.style.boxShadow = '';
+    this.style.borderTop = '';
+    this.style.borderBottom = '';
+    this.style.position = '';
+    
     console.log('StatusBar: Original layout restoration complete');
   }
 
