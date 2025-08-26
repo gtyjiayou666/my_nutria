@@ -303,6 +303,33 @@ class StatusBar extends HTMLElement {
         "update-frame-list",
         this.updateFrameList.bind(this)
       );
+      
+      // 设置高频检查机制，确保桌面模式下任务栏及时更新
+      this.frameListUpdateInterval = setInterval(() => {
+        if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
+          window.wm.updateFrameList();
+        }
+      }, 200); // 改为每200毫秒检查一次，提高响应速度
+      
+      // 监听窗口管理器的frame变化事件
+      if (window.wm) {
+        this.frameChangeListener = () => {
+          if (this.classList.contains('desktop-mode')) {
+            console.log('StatusBar: Frame change detected, updating taskbar');
+            setTimeout(() => {
+              if (window.wm && window.wm.updateFrameList) {
+                window.wm.updateFrameList();
+              }
+            }, 50); // 50ms延迟确保状态稳定
+          }
+        };
+        
+        // 监听frame相关事件
+        window.wm.addEventListener('frameopen', this.frameChangeListener);
+        window.wm.addEventListener('frameclose', this.frameChangeListener);
+        window.wm.addEventListener('frameactivate', this.frameChangeListener);
+      }
+      
       this.getElem(`.frame-list`).onclick = (event) => {
         let target = event.target;
         let frameDiv = null;
@@ -902,12 +929,81 @@ class StatusBar extends HTMLElement {
       return;
     }
     
+    // 添加调试信息
+    console.log('updateFrameList: Received frames:', list);
+    
+    // 过滤掉不应该在任务栏显示的frame
+    const filteredFrames = list.filter(frame => {
+      console.log('updateFrameList: Checking frame:', {
+        id: frame.id,
+        url: frame.url,
+        title: frame.title,
+        manifest: frame.manifest
+      });
+      
+      // 排除homescreen本身
+      if (frame.url && (
+        frame.url.includes('/homescreen/') || 
+        frame.url.includes('homescreen/index.html') ||
+        frame.url.endsWith('/homescreen') ||
+        frame.url.includes('/apps/homescreen/') ||
+        frame.title === 'Homescreen' ||
+        frame.title === '主屏幕' ||
+        frame.title === 'Home Screen'
+      )) {
+        console.log('updateFrameList: Filtering out homescreen frame:', frame.url);
+        return false;
+      }
+      
+      // 排除系统应用
+      if (frame.url && (
+        frame.url.includes('/system/') ||
+        frame.url.includes('system/index.html') ||
+        frame.url.includes('/apps/system/')
+      )) {
+        console.log('updateFrameList: Filtering out system frame:', frame.url);
+        return false;
+      }
+      
+      // 排除about页面
+      if (frame.url && frame.url.startsWith('about:')) {
+        console.log('updateFrameList: Filtering out about frame:', frame.url);
+        return false;
+      }
+      
+      // 排除空白页面或无效frame
+      if (!frame.url || frame.url === '' || frame.url === 'about:blank') {
+        console.log('updateFrameList: Filtering out blank frame:', frame.url);
+        return false;
+      }
+      
+      // 排除本地文件系统页面（除非是真实的应用）
+      if (frame.url && frame.url.startsWith('file://') && !frame.manifest) {
+        console.log('updateFrameList: Filtering out file frame without manifest:', frame.url);
+        return false;
+      }
+      
+      console.log('updateFrameList: Frame passed filter:', frame.url);
+      return true;
+    });
+    
+    console.log('updateFrameList: Filtered frames count:', filteredFrames.length);
+    
+    // 如果没有用户应用，隐藏frame-list
+    if (filteredFrames.length === 0) {
+      frames.style.display = 'none';
+      frames.innerHTML = '';
+      console.log('updateFrameList: No frames to display, hiding frame-list');
+      return;
+    }
+    
     // 确保frame-list在桌面模式下可见
     frames.style.display = 'flex';
+    console.log('updateFrameList: Showing frame-list with', filteredFrames.length, 'frames');
     
     let content = "";
     
-    list.forEach((frame) => {
+    filteredFrames.forEach((frame) => {
       let icon = frame.icon || window.config.brandLogo;
       let iconClass = frame.id == this.currentActive ? "active" : "";
       if (frame.isPlayingAudio) {
@@ -1231,11 +1327,10 @@ class StatusBar extends HTMLElement {
       }
       
       // 桌面模式下显示任务栏应用
-      if (window.wm && window.wm.frames) {
+      if (window.wm && window.wm.updateFrameList) {
         // 触发frame list更新以显示后台应用
-        const frameIds = Object.keys(window.wm.frames);
-        const frameList = frameIds.map(id => window.wm.frames[id]);
-        this.updateFrameList('', frameList);
+        console.log('StatusBar: Forcing frame list update on desktop mode switch');
+        window.wm.updateFrameList();
       }
       
       console.log(`StatusBar: Added desktop-mode class, current classes:`, this.className);
@@ -1762,6 +1857,22 @@ class StatusBar extends HTMLElement {
         document.removeEventListener('contextmenu', hideMenu);
       }
     }, 10000); // 10秒后强制隐藏
+  }
+
+  disconnectedCallback() {
+    // 清理定时器
+    if (this.frameListUpdateInterval) {
+      clearInterval(this.frameListUpdateInterval);
+      this.frameListUpdateInterval = null;
+    }
+    
+    // 清理事件监听器
+    if (window.wm && this.frameChangeListener) {
+      window.wm.removeEventListener('frameopen', this.frameChangeListener);
+      window.wm.removeEventListener('frameclose', this.frameChangeListener);
+      window.wm.removeEventListener('frameactivate', this.frameChangeListener);
+      this.frameChangeListener = null;
+    }
   }
 }
 

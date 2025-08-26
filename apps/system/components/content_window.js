@@ -947,6 +947,18 @@ class ContentWindow extends HTMLElement {
 
     this.dispatchStateUpdate();
 
+    // 更新任务栏中的frame列表，确保桌面模式下能及时显示应用图标
+    if (window.wm && window.wm.updateFrameList) {
+      window.wm.updateFrameList();
+    }
+    
+    // 额外的快速更新，确保即时响应
+    setTimeout(() => {
+      if (window.wm && window.wm.updateFrameList) {
+        window.wm.updateFrameList();
+      }
+    }, 10); // 10ms后再次更新
+
     actionsDispatcher.addListener("keyboard-opening", this.openKeyboard);
     actionsDispatcher.addListener("keyboard-closing", this.closeKeyboard);
     actionsDispatcher.addListener("navigate-to", this.navigateTo);
@@ -1022,6 +1034,18 @@ class ContentWindow extends HTMLElement {
     }
 
     this.dispatchStateUpdate();
+
+    // 更新任务栏中的frame列表，确保桌面模式下能及时显示应用图标
+    if (window.wm && window.wm.updateFrameList) {
+      window.wm.updateFrameList();
+    }
+    
+    // 额外的快速更新，确保状态变化时即时响应
+    setTimeout(() => {
+      if (window.wm && window.wm.updateFrameList) {
+        window.wm.updateFrameList();
+      }
+    }, 20); // 20ms后再次更新
 
     if (this.config.isHomescreen || this.state.url === "") {
       return;
