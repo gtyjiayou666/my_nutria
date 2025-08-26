@@ -95,6 +95,9 @@ window-manager .carousel {
   /* 优化滚动性能 */
   will-change: scroll-position;
   -webkit-overflow-scrolling: touch;
+  
+  /* 确保carousel背景区域可以接收点击事件 */
+  position: relative;
 }
 
 /* 桌面模式下增强水平滚动体验 */
@@ -133,13 +136,13 @@ window-manager .carousel {
   
   /* 添加滚动提示 */
   window-manager .carousel:not(.vertical)::after {
-    content: "← 滚动查看更多应用 →";
+    content: "← 滚动查看更多应用 → | 点击空白处回到主页";
     position: absolute;
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
     color: rgba(255, 255, 255, 0.6);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -147,11 +150,19 @@ window-manager .carousel {
     padding: 2px 8px;
     border-radius: 8px;
     backdrop-filter: blur(5px);
+    white-space: nowrap;
   }
   
   /* 当有多个应用时显示提示 */
   window-manager .carousel:not(.vertical):hover::after {
     opacity: 1;
+  }
+  
+  /* 优化padding区域的点击体验 */
+  window-manager .carousel:not(.vertical) > .padding {
+    cursor: pointer;
+    /* 让padding区域更明显一些（调试时可以添加背景色） */
+    /* background: rgba(255, 0, 0, 0.1); */
   }
 }
 

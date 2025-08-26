@@ -443,6 +443,40 @@ class WindowManager extends HTMLElement {
       }
     }, { passive: true });
 
+    // 添加点击空白处回到主页的功能
+    this.carousel.addEventListener('click', (event) => {
+      if (this.isCarouselOpen) {
+        // 检查点击的目标
+        const clickedElement = event.target;
+        
+        // 如果点击的是carousel本身，或者是padding区域，则回到主页
+        if (clickedElement === this.carousel || 
+            clickedElement.classList.contains('padding') ||
+            (clickedElement.closest && !clickedElement.closest('.screenshot, .new-tab'))) {
+          
+          // 防止点击应用截图或新建标签时触发
+          if (!clickedElement.closest('.screenshot') && !clickedElement.closest('.new-tab')) {
+            // 点击空白处，关闭carousel并回到主页
+            actionsDispatcher.dispatch("close-carousel");
+            // 延迟一下再跳转到主页，确保carousel关闭动画完成
+            setTimeout(() => {
+              this.goHome();
+            }, 100);
+          }
+        }
+      }
+    });
+
+    // 添加Escape键关闭carousel并回到主页
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.isCarouselOpen) {
+        actionsDispatcher.dispatch("close-carousel");
+        setTimeout(() => {
+          this.goHome();
+        }, 100);
+      }
+    });
+
     let options = {
       root: this.windows,
       rootMargin: "0px",
