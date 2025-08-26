@@ -125,6 +125,26 @@ class WindowManagerKeys {
       actionsDispatcher.dispatch("close-carousel");
     }
 
+    // 在桌面模式下，支持左右箭头键进行水平滚动
+    if (this.isCarouselOpen && event.type === "keydown") {
+      const carousel = document.querySelector('window-manager .carousel');
+      if (carousel && !carousel.classList.contains('vertical')) {
+        if (event.key === "ArrowLeft" && !this.isAltDown) {
+          event.preventDefault();
+          carousel.scrollBy({
+            left: -carousel.clientWidth * 0.3,
+            behavior: 'smooth'
+          });
+        } else if (event.key === "ArrowRight" && !this.isAltDown) {
+          event.preventDefault();
+          carousel.scrollBy({
+            left: carousel.clientWidth * 0.3,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+
     // Switch to the current frame with [Enter]
     if (event.type === "keyup" && event.key === "Enter") {
       this.switchToCurrentFrame();
@@ -345,6 +365,19 @@ class WindowManager extends HTMLElement {
 
     this.windows = this.querySelector(".windows");
     this.carousel = this.querySelector(".carousel");
+
+    // 为桌面模式添加鼠标滚轮水平滚动支持
+    this.carousel.addEventListener('wheel', (event) => {
+      // 仅在桌面模式且carousel打开时处理
+      if (this.isCarouselOpen && !this.carousel.classList.contains('vertical')) {
+        event.preventDefault();
+        const scrollAmount = event.deltaY * 2; // 增加滚动速度
+        this.carousel.scrollBy({
+          left: scrollAmount,
+          behavior: 'smooth'
+        });
+      }
+    }, { passive: false });
 
     let options = {
       root: this.windows,

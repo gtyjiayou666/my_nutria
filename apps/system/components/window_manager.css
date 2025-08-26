@@ -93,6 +93,35 @@ window-manager .carousel {
   transition: all 0.15s cubic-bezier(0.2, 0.9, 0.1, 1), backdrop-filter none;
 }
 
+/* 桌面模式下增强水平滚动体验 */
+@media (min-width: 800px) {
+  window-manager .carousel:not(.vertical) {
+    /* 显示滚动条，让用户知道可以滚动 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    
+    /* 添加适当的间距，但保持原有布局 */
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+    
+    /* 确保grid列的计算考虑间距 */
+    box-sizing: border-box;
+  }
+
+  /* 鼠标悬停时显示更明显的滚动条 */
+  window-manager .carousel:not(.vertical):hover {
+    scrollbar-width: auto;
+    scrollbar-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.1);
+  }
+
+  /* 在桌面模式下调整carousel项目的尺寸 */
+  window-manager .carousel:not(.vertical) > div {
+    /* 确保项目不会太小，同时保持间距 */
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 window-manager .carousel > div {
   scroll-snap-align: center;
   scroll-snap-stop: always;
