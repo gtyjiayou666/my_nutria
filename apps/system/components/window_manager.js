@@ -829,6 +829,11 @@ class WindowManager extends HTMLElement {
 
     this.updateFrameList();
 
+    // 触发frame打开事件，让status_bar能立即响应
+    this.dispatchEvent(new CustomEvent('frameopen', { 
+      detail: { id: attrId, url, config } 
+    }));
+
     return contentWindow.webView;
   }
 
@@ -970,13 +975,16 @@ class WindowManager extends HTMLElement {
     let list = [];
     let frame = this.windows.firstElementChild;
     while (frame) {
-      if (!frame.config.isHomescreen) {
-        const { title, icon } = frame.state;
+      // 更严格的过滤条件
+      if (!frame.config.isHomescreen && this.shouldShowFrameInTaskbar(frame)) {
+        const { title, icon, url } = frame.state;
         let id = frame.getAttribute("id");
         list.push({
           id,
           title,
           icon,
+          url,
+          manifest: frame.config.manifest,
           isPlayingAudio: frame.isPlayingAudio,
           audioMuted: frame.audioMuted,
         });
@@ -984,7 +992,70 @@ class WindowManager extends HTMLElement {
       frame = frame.nextElementSibling;
     }
 
+    console.log('WindowManager updateFrameList: Sending', list.length, 'frames to status bar');
     actionsDispatcher.dispatch("update-frame-list", list);
+  }
+
+  // 新增方法：判断frame是否应该在任务栏中显示
+  shouldShowFrameInTaskbar(frame) {
+    if (!frame || !frame.state) {
+      return false;
+    }
+    
+    const url = frame.state.url;
+    const title = frame.state.title;
+    
+    console.log('WindowManager shouldShowFrameInTaskbar: Checking frame:', {
+      id: frame.getAttribute("id"),
+      url: url,
+      title: title,
+      isHomescreen: frame.config.isHomescreen
+    });
+    
+    // 排除homescreen
+    if (url && (
+      url.includes('/homescreen/') || 
+      url.includes('homescreen/index.html') ||
+      url.endsWith('/homescreen') ||
+      url.includes('/apps/homescreen/') ||
+      title === 'Homescreen' ||
+      title === '主屏幕' ||
+      title === 'Home Screen'
+    )) {
+      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out homescreen frame');
+      return false;
+    }
+    
+    // 排除系统应用
+    if (url && (
+      url.includes('/system/') ||
+      url.includes('system/index.html') ||
+      url.includes('/apps/system/')
+    )) {
+      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out system frame');
+      return false;
+    }
+    
+    // 排除about页面
+    if (url && url.startsWith('about:')) {
+      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out about frame');
+      return false;
+    }
+    
+    // 排除空白页面
+    if (!url || url === '' || url === 'about:blank') {
+      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out blank frame');
+      return false;
+    }
+    
+    // 排除本地文件系统页面（除非是真实的应用）
+    if (url && url.startsWith('file://') && !frame.config.manifest) {
+      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out file frame without manifest');
+      return false;
+    }
+    
+    console.log('WindowManager shouldShowFrameInTaskbar: Frame passed filter');
+    return true;
   }
 
   switchToFrame(id, behavior = "instant", updatePreviousFrame = false) {
@@ -1036,6 +1107,11 @@ class WindowManager extends HTMLElement {
 
     // In split mode, the activated frame may not be the correct one.
     this.expectedActiveFrame = id;
+    
+    // 触发frame激活事件，让status_bar能立即响应
+    this.dispatchEvent(new CustomEvent('frameactivate', { 
+      detail: { id, behavior } 
+    }));
   }
 
   forceFrameStateUpdate(id) {
