@@ -1,0 +1,17 @@
+{
+  "name": "Keyboard-desktop",
+  "description": "中文输入法-桌面版",
+  "start_url": "/index.html",
+  "b2g_features": {
+    "core": true,
+    "role": "input",
+    "developer": {
+      "name": "天命人取经队"
+    },
+    "permissions": {
+      "input": {},
+      "themeable": {}
+    }
+  },
+  "version": "1.0"
+}

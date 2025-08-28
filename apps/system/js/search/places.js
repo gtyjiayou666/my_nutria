@@ -30,7 +30,7 @@ class PlacesSource extends SearchSource {
 
   activate(result) {
     let url = result.variants.default.url;
-    maybeOpenURL(url);
+    window.wm.openFrame(url, {activate: true});
     contentManager.visitPlace(url, true);
   }
 }
@@ -39,7 +39,6 @@ class PlacesSource extends SearchSource {
 class PlacesItemSearch extends LitElement {
   // data is { meta, variants }
   constructor(data) {
-    console.info("PlacesItemSearch@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     super();
     this.data = data;
     this.revokable = [];
@@ -93,17 +92,7 @@ class PlacesItemSearch extends LitElement {
       () => {
         SearchSource.closeSearch();
         let url = this.data.variants.default.url;
-        // 在 system.js 中 (派发事件)
-        // window.dispatchEvent(new CustomEvent('maybeOpenURL'), {
-        //   detail: {
-        //     url: url
-        //   }
-        // });
-        // maybeOpenURL(url);
-
-        console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        actionsDispatcher.dispatch("maybeOpenURL", url); // WindowManager 会处理
-        console.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        window.wm.openFrame(url, {activate: true});
         contentManager.visitPlace(url, true);
       },
       { once: true }

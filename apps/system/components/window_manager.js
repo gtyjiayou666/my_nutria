@@ -551,38 +551,6 @@ class WindowManager extends HTMLElement {
     this.activeFrame = null;
     this.startedAt = {};
     this.isCarouselOpen = false;
-    actionsDispatcher.addListener("maybeOpenURL", (_name, data_url) => {
-      console.log("WindowManager: Received 'maybeOpenURL' command from system");
-      // 直接调用 homescreen.js 暴露的函数
-      const homescreenFrame = this.homescreenFrame();
-      if (homescreenFrame && homescreenFrame.webView) {
-        // 1. 获取当前的 src URL
-        let currentSrc = homescreenFrame.webView.src;
-
-        // 2. 创建一个 URL 对象
-        const url = new URL(currentSrc);
-
-        // 3. 构造要发送的数据对象
-        const messageData = {
-          action: "maybeOpenURL",
-          url: data_url,
-        };
-
-        const newHash = encodeURIComponent(JSON.stringify(messageData));
-        url.hash = newHash;
-
-        const newSrc = url.toString();
-
-        if (newSrc !== currentSrc) {
-          console.log("Updating webView src to send message via hash:", newSrc);
-          homescreenFrame.webView.setAttribute('src', newSrc);
-        } else {
-          console.log("Hash is already up-to-date.");
-        }
-
-        return;
-      }
-    });
     actionsDispatcher.addListener("go-back", this.goBack.bind(this));
     actionsDispatcher.addListener("android-back", this.androidBack.bind(this));
     actionsDispatcher.addListener("go-forward", this.goForward.bind(this));

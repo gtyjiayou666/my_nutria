@@ -5,7 +5,7 @@ function handleSearchPanelVisibility(isDesktop) {
   const searchPanel = document.getElementById("search-panel");
   console.log("HomeScreen: handleSearchPanelVisibility called with isDesktop =", isDesktop);
   console.log("HomeScreen: Found search panel element:", searchPanel);
-  
+
   if (searchPanel) {
     if (isDesktop) {
       // 桌面模式：隐藏搜索框
@@ -414,10 +414,7 @@ function maybeOpenURL(url, details = {}) {
     }
 
     let encoded = encodeURIComponent(JSON.stringify(details));
-    let a = window.open(url, "_blank", `details=${encoded}`);
-    if (a == null) {
-      console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    }
+    window.open(url, "_blank", `details=${encoded}`);
     console.log(`maybeOpenURL called window.open(${url})`);
   } catch (e) {
     console.log(`maybeOpenUrl oops ${e}`);
@@ -427,40 +424,33 @@ function maybeOpenURL(url, details = {}) {
 
 
 function handleHashChange() {
-  // 获取当前的 hash (去掉 '#' 号)
-  const hash = window.location.hash.substring(1); 
+
+  const hash = window.location.hash.substring(1);
 
   if (!hash) {
     console.log("No hash present.");
     return;
   }
-  
+
   console.log("Hash changed:", hash);
-  
+
   try {
-    // 2. 解码并解析 hash 中的 JSON 数据
+
     const data = JSON.parse(decodeURIComponent(hash));
-    
-    // 3. 验证数据结构和 action
+
     if (!data.action) {
       console.warn("Received hash data without 'action' field:", data);
       return;
     }
-    
-    // 4. 根据 action 执行相应操作
-    switch(data.action) {
-      case "maybeOpenURL":
-        console.log("Hash command: openNewTab received. isDesktop =", data.url);
-        this.maybeOpenURL(data.url); 
-        break;
-        
+
+    switch (data.action) {
       case "desktop-mode-changed":
         console.log("Hash command: desktop-mode-changed received. isDesktop =", data.isDesktop);
         // 触发桌面模式切换事件，让其他组件可以响应
         window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
           detail: { isDesktop: data.isDesktop }
         }));
-        
+
         // 确保DOM已加载后再处理搜索框
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', () => {
@@ -470,34 +460,17 @@ function handleHashChange() {
           handleSearchPanelVisibility(data.isDesktop);
         }
         break;
-        
-      // case "closeTab":
-      //   closeTab();
-      //   break;
-      
+
       default:
         console.warn("Unknown action received via hash:", data.action, data);
     }
-    
+
   } catch (error) {
-    // 如果解析 JSON 失败（例如 hash 格式错误），捕获错误
     console.error("Failed to parse hash data:", hash, error);
   }
 }
 
-// --- 2. 监听 hashchange 事件 ---
-// 当 URL 的 hash 部分发生变化时，这个事件会被触发
 window.addEventListener('hashchange', handleHashChange);
-
-
-
-// window.parent.addEventListener('maybeOpenURL', (event) => {
-//   console.log(`window.addEventListener('maybeOpenURL', function(event)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
-//   maybeOpenURL(event.detail.url);
-// });
-
-
-
 
 document.addEventListener("DOMContentLoaded", async () => {
   await depGraphLoaded;

@@ -5,7 +5,6 @@
 
 const bsLoad = Date.now();
 
-// 在 bootstrap.js 中添加以下代码
 document.addEventListener('DOMContentLoaded', () => {
   const appContainer = document.getElementById('app-container');
   const apps = appContainer.querySelectorAll('.app');
@@ -487,10 +486,7 @@ function configureTopStatus() {
   window.actionsDispatcher?.dispatch("top-status-bar-changed", enableTopStatus);
 }
 
-
 var graph;
-
-
 async function ensurePanelManager() {
   let result = await graph.waitForDeps("search");
   let module = result.get("search panel");
@@ -503,7 +499,6 @@ document.addEventListener(
     timingFromStart(
       `DOMContentLoaded, embedder is ${window.embedderSetupDone}`
     );
-
     configureTopStatus();
     Services.prefs.addObserver("ui.status-top.enabled", configureTopStatus);
 
@@ -537,6 +532,7 @@ document.addEventListener(
 
     await graph.waitForDeps("phase1");
     await graph.waitForDeps("launch");
+    
     await manageFTU();
     keyManager.registerShortPressAction(config.powerKey, "power");
     keyManager.registerLongPressAction(config.powerKey, "power");

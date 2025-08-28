@@ -57,8 +57,25 @@ class DisplayPanel {
         await this.settings.set([setting]);
       }
     }
+    let num = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenNum());
+    console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", num);
+    let currentResolution = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution(0));
+    console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", currentResolution);
+    // let resolutions = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenResolutions(0));
+    // console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", resolutions);
+    await this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(0, 0, 1920, 1080))
   }
 
+  domRequestToPromise(request) {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => {
+        resolve(request.result); // 成功时返回 result
+      };
+      request.onerror = () => {
+        reject(request.error || new Error('DOMRequest failed'));
+      };
+    });
+  }
   async updateChoice(item) {
     this.log(`dark mode = ${item.checked}`);
     let settings = await apiDaemon.getSettings();
@@ -82,7 +99,7 @@ class DisplayPanel {
     try {
       let result = await this.settings.get("ui.prefers.color-scheme");
       isDarkMode = result.value === "dark";
-    } catch (e) {}
+    } catch (e) { }
 
     let modeSwitch = this.panel.querySelector("sl-switch");
     modeSwitch.checked = isDarkMode;
@@ -94,14 +111,14 @@ class DisplayPanel {
     try {
       let result = await this.settings.get("homescreen.manifestUrl");
       homescreenUrl = result.value.replace("$PORT", port);
-    } catch (e) {}
+    } catch (e) { }
 
     // Get the manifest url of the current theme from the setting.
     let themeUrl;
     try {
       let result = await this.settings.get("nutria.theme");
       themeUrl = `http://${result.value}.localhost${port}/manifest.webmanifest`;
-    } catch (e) {}
+    } catch (e) { }
 
     // Get the list of homescreen and theme apps and populate the menus.
     let homescreens = document.getElementById("homescreens");

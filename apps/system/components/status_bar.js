@@ -306,7 +306,7 @@ class StatusBar extends HTMLElement {
       this.getElem(`.frame-list`).onclick = (event) => {
         let target = event.target;
         let frameDiv = null;
-        
+
         // 向上查找，直到找到frame div元素或到达frame-list容器
         while (target && target !== event.currentTarget) {
           if (target.id && target.id.startsWith('shortcut-')) {
@@ -315,22 +315,22 @@ class StatusBar extends HTMLElement {
           }
           target = target.parentElement;
         }
-        
+
         if (!frameDiv) {
           console.log('No frame div found for click');
           return;
         }
-        
+
         // 检查是否点击了音频控制图标
-        if (event.target.localName === "sl-icon" && 
-            (event.target.getAttribute("name") === "volume-1" || 
-             event.target.getAttribute("name") === "volume-x")) {
+        if (event.target.localName === "sl-icon" &&
+          (event.target.getAttribute("name") === "volume-1" ||
+            event.target.getAttribute("name") === "volume-x")) {
           // Toggle the muted state of the frame
           let frameId = frameDiv.getAttribute("id").split("-")[1];
           window.wm.toggleMutedState(frameId);
           return;
         }
-        
+
         // 否则切换到该frame
         let id = frameDiv.getAttribute("id").split("-")[1];
         if (this.isCarouselOpen) {
@@ -346,12 +346,12 @@ class StatusBar extends HTMLElement {
         if (!isDesktop) {
           return; // Allow default context menu behavior in mobile mode
         }
-        
+
         event.preventDefault();
-        
+
         let target = event.target;
         let frameDiv = null;
-        
+
         // 向上查找，直到找到frame div元素或到达frame-list容器
         while (target && target !== event.currentTarget) {
           if (target.id && target.id.startsWith('shortcut-')) {
@@ -360,7 +360,7 @@ class StatusBar extends HTMLElement {
           }
           target = target.parentElement;
         }
-        
+
         if (frameDiv) {
           let frameId = frameDiv.getAttribute("id").split("-")[1];
           this.showTaskbarContextMenu(event, frameId);
@@ -438,7 +438,7 @@ class StatusBar extends HTMLElement {
           mainSearchBox.value = e.target.value;
         }
       }
-      
+
       // 触发搜索功能 - 调用SearchPanel的handleEvent方法
       if (this.panelManager && typeof this.panelManager.handleEvent === 'function') {
         this.panelManager.handleEvent();
@@ -488,22 +488,22 @@ class StatusBar extends HTMLElement {
 
   closeSearchPanel() {
     console.log("closeSearchPanel called");
-    
+
     // 关闭主文档中的搜索面板
     const mainSearchPanel = document.getElementById('main-search-panel');
     if (mainSearchPanel) {
       mainSearchPanel.classList.remove('open');
-      
+
       // 移除事件监听器
       if (mainSearchPanel._closeHandler) {
         mainSearchPanel.removeEventListener('click', mainSearchPanel._closeHandler);
         document.removeEventListener('keydown', mainSearchPanel._closeHandler);
       }
     }
-    
+
     // 移除body的class
     document.body.classList.remove('search-panel-open');
-    
+
     // 清空搜索框
     this.searchBox.value = "";
     if (mainSearchPanel) {
@@ -512,18 +512,18 @@ class StatusBar extends HTMLElement {
         mainSearchBox.value = "";
       }
     }
-    
+
     if (this.panelManager) {
       this.panelManager.onClose();
     }
-    
+
     // 移除搜索面板打开状态类名
     this.classList.remove("search-panel-open");
     console.log("Removed search-panel-open class");
   }
   async openSearchPanel() {
     console.log("openSearchPanel called");
-    
+
     // 检查是否已经存在主文档中的搜索面板
     let mainSearchPanel = document.getElementById('main-search-panel');
     if (!mainSearchPanel) {
@@ -546,7 +546,7 @@ class StatusBar extends HTMLElement {
         </div>
       `;
       document.body.appendChild(mainSearchPanel);
-      
+
       // 添加样式
       if (!document.getElementById('main-search-panel-styles')) {
         const style = document.createElement('style');
@@ -650,38 +650,52 @@ class StatusBar extends HTMLElement {
           #main-search-panel .hidden {
             display: none;
           }
+          
+          #main-search-panel li {
+            padding: 0.5em;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+          }
+            
+          #main-search-panel li:hover,
+          #main-search-panel li:active {
+            background-color: rgba(255, 255, 255, 0.25);
+          }
         `;
         document.head.appendChild(style);
       }
     }
-    
+
     // 显示搜索面板
     mainSearchPanel.classList.add('open');
     document.body.classList.add('search-panel-open');
-    
+
     // 聚焦搜索框 - 这里我们聚焦底部栏的搜索框而不是主面板的
     this.searchBox.focus();
-    
+
     const searchBox = mainSearchPanel.querySelector('#main-search-box');
     if (searchBox) {
       // 复制原搜索框的值到主面板搜索框
       searchBox.value = this.searchBox.value;
-      
+
       // 添加输入事件监听器
       if (!searchBox._inputHandler) {
         searchBox._inputHandler = (e) => {
           // 同步到原搜索框，以便搜索管理器能够正常工作
           this.searchBox.value = e.target.value;
-          
+
           // 也要更新主搜索面板中的搜索框显示（如果它不是当前焦点）
           const mainSearchBox = mainSearchPanel.querySelector('#main-search-box');
           if (mainSearchBox && mainSearchBox !== e.target) {
             mainSearchBox.value = e.target.value;
           }
-          
+
           // 触发原搜索框的输入事件
           this.searchBox.dispatchEvent(new Event('input', { bubbles: true }));
-          
+
           // 控制清除按钮的显示
           const clearBtn = mainSearchPanel.querySelector('#main-clear-search');
           if (clearBtn) {
@@ -694,7 +708,7 @@ class StatusBar extends HTMLElement {
         };
         searchBox.addEventListener('input', searchBox._inputHandler);
       }
-      
+
       // 添加清除按钮事件监听器
       const clearBtn = mainSearchPanel.querySelector('#main-clear-search');
       if (clearBtn && !clearBtn._clickHandler) {
@@ -707,7 +721,7 @@ class StatusBar extends HTMLElement {
         };
         clearBtn.addEventListener('click', clearBtn._clickHandler);
       }
-      
+
       // 添加关闭按钮事件监听器
       const closeBtn = mainSearchPanel.querySelector('#main-close-search');
       if (closeBtn && !closeBtn._clickHandler) {
@@ -717,33 +731,33 @@ class StatusBar extends HTMLElement {
         closeBtn.addEventListener('click', closeBtn._clickHandler);
       }
     }
-    
+
     // 初始化搜索功能
     if (!this.panelManager) {
       this.panelManager = await ensurePanelManager();
     }
-    
+
     // 使用主文档中的元素初始化
     const mainClearSearch = mainSearchPanel.querySelector('#main-clear-search');
     const mainPrivateBrowsing = mainSearchPanel.querySelector('#main-private-browsing');
     const mainSearchResults = mainSearchPanel.querySelector('#main-search-results');
     const mainDefaultSearchResults = mainSearchPanel.querySelector('#main-default-search-results');
-    
+
     // 重新初始化搜索面板管理器，使用底部栏的搜索框作为主要输入
     this.panelManager.init(mainSearchPanel, this.searchBox, mainClearSearch, mainPrivateBrowsing, mainSearchResults, mainDefaultSearchResults);
     this.panelManager.onOpen();
-    
+
     // 添加搜索面板打开状态类名
     this.classList.add("search-panel-open");
     console.log("Added search-panel-open class, classes:", this.className);
-    
+
     // 添加关闭事件监听
     const closePanel = (e) => {
       if (e.type === 'click') {
         // 检查点击是否在搜索输入区域或搜索结果区域内
         const searchInputContainer = mainSearchPanel.querySelector('.search-input-container');
         const searchResults = mainSearchPanel.querySelector('.search-results');
-        
+
         // 如果点击的是搜索输入区域或搜索结果区域内的元素，不关闭面板
         if (searchInputContainer && (searchInputContainer.contains(e.target) || searchInputContainer === e.target)) {
           return;
@@ -751,17 +765,17 @@ class StatusBar extends HTMLElement {
         if (searchResults && (searchResults.contains(e.target) || searchResults === e.target)) {
           return;
         }
-        
+
         // 其他区域的点击都关闭搜索面板
         this.closeSearchPanel();
       } else if (e.type === 'keydown' && e.key === 'Escape') {
         this.closeSearchPanel();
       }
     };
-    
+
     mainSearchPanel.addEventListener('click', closePanel);
     document.addEventListener('keydown', closePanel);
-    
+
     // 存储事件监听器引用以便后续移除
     mainSearchPanel._closeHandler = closePanel;
   }
@@ -817,9 +831,10 @@ class StatusBar extends HTMLElement {
         url = `https://${url}`;
       }
 
-      let encoded = encodeURIComponent(JSON.stringify(details));
-      window.open(url, "_blank", `details=${encoded}`);
-      console.log(`maybeOpenURL called window.open(${url})`);
+      let encoded = encodeURIComponent(JSON.stringify(details)); window.wm.openFrame(url,
+            {activate: true, details: encoded})
+      // window.open(url, "_blank", `details=${encoded}`);
+      // console.log(`maybeOpenURL called window.open(${url})`);
     } catch (e) {
       console.log(`maybeOpenUrl oops ${e}`);
     }
@@ -885,7 +900,7 @@ class StatusBar extends HTMLElement {
   updateFrameList(_name, list) {
     // 检查当前是否为桌面模式
     const isDesktopMode = this.classList.contains('desktop-mode');
-    
+
     // 移动模式下不显示任务栏中的应用
     if (!isDesktopMode) {
       let frames = this.getElem(`.frame-list`);
@@ -895,32 +910,32 @@ class StatusBar extends HTMLElement {
       }
       return;
     }
-    
+
     // 桌面模式下显示所有后台应用
     let frames = this.getElem(`.frame-list`);
     if (!frames) {
       return;
     }
-    
+
     // 确保frame-list在桌面模式下可见
     frames.style.display = 'flex';
-    
+
     let content = "";
-    
+
     list.forEach((frame) => {
       let icon = frame.icon || window.config.brandLogo;
       let iconClass = frame.id == this.currentActive ? "active" : "";
       if (frame.isPlayingAudio) {
         iconClass += " audio";
       }
-      
+
       // 桌面模式：显示图标 + 应用标题，类似Windows任务栏
       let title = frame.title || "未知应用";
       // 限制标题长度，避免过长
       if (title.length > 20) {
         title = title.substring(0, 17) + "...";
       }
-      
+
       content += `<div class="${iconClass}" id="shortcut-${frame.id}" title="${frame.title || ''}">
                     <img class="favicon" src="${icon}" alt="${frame.title || ''}"/>
                     <span class="app-title">${title}</span>`;
@@ -930,7 +945,7 @@ class StatusBar extends HTMLElement {
       }
       content += "</div>";
     });
-    
+
     frames.innerHTML = content;
   }
 
@@ -1222,14 +1237,14 @@ class StatusBar extends HTMLElement {
       if (screenElement) {
         screenElement.classList.add('desktop-mode');
       }
-      
+
       // 显示搜索面板
       if (this.searchPanel) {
         this.searchPanel.style.display = 'flex';
         this.searchPanel.style.visibility = 'visible';
         this.searchPanel.style.opacity = '1';
       }
-      
+
       // 桌面模式下显示任务栏应用
       if (window.wm && window.wm.frames) {
         // 触发frame list更新以显示后台应用
@@ -1237,7 +1252,7 @@ class StatusBar extends HTMLElement {
         const frameList = frameIds.map(id => window.wm.frames[id]);
         this.updateFrameList('', frameList);
       }
-      
+
       console.log(`StatusBar: Added desktop-mode class, current classes:`, this.className);
     } else {
       // 移动模式：恢复原始布局
@@ -1263,20 +1278,20 @@ class StatusBar extends HTMLElement {
         this.searchPanel.style.visibility = 'hidden';
         this.searchPanel.style.opacity = '0';
       }
-      
+
       // 移动模式下隐藏任务栏应用
       this.updateFrameList('', []);
 
       // 确保移动模式下status bar是可见的
       this.style.display = '';
       this.classList.remove('fullscreen');
-      
+
       // 在移动模式下，如果搜索面板是打开的，则关闭它
       const mainSearchPanel = document.getElementById('main-search-panel');
       if (mainSearchPanel && mainSearchPanel.classList.contains('open')) {
         this.closeSearchPanel();
       }
-      
+
       console.log(`StatusBar: Mobile mode restored, display:`, this.style.display);
     }
 
@@ -1467,7 +1482,7 @@ class StatusBar extends HTMLElement {
     this.style.borderTop = '';
     this.style.borderBottom = '';
     this.style.position = '';
-    
+
     console.log('StatusBar: Original layout restoration complete');
   }
 
@@ -1569,7 +1584,7 @@ class StatusBar extends HTMLElement {
     menu.style.transition = 'all 0.15s ease-out';
     menu.style.transform = 'scale(0.95)';
     menu.style.opacity = '0';
-    
+
     // 添加一个小指示器来显示菜单是活跃的
     const indicator = document.createElement('div');
     indicator.style.position = 'absolute';
@@ -1618,11 +1633,11 @@ class StatusBar extends HTMLElement {
       menuItem.style.transition = 'all 0.15s ease';
       menuItem.style.position = 'relative';
       menuItem.style.userSelect = 'none';
-      
+
       if (item.style) {
         menuItem.style.cssText += item.style;
       }
-      
+
       // 添加图标
       const icon = document.createElement('span');
       icon.style.marginRight = '8px';
@@ -1632,29 +1647,29 @@ class StatusBar extends HTMLElement {
       } else if (item.label.includes('关闭')) {
         icon.textContent = '❌';
       }
-      
+
       menuItem.appendChild(icon);
       const textSpan = document.createElement('span');
       textSpan.textContent = item.label;
       menuItem.appendChild(textSpan);
-      
+
       if (!item.disabled) {
         menuItem.addEventListener('mouseenter', () => {
           menuItem.style.backgroundColor = '#f0f9ff';
           menuItem.style.borderRadius = '4px';
           menuItem.style.transform = 'translateX(2px)';
         });
-        
+
         menuItem.addEventListener('mouseleave', () => {
           menuItem.style.backgroundColor = '';
           menuItem.style.borderRadius = '';
           menuItem.style.transform = '';
         });
-        
+
         menuItem.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          
+
           // 添加点击效果
           menuItem.style.transform = 'scale(0.98)';
           setTimeout(() => {
@@ -1674,7 +1689,7 @@ class StatusBar extends HTMLElement {
         // 禁用状态的样式
         menuItem.style.opacity = '0.6';
       }
-      
+
       menu.appendChild(menuItem);
     });
 
@@ -1693,10 +1708,10 @@ class StatusBar extends HTMLElement {
     if (top + menuRect.height > window.innerHeight) {
       top = event.clientY - menuRect.height;
     }
-    
+
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
-    
+
     // 启动进入动画
     requestAnimationFrame(() => {
       menu.style.transform = 'scale(1)';
@@ -1706,7 +1721,7 @@ class StatusBar extends HTMLElement {
     // 优化菜单隐藏逻辑 - 让菜单更稳定，更容易操作
     let menuHideTimeout = null;
     let isMouseOverMenu = false;
-    
+
     // 鼠标进入菜单时清除隐藏计时器
     menu.addEventListener('mouseenter', () => {
       isMouseOverMenu = true;
@@ -1715,7 +1730,7 @@ class StatusBar extends HTMLElement {
         menuHideTimeout = null;
       }
     });
-    
+
     // 鼠标离开菜单时设置延迟隐藏
     menu.addEventListener('mouseleave', () => {
       isMouseOverMenu = false;
@@ -1734,12 +1749,12 @@ class StatusBar extends HTMLElement {
       if (menu.contains(e.target)) {
         return;
       }
-      
+
       // 如果鼠标在菜单上，延迟隐藏
       if (isMouseOverMenu) {
         return;
       }
-      
+
       menu.remove();
       document.removeEventListener('click', hideMenu);
       document.removeEventListener('contextmenu', hideMenu);
@@ -1747,13 +1762,13 @@ class StatusBar extends HTMLElement {
         clearTimeout(menuHideTimeout);
       }
     };
-    
+
     // 延迟添加点击监听器，避免立即触发
     setTimeout(() => {
       document.addEventListener('click', hideMenu);
       document.addEventListener('contextmenu', hideMenu); // 右键也会隐藏菜单
     }, 200);
-    
+
     // 添加自动隐藏计时器（保险措施）
     setTimeout(() => {
       if (document.body.contains(menu) && !isMouseOverMenu) {

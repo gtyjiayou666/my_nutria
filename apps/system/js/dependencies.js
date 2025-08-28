@@ -6,6 +6,7 @@ const kDeps = [
       "actions dispatcher",
       "haptic feedback",
       "input method",
+      "input method desktop",
       "notifications",
       "watch homescreen",
       "audio volume indicator comp",
@@ -40,6 +41,12 @@ const kDeps = [
     name: "input method",
     kind: "windowModule",
     param: ["./js/input_method.js", "inputMethod", "InputMethod"],
+    deps: ["actions dispatcher"],
+  },
+  {
+    name: "input method desktop",
+    kind: "windowModule",
+    param: ["./js/input_method_desktop.js", "inputMethodDesktop", "InputMethodDesktop"],
     deps: ["actions dispatcher"],
   },
   {

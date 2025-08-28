@@ -6,9 +6,6 @@ class KeyboardLayout {
     this.layouts = {};
     this.root = root;
 
-
-
-
     this.inputPreviewBar = document.getElementById("input-preview-bar");
 
     this.inputText = "";           // 输入区内容（如拼音）
@@ -79,26 +76,11 @@ class KeyboardLayout {
   async loadData() {
     try {
       const response = await fetch('../resources/chinese.json');
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const text = await response.text();
       this.CNdata = JSON.parse(text);
-      // let transformedData = {};
-      // for (const [pinyin, candidates] of Object.entries(this.CNdata)) {
-      //   transformedData[pinyin] = candidates.map(candidate => candidate[0]);
-      // }
-
-      // const downloadJSON = (data, filename = 'data.json') => {
-      //   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      //   const url = URL.createObjectURL(blob);
-      //   Object.assign(document.createElement('a'), { href: url, download: filename }).click();
-      //   URL.revokeObjectURL(url);
-      // };
-      // downloadJSON(transformedData, '用户数据.json');
-
     } catch (error) {
       console.error('错误:', error);
       this.CNdata = {}; // 设置默认值
@@ -542,16 +524,6 @@ document.addEventListener(
   async () => {
     await depGraphLoaded;
     await getSharedDeps("shared-icons");
-
-    let layout = new KeyboardLayout(document.getElementById("vkb"));
-
-    const layouts = ["en-US", "zh-CN"];
-
-    for (lang of layouts) {
-      await layout.loadLayout(lang);
-    }
-    layout.selectLayout(layouts[1]);
-
   },
   { once: true }
 );

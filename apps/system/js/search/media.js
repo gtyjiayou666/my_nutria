@@ -31,7 +31,7 @@ class MediaSource extends SearchSource {
 
   activate(result) {
     let url = result.variants.default.url;
-    maybeOpenURL(url);
+    window.wm.openFrame(url, {activate: true});
     if (!isPrivateBrowsing()) {
       contentManager.visitMedia(url, true);
     }
@@ -66,9 +66,8 @@ class MediaItem extends HTMLElement {
     shadow.innerHTML = `
       <link rel="stylesheet" href="style/search/media.css">
       <img class="icon">
-      <div class="text">${content.title} ${
-      content.album ? "- " + content.album : ""
-    } ${content.artist ? "- " + content.artist : ""}</div>
+      <div class="text">${content.title} ${content.album ? "- " + content.album : ""
+      } ${content.artist ? "- " + content.artist : ""}</div>
       `;
 
     let icon = shadow.querySelector(".icon");
@@ -80,7 +79,7 @@ class MediaItem extends HTMLElement {
     } else if (content.backgroundColor) {
       shadow.host.style.backgroundColor = content.backgroundColor;
     }
-    
+
     this.activate();
   }
 
@@ -95,7 +94,7 @@ class MediaItem extends HTMLElement {
       () => {
         SearchSource.closeSearch();
         let url = this.data.variants.default.url;
-        maybeOpenURL(url);
+        window.wm.openFrame(url, {activate: true});
         if (!isPrivateBrowsing()) {
           contentManager.visitMedia(url, true);
         }

@@ -34,9 +34,7 @@ export class SearchPanel {
       new ContactsSource("contacts", searchResults),
       new AppsSource("apps", searchResults),
       new TopSitesSource("top-sites", searchResults),
-      new SearchActivitySource("activities", searchResults),
-      // new FendConverterSource("fend-converter"),
-      // new OpenSearchSource("suggestions"),
+      new SearchActivitySource("activities", searchResults)
     ];
   }
 
@@ -44,14 +42,12 @@ export class SearchPanel {
     // 如果搜索框当前有焦点，根据桌面模式状态处理虚拟键盘
     if (document.activeElement === this.searchBox) {
       if (isDesktop) {
-        // 桌面模式：强制关闭虚拟键盘（如果有的话）
         this.searchBox.blur();
         // 延迟重新聚焦，避免触发虚拟键盘
         setTimeout(() => {
           this.searchBox.focus();
         }, 100);
       } else {
-        // 移动模式：确保虚拟键盘能够正常显示
         // 重新触发焦点以确保虚拟键盘显示
         this.searchBox.blur();
         setTimeout(() => {
@@ -62,7 +58,6 @@ export class SearchPanel {
   }
 
   onOpen() {
-    console.info("search  on  open !!!!!!!!!!!!!!!!!!!!!")
     this.panel.classList.add("open");
     this.clearSearch.classList.remove("hidden");
     this.privateBrowsing.classList.remove("hidden");
@@ -93,7 +88,7 @@ export class SearchPanel {
   }
 
   openURL(url, search) {
-    return maybeOpenURL(url, { search });
+    return window.wm.openFrame(url, {activate: true, detail: search});;
   }
 
   clearAllResults() {

@@ -59,6 +59,12 @@ class TopSitesSource extends SearchSource {
   }
 
   activate(result) {
-    maybeOpenURL(result);
+    if (result.startsWith("about:")) {
+      let act = new WebActivity("open-about", { result });
+      act.start();
+      return;
+    }
+    window.wm.openFrame(`https://${result}`,
+            {activate: true});
   }
 }

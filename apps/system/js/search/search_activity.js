@@ -65,6 +65,6 @@ class SearchActivitySource extends SearchSource {
   }
 
   activate(result) {
-    maybeOpenURL(result);
+    window.wm.openFrame(result, {activate: true});
   }
 }

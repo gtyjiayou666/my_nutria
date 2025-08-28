@@ -1,0 +1,39 @@
+/* <input-method-desktop> styling */
+
+input-method-desktop {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  z-index: 1500;
+}
+
+input-method-desktop:not(.no-animation) {
+  transition: transform 0.15s;
+}
+
+input-method-desktop.offscreen {
+  transform: translateY(100%);
+}
+
+input-method-desktop web-view {
+  border: none;
+  flex: 1;
+}
+
+input-method-desktop .padding {
+  height: var(--statusbar-height);
+  pointer-events: auto;
+  background-color: var(--sl-panel-background-color);
+  color: var(--sl-color-neutral-500);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+input-method-desktop .padding sl-icon {
+  font-size: calc(0.8 * var(--statusbar-height));
+}
