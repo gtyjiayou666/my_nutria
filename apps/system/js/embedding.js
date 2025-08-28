@@ -344,7 +344,7 @@ const UAHelper = {
 
   // Set some prefs based on the session type.
   if (sessionType == "desktop" || sessionType == "session") {
-    Services.prefs.setBoolPref("dom.inputmethod.enabled", false);
+    Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
     Services.prefs.setBoolPref("dom.flashlight.enabled", false);
     embedder.useVirtualKeyboard = false;
   } else {

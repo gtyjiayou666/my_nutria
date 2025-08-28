@@ -41,7 +41,6 @@ class MediaSource extends SearchSource {
 // Define a custom element for our content.
 class MediaItem extends HTMLElement {
   constructor(data) {
-    console.info("MediaItem@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
     super();
     this.data = data;
     this.revokable = [];

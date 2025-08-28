@@ -11,6 +11,7 @@ class WindowManagerKeys {
 
     this.isModifierDown = false;
     this.isShiftDown = false;
+    this.isShift = false;
     this.isCtrlDown = false;
     this.isAltDown = false;
     this.index = -1;
@@ -36,9 +37,6 @@ class WindowManagerKeys {
   }
 
   handleEvent(event) {
-    // console.log(
-    //   `WindowManagerKeys Got ${event.type} event ${event.key} (open=${this.isCarouselOpen})`
-    // );
 
     if (event.key === kCarouselModifier) {
       this.isModifierDown = event.type === "keydown";
@@ -51,6 +49,8 @@ class WindowManagerKeys {
 
     if (event.key === "Shift") {
       this.isShiftDown = event.type === "keydown";
+      if (event.type === "keyup")
+        this.isShift = !this.isShift;
     }
 
     if (event.key === "Alt") {
@@ -221,6 +221,11 @@ class WindowManagerKeys {
         this.wm.goForward();
       }
     }
+    if (this.isShift)
+      event.preventDefault();
+    // navigator.b2g.inputMethod.setComposition("12", 1, 2)
+    // navigator.b2g.inputMethod.setComposition("22", 1, 2)
+    // navigator.b2g.inputMethod.endComposition("3")
   }
 }
 
@@ -376,20 +381,20 @@ class WindowManager extends HTMLElement {
       // 仅在桌面模式且carousel打开时处理
       if (this.isCarouselOpen && !this.carousel.classList.contains('vertical')) {
         event.preventDefault();
-        
+
         // 检测滚动方向和强度
         let deltaX = event.deltaX;
         let deltaY = event.deltaY;
-        
+
         // 如果主要是垂直滚动，转换为水平滚动
         if (Math.abs(deltaY) > Math.abs(deltaX)) {
           deltaX = deltaY;
         }
-        
+
         // 滚动灵敏度
         const scrollMultiplier = 3;
         const scrollAmount = deltaX * scrollMultiplier;
-        
+
         // 使用requestAnimationFrame确保流畅性
         requestAnimationFrame(() => {
           this.carousel.scrollBy({
@@ -419,7 +424,7 @@ class WindowManager extends HTMLElement {
         const touchY = event.touches[0].clientY;
         const deltaX = touchX - touchStartX;
         const deltaY = touchY - touchStartY;
-        
+
         // 判断是否为水平滑动
         if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
           isHorizontalSwipe = true;
@@ -432,7 +437,7 @@ class WindowManager extends HTMLElement {
       if (this.isCarouselOpen && !this.carousel.classList.contains('vertical') && isHorizontalSwipe) {
         const touchX = event.changedTouches[0].clientX;
         const deltaX = touchX - touchStartX;
-        
+
         if (Math.abs(deltaX) > 50) { // 最小滑动距离
           const scrollAmount = deltaX * -2; // 反向滚动
           this.carousel.scrollBy({
@@ -448,12 +453,12 @@ class WindowManager extends HTMLElement {
       if (this.isCarouselOpen) {
         // 检查点击的目标
         const clickedElement = event.target;
-        
+
         // 如果点击的是carousel本身，或者是padding区域，则回到主页
-        if (clickedElement === this.carousel || 
-            clickedElement.classList.contains('padding') ||
-            (clickedElement.closest && !clickedElement.closest('.screenshot, .new-tab'))) {
-          
+        if (clickedElement === this.carousel ||
+          clickedElement.classList.contains('padding') ||
+          (clickedElement.closest && !clickedElement.closest('.screenshot, .new-tab'))) {
+
           // 防止点击应用截图或新建标签时触发
           if (!clickedElement.closest('.screenshot') && !clickedElement.closest('.new-tab')) {
             // 点击空白处，关闭carousel并回到主页
@@ -582,7 +587,7 @@ class WindowManager extends HTMLElement {
     actionsDispatcher.addListener("desktop-mode-changed", (_name, data) => {
       console.log("WindowManager: Received 'desktop-mode-changed' command from system");
       console.log("WindowManager: Data received:", data);
-      
+
       // 向 homescreen 发送桌面模式切换信息
       const homescreenFrame = this.homescreenFrame();
       if (homescreenFrame && homescreenFrame.webView) {
@@ -610,7 +615,7 @@ class WindowManager extends HTMLElement {
           console.log("Hash is already up-to-date.");
         }
       }
-      
+
       // 关键修复：强制刷新carousel布局以应用新的模式
       if (this.isCarouselOpen) {
         console.log("WindowManager: Refreshing carousel layout for mode change");
@@ -830,8 +835,8 @@ class WindowManager extends HTMLElement {
     this.updateFrameList();
 
     // 触发frame打开事件，让status_bar能立即响应
-    this.dispatchEvent(new CustomEvent('frameopen', { 
-      detail: { id: attrId, url, config } 
+    this.dispatchEvent(new CustomEvent('frameopen', {
+      detail: { id: attrId, url, config }
     }));
 
     return contentWindow.webView;
@@ -992,7 +997,6 @@ class WindowManager extends HTMLElement {
       frame = frame.nextElementSibling;
     }
 
-    console.log('WindowManager updateFrameList: Sending', list.length, 'frames to status bar');
     actionsDispatcher.dispatch("update-frame-list", list);
   }
 
@@ -1001,20 +1005,14 @@ class WindowManager extends HTMLElement {
     if (!frame || !frame.state) {
       return false;
     }
-    
+
     const url = frame.state.url;
     const title = frame.state.title;
-    
-    console.log('WindowManager shouldShowFrameInTaskbar: Checking frame:', {
-      id: frame.getAttribute("id"),
-      url: url,
-      title: title,
-      isHomescreen: frame.config.isHomescreen
-    });
-    
+
+
     // 排除homescreen
     if (url && (
-      url.includes('/homescreen/') || 
+      url.includes('/homescreen/') ||
       url.includes('homescreen/index.html') ||
       url.endsWith('/homescreen') ||
       url.includes('/apps/homescreen/') ||
@@ -1022,39 +1020,33 @@ class WindowManager extends HTMLElement {
       title === '主屏幕' ||
       title === 'Home Screen'
     )) {
-      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out homescreen frame');
       return false;
     }
-    
+
     // 排除系统应用
     if (url && (
       url.includes('/system/') ||
       url.includes('system/index.html') ||
       url.includes('/apps/system/')
     )) {
-      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out system frame');
       return false;
     }
-    
+
     // 排除about页面
     if (url && url.startsWith('about:')) {
-      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out about frame');
       return false;
     }
-    
+
     // 排除空白页面
     if (!url || url === '' || url === 'about:blank') {
-      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out blank frame');
       return false;
     }
-    
+
     // 排除本地文件系统页面（除非是真实的应用）
     if (url && url.startsWith('file://') && !frame.config.manifest) {
-      console.log('WindowManager shouldShowFrameInTaskbar: Filtering out file frame without manifest');
       return false;
     }
-    
-    console.log('WindowManager shouldShowFrameInTaskbar: Frame passed filter');
+
     return true;
   }
 
@@ -1107,10 +1099,10 @@ class WindowManager extends HTMLElement {
 
     // In split mode, the activated frame may not be the correct one.
     this.expectedActiveFrame = id;
-    
+
     // 触发frame激活事件，让status_bar能立即响应
-    this.dispatchEvent(new CustomEvent('frameactivate', { 
-      detail: { id, behavior } 
+    this.dispatchEvent(new CustomEvent('frameactivate', {
+      detail: { id, behavior }
     }));
   }
 

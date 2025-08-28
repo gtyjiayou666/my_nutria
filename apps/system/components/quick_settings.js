@@ -771,7 +771,7 @@ class QuickSettings extends HTMLElement {
     // 根据桌面模式状态控制虚拟键盘
     if (newIsDesktop) {
       // 桌面模式：禁用虚拟键盘
-      Services.prefs.setBoolPref("dom.inputmethod.enabled", false);
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
       embedder.useVirtualKeyboard = false;
       // 如果当前有虚拟键盘打开，强制关闭
       if (window.inputMethod && window.inputMethod.opened) {

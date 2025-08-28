@@ -309,7 +309,7 @@ class StatusBar extends HTMLElement {
         if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
           window.wm.updateFrameList();
         }
-      }, 200); // 改为每200毫秒检查一次，提高响应速度
+      }, 2000); // 改为每200毫秒检查一次，提高响应速度
 
       // 监听窗口管理器的frame变化事件
       if (window.wm) {
@@ -944,18 +944,9 @@ class StatusBar extends HTMLElement {
       return;
     }
 
-    // 添加调试信息
-    console.log('updateFrameList: Received frames:', list);
 
     // 过滤掉不应该在任务栏显示的frame
     const filteredFrames = list.filter(frame => {
-      console.log('updateFrameList: Checking frame:', {
-        id: frame.id,
-        url: frame.url,
-        title: frame.title,
-        manifest: frame.manifest
-      });
-
       // 排除homescreen本身
       if (frame.url && (
         frame.url.includes('/homescreen/') ||
@@ -966,7 +957,6 @@ class StatusBar extends HTMLElement {
         frame.title === '主屏幕' ||
         frame.title === 'Home Screen'
       )) {
-        console.log('updateFrameList: Filtering out homescreen frame:', frame.url);
         return false;
       }
 
@@ -976,45 +966,36 @@ class StatusBar extends HTMLElement {
         frame.url.includes('system/index.html') ||
         frame.url.includes('/apps/system/')
       )) {
-        console.log('updateFrameList: Filtering out system frame:', frame.url);
         return false;
       }
 
       // 排除about页面
       if (frame.url && frame.url.startsWith('about:')) {
-        console.log('updateFrameList: Filtering out about frame:', frame.url);
         return false;
       }
 
       // 排除空白页面或无效frame
       if (!frame.url || frame.url === '' || frame.url === 'about:blank') {
-        console.log('updateFrameList: Filtering out blank frame:', frame.url);
         return false;
       }
 
       // 排除本地文件系统页面（除非是真实的应用）
       if (frame.url && frame.url.startsWith('file://') && !frame.manifest) {
-        console.log('updateFrameList: Filtering out file frame without manifest:', frame.url);
         return false;
       }
 
-      console.log('updateFrameList: Frame passed filter:', frame.url);
       return true;
     });
-
-    console.log('updateFrameList: Filtered frames count:', filteredFrames.length);
 
     // 如果没有用户应用，隐藏frame-list
     if (filteredFrames.length === 0) {
       frames.style.display = 'none';
       frames.innerHTML = '';
-      console.log('updateFrameList: No frames to display, hiding frame-list');
       return;
     }
 
     // 确保frame-list在桌面模式下可见
     frames.style.display = 'flex';
-    console.log('updateFrameList: Showing frame-list with', filteredFrames.length, 'frames');
 
     let content = "";
 
