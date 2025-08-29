@@ -250,7 +250,7 @@ class DisplayPreferences extends HTMLElement {
     // Get current resolution
     // let currentResolution = await this.getCurrentResolution();
     if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-      // let currentResolution = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution(this.display.dataset.num));
+      let currentResolution = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution(this.display.dataset.num));
       for (let res of availableResolutions) {
         let item = document.createElement("sl-menu-item");
         item.setAttribute("type", "checkbox");
@@ -282,7 +282,8 @@ class DisplayPreferences extends HTMLElement {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
 
-        // let num = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenNum());
+        let num = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenNum());
+        console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",num)
         let availableDisplays = [];
 
         for (var i = 0; i < num; i++) {
@@ -302,7 +303,7 @@ class DisplayPreferences extends HTMLElement {
   async getAvailableResolutions(screen) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        // let resolutions = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenResolutions(screen));
+        let resolutions = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenResolutions(screen));
         let availableResolutions = [];
 
         for (var i = 0; i < resolutions.length; i++) {
@@ -330,7 +331,7 @@ class DisplayPreferences extends HTMLElement {
   async getCurrentResolution() {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        // return await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution());
+        return await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution());
       }
     } catch (e) {
       this.error(`Failed to get current resolution: ${e}`);
@@ -347,45 +348,7 @@ class DisplayPreferences extends HTMLElement {
   async setScreenResolution(screen, width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        this.close();
-        const overlay = document.getElementById("blackOverlay");
-        overlay.style.display = "block";
-        overlay.style.opacity = "1"
-        window.top.dispatchEvent(new CustomEvent("changeSize", {
-          detail: {
-            x: 0,
-            y: 0,
-            width: 1,
-            height: 1
-          }
-        }));
-        // let pos = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(screen, this.extension.dataset.extension, parseInt(width), parseInt(height)));
-        setTimeout(() => {
-          if (pos.x != -1) {
-            window.top.dispatchEvent(new CustomEvent("changeSize", {
-              detail: {
-                x: pos.x,
-                y: pos.y,
-                width: pos.width,
-                height: pos.height
-              }
-            }));
-          } else {
-            window.top.dispatchEvent(new CustomEvent("changeSize", {
-              detail: {
-                x: 0,
-                y: 0,
-                width: window.screen.width,
-                height: window.screen.height
-              }
-            }));
-          }
-          setTimeout(() => {
-            this.show();
-            overlay.style.opacity = "0";
-            overlay.style.display = "none";
-          }, 100);
-        }, 300);
+        this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(screen, this.extension.dataset.extension, parseInt(width), parseInt(height)));
       } else {
         this.error("b2GScreenManager not available");
       }
