@@ -126,6 +126,8 @@ body {
   color: white;
 }
 
+/* 移除基于屏幕尺寸的自动隐藏，改为通过JavaScript动态控制 */
+
 #search-panel.open {
   height: 100%;
   transition: all 0.3s;

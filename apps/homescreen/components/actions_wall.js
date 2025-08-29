@@ -242,19 +242,30 @@ class ActionsWall extends HTMLElement {
 
   // 检查是否为桌面模式
   isDesktopMode() {
-    // 检查 QuickSettings 的状态
-    const quickSettings = document.querySelector('quick-settings');
-    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-      return quickSettings.isDesktop;
+    // 优先检查 embedder.sessionType，这是最可靠的
+    if (window.embedder && window.embedder.sessionType) {
+      const sessionType = window.embedder.sessionType;
+      const isDesktop = (sessionType === "desktop" || sessionType === "session");
+      console.log(`ActionsWall: isDesktopMode - embedder.sessionType = ${sessionType}, isDesktop = ${isDesktop}`);
+      return isDesktop;
     }
     
     // 检查 wallpaperManager
     if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
+      console.log(`ActionsWall: isDesktopMode - wallpaperManager.isDesktop = ${window.wallpaperManager.isDesktop}`);
       return window.wallpaperManager.isDesktop;
     }
     
-    // 默认为桌面模式
-    return true;
+    // 检查 QuickSettings 的状态
+    const quickSettings = document.querySelector('quick-settings');
+    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
+      console.log(`ActionsWall: isDesktopMode - quickSettings.isDesktop = ${quickSettings.isDesktop}`);
+      return quickSettings.isDesktop;
+    }
+    
+    // 最终默认为移动模式（非桌面模式）
+    console.log("ActionsWall: isDesktopMode - using fallback = false (mobile mode)");
+    return false;
   }
 
   // 交换两个应用的位置（桌面模式下的拖拽交换）

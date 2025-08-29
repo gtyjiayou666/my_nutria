@@ -93,10 +93,8 @@ class QuickSettings extends HTMLElement {
     };
 
     // 初始化桌面模式状态，与 wallpaperManager 保持同步
-    // 延迟初始化，确保所有组件都已经加载完成
-    setTimeout(() => {
-      this.initializeDesktopState();
-    }, 2000);
+    // 立即初始化，确保启动时使用正确的样式
+    this.initializeDesktopState();
 
     shadow.querySelector("#new-feature-icon").onclick = () => {
       this.drawer.hide();
@@ -187,6 +185,9 @@ class QuickSettings extends HTMLElement {
 
       console.log(`QuickSettings: Desktop state initialized to ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
       
+      // 根据初始桌面模式状态应用相应的样式和设置（标记为初始化）
+      await this.applyDesktopModeSettings(this.isDesktop, embedder.sessionType, true);
+      
       // 初始化完成后，发送当前桌面模式状态到homescreen
       console.log(`QuickSettings: Sending initial desktop state to homescreen: ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
       actionsDispatcher.dispatch("desktop-mode-changed", { 
@@ -208,6 +209,79 @@ class QuickSettings extends HTMLElement {
       this.isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
       console.log(`QuickSettings: Error fallback - desktop: ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
     }
+  }
+
+  // 应用桌面模式的设置和样式
+  async applyDesktopModeSettings(isDesktop, sessionType, isInitializing = false) {
+    console.log(`QuickSettings: Applying desktop mode settings - isDesktop: ${isDesktop}, sessionType: ${sessionType}, isInitializing: ${isInitializing}`);
+    
+    // 根据桌面模式状态控制虚拟键盘
+    if (isDesktop) {
+      // 桌面模式：禁用虚拟键盘
+      console.log("QuickSettings: Setting up desktop mode - disabling virtual keyboard");
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
+      embedder.useVirtualKeyboard = false;
+      // 如果当前有虚拟键盘打开，强制关闭
+      if (window.inputMethod && window.inputMethod.opened) {
+        window.inputMethod.close();
+      }
+    } else {
+      // 移动模式：启用虚拟键盘
+      console.log("QuickSettings: Setting up mobile mode - enabling virtual keyboard");
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
+      embedder.useVirtualKeyboard = true;
+    }
+
+    // 更新AppsList的桌面模式状态
+    const appsList = document.querySelector('apps-list');
+    if (appsList && typeof appsList.updateDesktopMode === 'function') {
+      console.log(`QuickSettings: Updating apps-list desktop mode to ${isDesktop}`);
+      appsList.updateDesktopMode(isDesktop);
+    }
+
+    // 切换壁纸
+    if (window.wallpaperManager) {
+      console.log(`QuickSettings: Switching wallpaper for isDesktop: ${isDesktop}`);
+      window.wallpaperManager.switchWallpaper(isDesktop);
+    }
+
+    // 设置窗口大小
+    let w = 0;
+    let h = 0;
+    if (!isDesktop) {
+      h = window.screen.height;
+      w = Math.min(h / 1.5, window.screen.width);
+    } else {
+      w = window.screen.width;
+      h = window.screen.height;
+    }
+
+    console.log(`QuickSettings: Setting window size - w: ${w}, h: ${h}, isInitializing: ${isInitializing}`);
+    
+    // 设置窗口大小
+    if (window.top) {
+      const changeEvent = new CustomEvent("changeSize", {
+        detail: {
+          x: ((window.screen.width - w) / 2) | 0,
+          y: 0,
+          width: w,
+          height: h
+        }
+      });
+      
+      if (isInitializing) {
+        // 初始化时立即设置，无延迟
+        window.top.dispatchEvent(changeEvent);
+        console.log(`QuickSettings: Applied initial window size immediately`);
+      } else {
+        // 非初始化时保持原有的延迟逻辑
+        setTimeout(() => {
+          window.top.dispatchEvent(changeEvent);
+        }, 300);
+      }
+    }
+
+    console.log(`QuickSettings: Desktop mode settings applied successfully`);
   }
 
   connectedCallback() {
@@ -711,8 +785,6 @@ class QuickSettings extends HTMLElement {
     const overlay = document.getElementById("blackOverlay");
     overlay.style.display = "block";
     overlay.style.opacity = "1"
-    var w = 0;
-    var h = 0;
 
     // 获取当前实际的 isDesktop 状态
     let currentIsDesktop = this.isDesktop;
@@ -746,14 +818,6 @@ class QuickSettings extends HTMLElement {
       console.error(`QuickSettings: Failed to save desktop state and session type: ${e}`);
     }
 
-    if (!newIsDesktop) {
-      h = window.screen.height;
-      w = Math.min(h / 1.5, window.screen.width);
-    } else {
-      w = window.screen.width;
-      h = window.screen.height;
-    }
-
     console.log(`Switching desktop mode from ${currentIsDesktop} to ${newIsDesktop}, sessionType: ${oldSessionType} -> ${newSessionType}`);
 
     // 发送桌面模式切换事件
@@ -768,32 +832,21 @@ class QuickSettings extends HTMLElement {
       sessionType: newSessionType 
     });
 
-    // 根据桌面模式状态控制虚拟键盘
-    if (newIsDesktop) {
-      // 桌面模式：禁用虚拟键盘
-      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
-      embedder.useVirtualKeyboard = false;
-      // 如果当前有虚拟键盘打开，强制关闭
-      if (window.inputMethod && window.inputMethod.opened) {
-        window.inputMethod.close();
-      }
+    // 应用新的桌面模式设置（非初始化，保持动画）
+    await this.applyDesktopModeSettings(newIsDesktop, newSessionType, false);
+
+    // 获取窗口尺寸
+    let w = 0;
+    let h = 0;
+    if (!newIsDesktop) {
+      h = window.screen.height;
+      w = Math.min(h / 1.5, window.screen.width);
     } else {
-      // 移动模式：启用虚拟键盘
-      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
-      embedder.useVirtualKeyboard = true;
+      w = window.screen.width;
+      h = window.screen.height;
     }
 
-    // 更新AppsList的桌面模式状态
-    const appsList = document.querySelector('apps-list');
-    if (appsList && typeof appsList.updateDesktopMode === 'function') {
-      appsList.updateDesktopMode(newIsDesktop);
-    }
-
-    // 切换壁纸
-    if (window.wallpaperManager) {
-      window.wallpaperManager.switchWallpaper(newIsDesktop);
-    }
-
+    // 执行窗口大小变化动画
     setTimeout(() => {
       window.top.dispatchEvent(new CustomEvent("changeSize", {
         detail: {
