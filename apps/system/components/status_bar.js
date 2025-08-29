@@ -195,10 +195,22 @@ class StatusBar extends HTMLElement {
     };
 
     homeElem.onclick = this.homeClick = () => {
+      // 检查是否为桌面模式
+      const isDesktopMode = this.classList.contains('desktop-mode');
+      
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
-      actionsDispatcher.dispatch("go-home");
+      
+      if (isDesktopMode) {
+        // 桌面模式：不最小化当前应用，只是回到桌面状态但保持应用可见
+        // 这里我们可以选择不执行任何操作，或者只是聚焦到桌面
+        console.log("Desktop mode: Home button clicked, keeping current app visible");
+        return; // 不执行go-home操作，保持当前应用可见
+      } else {
+        // 移动模式：保持原有行为
+        actionsDispatcher.dispatch("go-home");
+      }
     };
 
     let gridElem = this.getElem(`sl-icon[name="${this.carouselIcon}"]`);
@@ -241,17 +253,42 @@ class StatusBar extends HTMLElement {
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
-      document.getElementById("apps-list").toggle();
+      // 移动模式：确保移除桌面模式样式类
+      const appsList = document.getElementById("apps-list");
+      if (appsList) {
+        appsList.classList.remove('desktop-mode');
+        appsList.toggle();
+      }
     };
 
     // 为桌面模式的 quicklaunch 图标也添加事件监听器
     let quickLaunchDesktopElem = this.getElem(`svg.quicklaunch.desktop-mode`);
     hapticFeedback.register(quickLaunchDesktopElem);
     quickLaunchDesktopElem.onpointerdown = async () => {
+      // 桌面模式下的开始按钮行为：不最小化应用，直接显示菜单
+      const isDesktopMode = this.classList.contains('desktop-mode');
+      
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
-      document.getElementById("apps-list").toggle();
+      
+      if (isDesktopMode) {
+        // 桌面模式：直接显示应用列表，不最小化当前应用
+        const appsList = document.getElementById("apps-list");
+        if (appsList) {
+          // 确保应用列表显示在当前应用之上，并使用桌面模式样式
+          appsList.classList.add('desktop-mode');
+          appsList.style.zIndex = '9999';
+          appsList.toggle();
+        }
+      } else {
+        // 移动模式：保持原有行为
+        const appsList = document.getElementById("apps-list");
+        if (appsList) {
+          appsList.classList.remove('desktop-mode');
+          appsList.toggle();
+        }
+      }
     };
 
     let leftText = this.getElem(`.left-text`);
@@ -873,15 +910,25 @@ class StatusBar extends HTMLElement {
   setupSwipeDetector() {
     const swipeDetector = new SwipeDetector(this);
     swipeDetector.addEventListener("swipe-down", () => {
+      const isDesktopMode = this.classList.contains('desktop-mode');
+      
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
-        actionsDispatcher.dispatch("go-home");
+        if (!isDesktopMode) {
+          // 移动模式：回到桌面
+          actionsDispatcher.dispatch("go-home");
+        }
       }
     });
     swipeDetector.addEventListener("swipe-up", () => {
+      const isDesktopMode = this.classList.contains('desktop-mode');
+      
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
-        actionsDispatcher.dispatch("go-home");
+        if (!isDesktopMode) {
+          // 移动模式：回到桌面
+          actionsDispatcher.dispatch("go-home");
+        }
       } else {
         this.triggerCarousel();
       }
@@ -1294,6 +1341,7 @@ class StatusBar extends HTMLElement {
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
+    const appsList = document.getElementById('apps-list');
 
     console.log(`StatusBar: updateQuicklaunchPosition to ${isDesktop ? 'desktop' : 'mobile'} mode`);
     console.log(`StatusBar: Current classes before update:`, this.className);
@@ -1311,6 +1359,10 @@ class StatusBar extends HTMLElement {
       this.classList.add('desktop-mode');
       if (screenElement) {
         screenElement.classList.add('desktop-mode');
+      }
+      // 确保apps-list在桌面模式下有正确的样式
+      if (appsList) {
+        appsList.classList.add('desktop-mode');
       }
 
       // 显示搜索面板
@@ -1341,6 +1393,10 @@ class StatusBar extends HTMLElement {
       this.classList.remove('desktop-mode');
       if (screenElement) {
         screenElement.classList.remove('desktop-mode');
+      }
+      // 确保apps-list在移动模式下移除桌面模式样式
+      if (appsList) {
+        appsList.classList.remove('desktop-mode');
       }
 
       console.log(`StatusBar: Removed desktop-mode class, current classes:`, this.className);

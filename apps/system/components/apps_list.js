@@ -285,17 +285,27 @@ class AppsList extends LitElement {
     );
     this.classList.add("open");
 
-    // Ensure we always show the homescreen as background with wallpaper visible
-    window.wm.goHomeInstant();
-    // Make sure only homescreen is visible as background
-    window.wm.ensureActiveFrameVisibility();
-    // Hide the homescreen content to show only the wallpaper
-    let homescreenFrame = window.wm.homescreenFrame();
-    if (homescreenFrame) {
-      homescreenFrame.classList.add("deactivated");
-      // Force wallpaper to be visible by ensuring no content windows are showing
-      homescreenFrame.style.background = "transparent";
+    // 检查是否为桌面模式
+    const isDesktopMode = this.classList.contains('desktop-mode');
+    
+    if (!isDesktopMode) {
+      // 移动模式：保持原有行为，显示桌面背景
+      // Ensure we always show the homescreen as background with wallpaper visible
+      window.wm.goHomeInstant();
+      // Make sure only homescreen is visible as background
+      window.wm.ensureActiveFrameVisibility();
+      // Hide the homescreen content to show only the wallpaper
+      let homescreenFrame = window.wm.homescreenFrame();
+      if (homescreenFrame) {
+        homescreenFrame.classList.add("deactivated");
+        // Force wallpaper to be visible by ensuring no content windows are showing
+        homescreenFrame.style.background = "transparent";
+      }
+    } else {
+      // 桌面模式：不切换到桌面，保持当前应用可见
+      console.log('AppsList: Desktop mode - not switching to homescreen, keeping current app visible');
     }
+    
     this.focus();
     embedder.addSystemEventListener("keypress", this, true);
     
@@ -309,11 +319,21 @@ class AppsList extends LitElement {
     embedder.removeSystemEventListener("keypress", this, true);
     this.closeContextMenu();
     this.classList.remove("open");
-    // Restore the homescreen content visibility
-    let homescreenFrame = window.wm.homescreenFrame();
-    if (homescreenFrame) {
-      homescreenFrame.classList.remove("deactivated");
-      homescreenFrame.style.background = "";
+    
+    // 检查是否为桌面模式
+    const isDesktopMode = this.classList.contains('desktop-mode');
+    
+    if (!isDesktopMode) {
+      // 移动模式：恢复homescreen的内容可见性
+      // Restore the homescreen content visibility
+      let homescreenFrame = window.wm.homescreenFrame();
+      if (homescreenFrame) {
+        homescreenFrame.classList.remove("deactivated");
+        homescreenFrame.style.background = "";
+      }
+    } else {
+      // 桌面模式：不需要恢复homescreen，保持当前应用可见
+      console.log('AppsList: Desktop mode - not restoring homescreen, keeping current app visible');
     }
     
     // 移除全局点击监听器
