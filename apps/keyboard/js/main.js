@@ -6,9 +6,6 @@ class KeyboardLayout {
     this.layouts = {};
     this.root = root;
 
-
-
-
     this.inputPreviewBar = document.getElementById("input-preview-bar");
 
     this.inputText = "";           // 输入区内容（如拼音）
@@ -86,18 +83,6 @@ class KeyboardLayout {
 
       const text = await response.text();
       this.CNdata = JSON.parse(text);
-      // let transformedData = {};
-      // for (const [pinyin, candidates] of Object.entries(this.CNdata)) {
-      //   transformedData[pinyin] = candidates.map(candidate => candidate[0]);
-      // }
-
-      // const downloadJSON = (data, filename = 'data.json') => {
-      //   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      //   const url = URL.createObjectURL(blob);
-      //   Object.assign(document.createElement('a'), { href: url, download: filename }).click();
-      //   URL.revokeObjectURL(url);
-      // };
-      // downloadJSON(transformedData, '用户数据.json');
 
     } catch (error) {
       console.error('错误:', error);
@@ -233,12 +218,13 @@ class KeyboardLayout {
     this.inputText = text
     let i = 0
     this.candidateList = [];
+    this.candidatePinList = [];
     while (this.inputText.length - i > this.inputIndex) {
       const newList = this.CNdata[this.inputText.slice(this.inputIndex, this.inputText.length - i)] || [];
-      this.candidateList = [...newList, ...this.candidateList];
+      this.candidateList = [...this.candidateList, ...newList];
       if (newList.length != 0) {
         const pinyinlist = Array(newList.length).fill(this.inputText.slice(this.inputIndex, this.inputText.length - i));
-        this.candidatePinList = [...pinyinlist, ...this.candidatePinList]
+        this.candidatePinList = [...this.candidatePinList, ...pinyinlist]
       }
       i = i + 1;
     }

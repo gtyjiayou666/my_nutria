@@ -4,6 +4,8 @@
 const kCarouselModifier =
   embedder.sessionType == "session" ? "Alt" : window.config.metaOrControl;
 
+import CNdata from './chinese.js';
+
 class WindowManagerKeys {
   constructor(wm) {
     this.wm = wm;
@@ -15,9 +17,22 @@ class WindowManagerKeys {
     this.isCtrlDown = false;
     this.isAltDown = false;
     this.index = -1;
+    this.CANDIDATES_PER_PAGE = 7;
+    this.inputText = "";           // 输入区内容（如拼音）
+    this.candidateList = [];       // 候选词列表
+    this.candidatePinList = [];       // 候选词列表
+    this.highlightedIndex = 0;     // 当前高亮候选词索引
+    this.inputIndex = 0;           // 高亮候选词索引
+    this.committedText = "";
+    this.currentPage = 0;
+    this.visibleCandidatesLength = 0;
+    this.createCandidateUI();
 
     embedder.addSystemEventListener("keydown", this, true);
     embedder.addSystemEventListener("keyup", this, true);
+    document.addEventListener('click', () => {
+      this.clearInputText();
+    });
   }
 
   changeCarouselState(open) {
@@ -57,7 +72,7 @@ class WindowManagerKeys {
       this.isAltDown = event.type === "keydown";
     }
 
-    if (event.key === window.config.metaOrControl) {
+    if (event.key == window.config.metaOrControl) {
       this.isCtrlDown = event.type === "keydown";
     }
 
@@ -80,6 +95,7 @@ class WindowManagerKeys {
           this.wm.switchToFrame(children[n].getAttribute("id"));
         }
       }
+      return;
     }
 
     // [modifier] + [Tab] allows switching to the next frame, or to the
@@ -114,6 +130,7 @@ class WindowManagerKeys {
             inline: "center",
           });
       }
+      return;
     }
 
     // Close the carousel with [Escape]
@@ -123,10 +140,11 @@ class WindowManagerKeys {
       this.isCarouselOpen
     ) {
       actionsDispatcher.dispatch("close-carousel");
+      return;
     }
 
     // 在桌面模式下，支持左右箭头键进行水平滚动
-    if (this.isCarouselOpen && event.type === "keydown") {
+    if (this.isCarouselOpen && event.type === "keydown" && this.candidateContainer.style.display === 'none') {
       const carousel = document.querySelector('window-manager .carousel');
       if (carousel && !carousel.classList.contains('vertical')) {
         if (event.key === "ArrowLeft" && !this.isAltDown) {
@@ -153,11 +171,13 @@ class WindowManagerKeys {
     // Switch to the current frame with [Enter]
     if (event.type === "keyup" && event.key === "Enter") {
       this.switchToCurrentFrame();
+      return;
     }
 
     // Switch to the homescreen frame with [Home]
     if (event.type === "keyup" && event.key === "Home") {
       this.wm.goHome();
+      return;
     }
 
     // Open the url editor with [Ctrl] + [l]
@@ -166,6 +186,7 @@ class WindowManagerKeys {
       if (!frame?.config.isHomescreen) {
         actionsDispatcher.dispatch("open-url-editor", frame.state.url);
       }
+      return;
     }
 
     // Open the homescreen "new tab" editor with [Ctrl] + [t]
@@ -177,11 +198,13 @@ class WindowManagerKeys {
       !window.lockscreen.isLocked()
     ) {
       actionsDispatcher.dispatch("new-tab");
+      return;
     }
 
     // Do a WebRender Capture with [Ctrl] + [Shift] + [w]
     if (this.isCtrlDown && this.isShiftDown && event.key === "w") {
       embedder.wrCapture();
+      return;
     }
 
     // Close the current tab with [Ctrl] + [w]
@@ -192,6 +215,7 @@ class WindowManagerKeys {
       !this.isCarouselOpen
     ) {
       this.wm.closeFrame();
+      return;
     }
 
     // Reload the current tab with [Ctrl] + [r]
@@ -201,14 +225,19 @@ class WindowManagerKeys {
     if (this.isCtrlDown && event.type === "keydown" && !this.isCarouselOpen) {
       if (event.key === "r") {
         this.wm.reloadCurrentFrame(this.isShiftDown);
+        return;
       } else if (event.key === "+") {
         this.wm.zoomInCurrentFrame();
+        return;
       } else if (event.key === "=") {
         this.wm.zoomInCurrentFrame();
+        return;
       } else if (event.key === "-") {
         this.wm.zoomOutCurrentFrame();
+        return;
       } else if (event.key === "0") {
         this.wm.zoomResetCurrentFrame();
+        return;
       }
     }
 
@@ -220,13 +249,321 @@ class WindowManagerKeys {
       } else if (event.key === "ArrowRight") {
         this.wm.goForward();
       }
+      return;
     }
-    if (this.isShift)
-      event.preventDefault();
-    // navigator.b2g.inputMethod.setComposition("12", 1, 2)
-    // navigator.b2g.inputMethod.setComposition("22", 1, 2)
-    // navigator.b2g.inputMethod.endComposition("3")
+    if (this.isCtrlDown) {
+      return;
+    }
+    if (this.isShift && event.type === "keydown") {
+      switch (event.key) {
+        case "CapsLock":
+        case "Shift":
+        case "Alt":
+        case "Backspace":
+          return;
+        case 'ArrowUp':
+          if (this.candidateContainer.style.display !== 'none') {
+            event.preventDefault();
+            this.highlightedIndex = this.highlightedIndex - 1;
+            if (this.highlightedIndex < 0 && this.currentPage > 0) {
+              this.prevCandidatePage();
+              this.highlightedIndex = 6;
+              this.updateCandidateUI(this.inputText, this.candidateList, this.highlightedIndex);
+            }
+            if (this.highlightedIndex >= 0) {
+              this.updateCandidateUI(this.inputText, this.candidateList, this.highlightedIndex);
+            }
+          }
+          return;
+        case 'ArrowDown':
+          if (this.candidateContainer.style.display !== 'none') {
+            event.preventDefault();
+            this.highlightedIndex = this.highlightedIndex + 1;
+            if (this.highlightedIndex >= this.visibleCandidatesLength) {
+              this.nextCandidatePage();
+            }
+            this.updateCandidateUI(this.inputText, this.candidateList, this.highlightedIndex);
+          }
+          return;
+        case 'ArrowRight':
+          if (this.candidateContainer.style.display !== 'none') {
+            event.preventDefault();
+            this.nextCandidatePage();
+          }
+          return;
+        case 'ArrowLeft':
+          if (this.candidateContainer.style.display !== 'none') {
+            event.preventDefault();
+            this.prevCandidatePage();
+          }
+          return;
+        case "Enter":
+          navigator.b2g.inputMethod.endComposition(this.inputText);
+          this.inputText = "";
+          event.preventDefault();
+          this.clearInputText();
+          return;
+        case " ":
+          if (this.candidateContainer.style.display !== 'none') {
+            let index = this.currentPage * this.CANDIDATES_PER_PAGE + this.highlightedIndex;
+            this.commitText(index);
+            event.preventDefault();
+          }
+          return;
+      }
+      // 处理字母：用于输入拼音
+      if ((event.key >= 'a' && event.key <= 'z') || (event.key >= 'A' && event.key <= 'Z')) {
+        event.preventDefault();
+        this.inputText = this.inputText + event.key;
+        navigator.b2g.inputMethod.setComposition(this.inputText, 0, this.inputText.length);
+        this.reInputText(this.inputText);
+        this.updateCandidateUI(this.inputText, this.candidateList, this.highlightedIndex);
+        return; // 处理完立即返回
+      } else if (event.key >= '0' && event.key <= '9') {
+        event.preventDefault();
+        if (this.candidateContainer.style.display === 'inline-block') {
+          event.preventDefault();
+          if (event.key >= '1' && event.key <= '7') {
+            let index = this.currentPage * this.CANDIDATES_PER_PAGE + Number(event.key) - 1;
+            if (index >= this.candidateList.length) {
+              return;
+            }
+            this.commitText(index);
+          }
+        }
+      }
+    }
   }
+
+  reInputText(text) {
+    this.inputText = text
+    let i = 0
+    this.candidateList = [];
+    this.candidatePinList = [];
+    while (this.inputText.length - i > this.inputIndex) {
+      const newList = CNdata[this.inputText.slice(this.inputIndex, this.inputText.length - i)] || [];
+      this.candidateList = [...this.candidateList, ...newList];
+      if (newList.length != 0) {
+        const pinyinlist = Array(newList.length).fill(this.inputText.slice(this.inputIndex, this.inputText.length - i));
+        this.candidatePinList = [...this.candidatePinList, ...pinyinlist]
+      }
+      i = i + 1;
+    }
+  }
+
+
+  updateInputText(newText) {
+    this.inputText = newText;
+    if (this.currentLayout._name == "zh-CN") {
+      if (this.candidateList.length == 0) {
+        this.candidateList = [this.inputText.slice(0, 1)];
+        this.candidatePinList = this.candidateList;
+      }
+      this.showCandidates(this.candidateList);
+    } else {
+      this.showCandidates([this.inputText]);
+    }
+  }
+
+  createCandidateUI() {
+    this.candidateContainer = document.createElement('div');
+    this.candidateContainer.id = 'ime-candidate-container';
+    this.candidateContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #333;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      font-family: sans-serif;
+      font-size: 14px;
+      z-index: 9999; /* 确保在最顶层 */
+      display: none; /* 初始隐藏 */
+      min-width: 200px;
+      max-width: 400px;
+    `;
+
+    // 创建拼音显示行
+    this.pinyinDisplay = document.createElement('div');
+    this.pinyinDisplay.id = 'ime-pinyin-display';
+    this.pinyinDisplay.style.cssText = `
+      padding: 2px 4px;
+      margin-bottom: 2px;
+      font-style: italic;
+      color: #ccc;
+    `;
+    this.candidateContainer.appendChild(this.pinyinDisplay);
+
+    // 创建候选词列表容器
+    this.candidateListElement = document.createElement('div');
+    this.candidateListElement.id = 'ime-candidate-list';
+    this.candidateListElement.style.cssText = `
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+    `;
+    this.candidateContainer.appendChild(this.candidateListElement);
+
+    // 将容器添加到 document.body
+    document.body.appendChild(this.candidateContainer);
+  }
+
+  updateCandidateUI(inputText, candidates, highlightedIndex) {
+
+    // 当前页码（可以从 this.currentPage 存取，初始化为 0）
+    const currentPage = this.currentPage || 0;
+    const totalPages = Math.max(1, Math.ceil(candidates.length / this.CANDIDATES_PER_PAGE));
+    const pageIndex = Math.min(currentPage, totalPages - 1);
+
+    const start = pageIndex * this.CANDIDATES_PER_PAGE;
+    const end = start + this.CANDIDATES_PER_PAGE;
+    const visibleCandidates = candidates.slice(start, end);
+    this.visibleCandidatesLength = visibleCandidates.length;
+
+    // 更新拼音显示
+    this.pinyinDisplay.textContent = inputText || "";
+
+    // 清空现有候选词
+    this.candidateListElement.innerHTML = "";
+
+    // 如果没有候选词但有输入，显示输入文本
+    if (visibleCandidates.length === 0 && inputText) {
+      const item = document.createElement('div');
+      item.textContent = inputText;
+      item.style.cssText = `
+      padding: 2px 6px;
+      background-color: #555;
+      border-radius: 3px;
+      cursor: pointer;
+    `;
+      this.candidateListElement.appendChild(item);
+    } else if (visibleCandidates.length > 0) {
+      // 添加当前页的候选词
+      visibleCandidates.forEach((candidate, idx) => {
+        const globalIndex = idx;
+        const item = document.createElement('div');
+        item.textContent = `${globalIndex + 1}.${candidate}`;
+        item.style.cssText = `
+        padding: 2px 6px;
+        border-radius: 3px;
+        cursor: pointer;
+        ${globalIndex === highlightedIndex ?
+            'background-color: #0078d7; color: white;' :
+            'background-color: transparent; color: white;'}
+      `;
+        this.candidateListElement.appendChild(item);
+      });
+
+      // 可选：添加“下一页”提示（如果还有更多）
+      if (pageIndex < totalPages - 1) {
+        const moreItem = document.createElement('div');
+        moreItem.textContent = '...';
+        moreItem.style.cssText = 'color: #aaa; font-size: 12px; text-align: center;';
+        this.candidateListElement.appendChild(moreItem);
+      }
+    }
+
+    // 显示或隐藏容器
+    if ((inputText && inputText.length > 0) || candidates.length > 0) {
+      this.candidateContainer.style.display = 'inline-block';
+      this.positionCandidateUI();
+    } else {
+      this.clearInputText();
+    }
+  }
+  // 下一页
+  nextCandidatePage() {
+    this.highlightedIndex = 0;
+    const total = this.candidateList.length; // 假设你保存了所有候选词列表
+    const totalPages = Math.max(1, Math.ceil(total / this.CANDIDATES_PER_PAGE));
+    const currentPage = this.currentPage || 0;
+
+    if (currentPage < totalPages - 1) {
+      this.currentPage = currentPage + 1;
+      this.updateCandidateUI(this.currentInputText, this.candidateList, this.highlightedIndex);
+    }
+  }
+
+  // 上一页
+  prevCandidatePage() {
+    this.highlightedIndex = 0;
+    const currentPage = this.currentPage || 0;
+    if (currentPage > 0) {
+      this.currentPage = currentPage - 1;
+      this.updateCandidateUI(this.currentInputText, this.candidateList, this.highlightedIndex);
+    }
+  }
+
+  onInputChanged() {
+    this.currentInputText = this.inputText;
+    this.currentPage = 0;
+    this.highlightedIndex = 0;
+    this.updateCandidateUI(this.currentInputText, this.candidateList, this.highlightedIndex);
+  }
+
+  commitText(index) {
+    const text = this.candidateList[index];
+    const pinyin = this.candidatePinList[index];
+    console.info(this.candidatePinList)
+    // this.committedText = this.committedText + text;
+    console.info(index, text, pinyin, this.committedText)
+    navigator.b2g.inputMethod.endComposition(text)
+    if (pinyin === this.inputText) {
+      // navigator.b2g.inputMethod.setComposition(text, 0, text.length)
+      this.clearInputText();
+    } else {
+      this.reInputText(this.inputText.slice(pinyin.length, this.inputText.length));
+      navigator.b2g.inputMethod.setComposition(this.inputText, 0, this.inputText.length)
+      this.onInputChanged();
+    }
+  }
+
+  hideCandidates() {
+    this.candidateList = [];
+    this.candidatePinList = [];
+    this.committedText = "";
+  }
+
+  clearInputText() {
+    this.hideCandidateUI();
+    this.hideCandidates();
+    this.inputText = "";
+    this.highlightedIndex = 0;
+    this.inputIndex = 0;
+  }
+  positionCandidateUI() {
+    const margin = 20; // 距离右下角的边距
+
+    // 先让容器根据内容自适应大小
+    Object.assign(this.candidateContainer.style, {
+      position: 'absolute',     // 或 'fixed'（如果希望随页面滚动）
+      right: `${margin}px`,
+      bottom: `${margin}px`,
+      top: 'auto',
+      left: 'auto',
+
+      width: 'auto',
+      maxWidth: '80%',
+      whiteSpace: 'nowrap',
+
+      padding: '8px 12px',
+      borderRadius: '4px',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      color: 'white',
+      fontSize: '14px',
+      zIndex: '9999',
+
+      display: 'inline-block'  // 关键：根据内容自适应宽度
+    });
+  }
+
+  hideCandidateUI() {
+    this.candidateContainer.style.display = 'none';
+  }
+
 }
 
 class CaretManager {

@@ -89,7 +89,8 @@ class KeyBindings {
 
     // [Ctrl]+[l] opens the search box.
     if (this.isModifierDown && event.type === "keydown" && event.key === "l") {
-      openSearchBox();
+      const statusBar = document.querySelector("status-bar");
+      statusBar.openSearchBox();
     }
   }
 }
@@ -413,9 +414,6 @@ class StatusBar extends HTMLElement {
     }
     this.searchBox = this.shadow.getElementById('search-box');
     this.panelManager = null;
-
-    console.log("StatusBar: searchBox found:", this.searchBox);
-    console.log("StatusBar: searchBox style:", this.searchBox ? window.getComputedStyle(this.searchBox) : "not found");
 
 
     this.searchBox.addEventListener("blur", () => {
