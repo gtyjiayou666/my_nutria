@@ -49,6 +49,12 @@ display-choose-resolution = 选择分辨率
 display-choose = 选择显示器
 display-choose-extension = 选择屏幕扩展
 
+# Display options
+display-monitor = 显示器
+display-extension-none = 无
+display-extension-extended = 扩展
+display-extension-mirror = 镜像
+
 # Search engines panel
 search-title = 搜索引擎
 search-select = 启用您的搜索引擎

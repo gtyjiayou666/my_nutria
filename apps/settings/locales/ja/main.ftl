@@ -50,6 +50,12 @@ display-choose-resolution = 解像度を選択
 display-choose = ディスプレイを選択
 display-choose-extension = 画面拡張を選択
 
+# Display options
+display-monitor = ディスプレイ
+display-extension-none = なし
+display-extension-extended = 拡張
+display-extension-mirror = ミラー
+
 # Search engines panel
 search-title = 検索エンジン
 search-select = 検索エンジンを有効にしてください

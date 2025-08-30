@@ -247,20 +247,27 @@
           <span data-l10n-id="display-choose"></span>
           <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
         </header>
-        <sl-menu id="displays" class="collapsible hidden"></sl-menu>
+        <div id="display-choose" class="collapsible" style="display: none;">
+          <sl-menu id="displays"></sl-menu>
+        </div>
 
         <header class="clickable" id="resolution-header">
           <sl-icon name="monitor"></sl-icon>&nbsp;
           <span data-l10n-id="display-choose-resolution"></span>
           <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
         </header>
-        <sl-menu id="resolutions" class="collapsible hidden"></sl-menu>
+        <div id="resolution-choose" class="collapsible" style="display: none;">
+          <sl-menu id="resolutions"></sl-menu>
+        </div>
 
-        <header>
+        <header class="clickable" id="extension-header">
           <sl-icon name="palette"></sl-icon>&nbsp;
           <span data-l10n-id="display-choose-extension"></span>
+          <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
         </header>
-        <sl-menu id="extensions"></sl-menu>
+        <div id="extension-choose" class="collapsible" style="display: none;">
+          <sl-menu id="extensions"></sl-menu>
+        </div>
       </div>
     </template>
 

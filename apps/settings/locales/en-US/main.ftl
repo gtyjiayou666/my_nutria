@@ -50,6 +50,12 @@ display-choose-resolution = Choose Resolution
 display-choose = Choose Display
 display-choose-extension = Choose Extension
 
+# Display options
+display-monitor = Display
+display-extension-none = None
+display-extension-extended = Extended
+display-extension-mirror = Mirror
+
 # Search engines panel
 search-title = Search Engines
 search-select = Enable your search engines
