@@ -520,18 +520,46 @@ class StatusBar extends HTMLElement {
 
     this.opensearchEngine = null;
     this.searchBox.addEventListener("keypress", (event) => {
-      this.opensearchEngine = this.opensearchEngine || new OpenSearch();
       console.log(`SearchBox: keypress ${event.key}`);
       if (event.key !== "Enter") {
         return;
       }
 
-      if (this.defaultSearchResults.onEnterKey()) {
+      // 检查panelManager是否可用并处理回车事件
+      if (this.panelManager && typeof this.panelManager.handleEnterKey === 'function') {
+        this.panelManager.handleEnterKey();
         return;
+      }
+
+      // 回退处理：使用本地实现
+      this.opensearchEngine = this.opensearchEngine || new OpenSearch();
+      
+      // 检查是否有主搜索面板的默认搜索结果组件
+      const mainSearchPanel = document.getElementById('main-search-panel');
+      let defaultSearchResults = null;
+      
+      if (mainSearchPanel) {
+        defaultSearchResults = mainSearchPanel.querySelector('#main-default-search-results');
+      }
+      
+      // 如果没有主搜索面板的组件，回退到shadow DOM中的组件
+      if (!defaultSearchResults) {
+        defaultSearchResults = this.defaultSearchResults;
+      }
+
+      // 尝试处理默认搜索结果的回车事件
+      if (defaultSearchResults && typeof defaultSearchResults.onEnterKey === 'function') {
+        if (defaultSearchResults.onEnterKey()) {
+          return;
+        }
       }
 
       let input = this.searchBox.value.trim();
       this.searchBox.blur();
+      
+      // 关闭搜索面板
+      this.closeSearchPanel();
+      
       if (!this.maybeOpenURL(input)) {
         // Keyword search, redirect to the current search engine.
         this.maybeOpenURL(this.opensearchEngine.getSearchUrlFor(input), { search: input });

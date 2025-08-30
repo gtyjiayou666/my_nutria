@@ -6,6 +6,14 @@ export class SearchPanel {
     this.panel = panel;
     this.searchBox = searchBox;
     this.searchBox.addEventListener("input", this);
+    
+    // 添加keypress事件处理，用于处理回车键
+    this.searchBox.addEventListener("keypress", (event) => {
+      if (event.key === "Enter") {
+        this.handleEnterKey();
+      }
+    });
+    
     this.searchResults = searchResults;
     this.clearSearch = clearSearch;
     this.defaultSearchResults = defaultSearchResults;
@@ -85,6 +93,110 @@ export class SearchPanel {
     document
       .getElementById("theme-color")
       .setAttribute("content", "transparent");
+  }
+
+  handleEnterKey() {
+    console.log("SearchPanel: handleEnterKey called");
+    
+    // 检查是否有默认搜索结果可以执行
+    if (this.defaultSearchResults && typeof this.defaultSearchResults.onEnterKey === 'function') {
+      if (this.defaultSearchResults.onEnterKey()) {
+        return; // 如果默认搜索结果处理了回车事件，直接返回
+      }
+    }
+
+    // 获取搜索框的内容
+    let input = this.searchBox.value.trim();
+    if (!input || input.length === 0) {
+      console.log("SearchPanel: No input to search for");
+      return;
+    }
+
+    console.log(`SearchPanel: Processing search for: "${input}"`);
+    
+    // 模糊搜索框
+    this.searchBox.blur();
+    
+    // 关闭搜索面板
+    this.onClose();
+    
+    // 检查是否可以访问OpenSearch类
+    if (typeof OpenSearch === 'undefined' && !this.opensearchEngine) {
+      console.warn("SearchPanel: OpenSearch class not available, using direct search");
+      // 直接处理URL或进行简单搜索
+      if (!this.maybeOpenURL(input)) {
+        // 使用默认搜索引擎
+        const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(input)}`;
+        this.maybeOpenURL(searchUrl, { search: input });
+      }
+      return;
+    }
+
+    // 创建 OpenSearch 引擎实例（如果需要）
+    if (!this.opensearchEngine) {
+      this.opensearchEngine = new OpenSearch();
+    }
+
+    // 使用类似homescreen的逻辑处理URL
+    if (!this.maybeOpenURL(input)) {
+      // 不是URL，执行关键词搜索
+      console.log(`SearchPanel: Performing keyword search for: "${input}"`);
+      const searchUrl = this.opensearchEngine.getSearchUrlFor(input);
+      this.maybeOpenURL(searchUrl, { search: input });
+    }
+  }
+
+  maybeOpenURL(url, details = {}) {
+    console.log(`SearchPanel: maybeOpenURL ${url}`);
+    if (!url || url.length == 0) {
+      return false;
+    }
+
+    // 设置私密浏览模式
+    details.privatebrowsing = this.privateBrowsing.classList.contains("active");
+
+    let isUrl = false;
+    try {
+      let a = new URL(url);
+      isUrl = true;
+    } catch (e) { }
+
+    if (url.startsWith("about:")) {
+      let act = new WebActivity("open-about", { url });
+      act.start();
+      return true;
+    }
+
+    const isFileUrl = url.startsWith("file://");
+    console.log(`SearchPanel: maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
+
+    try {
+      // 没有"."且不是URL，可能是关键词搜索
+      if (!url.includes(".") && !isUrl) {
+        return false;
+      }
+
+      if (
+        !isFileUrl &&
+        !url.startsWith("http") &&
+        !url.startsWith("ipfs://") &&
+        !url.startsWith("ipns://") &&
+        !url.startsWith("tile://")
+      ) {
+        url = `https://${url}`;
+      }
+
+      // 使用window.wm.openFrame而不是window.open
+      let encoded = encodeURIComponent(JSON.stringify(details));
+      window.wm.openFrame(url, {
+        activate: true,
+        details: encoded
+      });
+      console.log(`SearchPanel: opened frame for ${url}`);
+    } catch (e) {
+      console.log(`SearchPanel: maybeOpenUrl error ${e}`);
+    }
+    return true;
   }
 
   openURL(url, search) {
