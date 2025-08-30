@@ -744,9 +744,6 @@ class QuickSettings extends HTMLElement {
   }
 
   async handleNewFeatureClick() {
-    const overlay = document.getElementById("blackOverlay");
-    overlay.style.display = "block";
-    overlay.style.opacity = "1"
 
     // 获取当前实际的 isDesktop 状态
     let currentIsDesktop = this.isDesktop;
