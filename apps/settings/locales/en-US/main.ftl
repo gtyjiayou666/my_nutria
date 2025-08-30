@@ -52,7 +52,6 @@ display-choose-extension = Choose Extension
 
 # Display options
 display-monitor = Display
-display-extension-none = None
 display-extension-extended = Extended
 display-extension-mirror = Mirror
 

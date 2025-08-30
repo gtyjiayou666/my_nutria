@@ -23,12 +23,14 @@ class DisplayPanel {
   }
 
   async handleEvent(event) {
+    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+    console.log(event);
+    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     if (event.type === "panel-ready") {
       this.init();
     } else if (event.type === "sl-change") {
       this.updateChoice(event.target);
     } else if (event.type === "sl-select") {
-      console.log(`nutria.theme ${event.target.getAttribute("id")}`);
       let kind = event.target.getAttribute("id");
 
       if (kind == "homescreens") {
@@ -54,13 +56,13 @@ class DisplayPanel {
         this.theme?.removeAttribute("checked");
         this.theme = event.detail.item;
         // Set the new settings value.
-        console.log(`nutria.theme: will switch to ${event.detail.item.dataset.theme}`);
         let setting = {
           name: "nutria.theme",
           value: event.detail.item.dataset.theme,
         };
         await this.settings.set([setting]);
       } else if (kind == "resolutions") {
+        console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         if (this.resolution === event.detail.item) {
           this.resolution.checked = true;
           return;
@@ -69,7 +71,7 @@ class DisplayPanel {
         this.resolution?.removeAttribute("checked");
         this.resolution = event.detail.item;
         // Set the new screen resolution.
-        await this.setScreenResolution(this.display.dataset.num, event.detail.item.dataset.width, event.detail.item.dataset.height);
+        this.setScreenResolution(this.display.dataset.num, this.extension.dataset.mode, event.detail.item.dataset.width, event.detail.item.dataset.height);
       } else if (kind == "displays") {
         if (this.display === event.detail.item) {
           this.display.checked = true;
@@ -89,7 +91,7 @@ class DisplayPanel {
         this.extension?.removeAttribute("checked");
         this.extension = event.detail.item;
         // Set the new extension mode.
-        await this.setScreenResolution(this.display.dataset.num, this.resolution.dataset.width, this.resolution.dataset.height);
+        this.setScreenResolution(this.display.dataset.num, this.extension.dataset.mode, this.resolution.dataset.width, this.resolution.dataset.height);
       }
     } else if (event.type === "click") {
       // Handle resolution header click for collapse/expand
@@ -116,7 +118,6 @@ class DisplayPanel {
     });
   }
   async updateChoice(item) {
-    this.log(`dark mode = ${item.checked}`);
     let settings = await apiDaemon.getSettings();
     await settings.set([
       {
@@ -128,11 +129,9 @@ class DisplayPanel {
 
   async init() {
     if (this.ready) {
-      this.log("Already initialized, skipping...");
       return;
     }
 
-    this.log("Starting display panel initialization...");
 
     // The ui.prefers.color-scheme is set to "dark" when prefering a dark theme, any
     // other value select a light theme.
@@ -141,7 +140,7 @@ class DisplayPanel {
     try {
       let result = await this.settings.get("ui.prefers.color-scheme");
       isDarkMode = result.value === "dark";
-    } catch (e) { 
+    } catch (e) {
       this.log("Could not get color scheme setting, using default");
     }
 
@@ -177,13 +176,11 @@ class DisplayPanel {
       this.error("Homescreen or themes menu not found!");
       return;
     }
-
-    this.log("Loading apps for homescreen and theme selection...");
     let appsManager = await apiDaemon.getAppsManager();
     let apps = await appsManager.getAll();
     let homescreenCount = 0;
     let themeCount = 0;
-    
+
     for (let app of apps) {
       // Fetch the manifest to check if the app role is "homescreen"
       let response = await fetch(app.manifestUrl);
@@ -212,30 +209,26 @@ class DisplayPanel {
         themeCount++;
       }
     }
-    
-    this.log(`Loaded ${homescreenCount} homescreens and ${themeCount} themes`);
+
     homescreens.addEventListener("sl-select", this);
     themes.addEventListener("sl-select", this);
 
     // Initialize resolution, display and extension options
-    this.log("Initializing display options...");
-    await this.initResolutions();
     await this.initDisplays();
+    await this.initResolutions();
     await this.initExtensions();
-    
+
     // Add event listeners for headers click
     let resolutionHeader = this.panel.querySelector("#resolution-header");
     if (resolutionHeader) {
       resolutionHeader.addEventListener("click", this);
-      this.log("Resolution header click listener added");
     }
-    
+
     let displayHeader = this.panel.querySelector("#display-header");
     if (displayHeader) {
       displayHeader.addEventListener("click", this);
-      this.log("Display header click listener added");
     }
-    
+
     let extensionHeader = this.panel.querySelector("#extension-header");
     if (extensionHeader) {
       extensionHeader.addEventListener("click", this);
@@ -244,7 +237,7 @@ class DisplayPanel {
 
     this.ready = true;
     this.log("Display panel initialization completed successfully!");
-    
+
     // Ensure all dynamically created content is translated
     if (document.l10n) {
       try {
@@ -263,41 +256,40 @@ class DisplayPanel {
       this.error("Resolutions menu not found!");
       return;
     }
-    
+
     // Clear existing content
     resolutions.innerHTML = "";
-    
+
     try {
       // Get available resolutions from the backend
       let availableResolutions = await this.getAvailableResolutions();
       this.log(`Found ${availableResolutions.length} available resolutions`);
-      
+
       // Get current resolution
       let currentResolution = await this.getCurrentResolution();
-      
+
       for (let res of availableResolutions) {
         let item = document.createElement("sl-menu-item");
         item.setAttribute("type", "checkbox");
         item.textContent = `${res.width} × ${res.height}`;
         item.dataset.width = res.width;
         item.dataset.height = res.height;
-        
+
         // Check if this is the current resolution
         if (currentResolution && res.width === currentResolution.width && res.height === currentResolution.height) {
           item.setAttribute("checked", "true");
           this.resolution = item;
-          this.log(`Current resolution: ${res.width} × ${res.height}`);
         }
-        
+
         resolutions.append(item);
       }
-      
+
       // Add event listener only once
       if (!resolutions.hasAttribute("data-listener-added")) {
         resolutions.addEventListener("sl-select", this);
         resolutions.setAttribute("data-listener-added", "true");
       }
-      
+
       this.log("Resolutions initialized successfully");
     } catch (error) {
       this.error(`Failed to initialize resolutions: ${error}`);
@@ -307,22 +299,22 @@ class DisplayPanel {
   async getAvailableResolutions() {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        let resolutions = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenResolutions(0));
+        let resolutions = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenResolutions(this.display.dataset.num));
         let availableResolutions = [];
-        
+
         for (var i = 0; i < resolutions.length; i++) {
           availableResolutions.push({
             width: resolutions[i].width,
             height: resolutions[i].height
           });
         }
-        
+
         return availableResolutions;
       }
     } catch (e) {
       this.error(`Failed to get available resolutions: ${e}`);
     }
-    
+
     // Default resolutions if backend doesn't return any
     return [
       { width: 1920, height: 1080 },
@@ -335,12 +327,12 @@ class DisplayPanel {
   async getCurrentResolution() {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        return await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution(0));
+        return await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getCurrentResolution(this.display.dataset.num));
       }
     } catch (e) {
       this.error(`Failed to get current resolution: ${e}`);
     }
-    
+
     // Default resolution
     return { width: 1920, height: 1080 };
   }
@@ -348,33 +340,34 @@ class DisplayPanel {
   async initDisplays() {
     this.log("Initializing displays...");
     const displays = this.panel.querySelector("#displays");
-    
+
     if (!displays) {
       this.error("Displays menu not found!");
       return;
     }
-    
+
     try {
       // Clear existing display options
       displays.innerHTML = "";
-      
-      const displayCount = 1; // Default to 1 display for now
-      this.log(`Creating ${displayCount} display options`);
-      
+
+      let displayCount = 1; // Default to 1 display
+      if (navigator.b2g && navigator.b2g.b2GScreenManager) {
+        displayCount = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenNum());
+      }
       for (let i = 0; i < displayCount; i++) {
         const item = document.createElement("sl-menu-item");
         item.setAttribute("type", "checkbox");
         item.dataset.num = i;
-        
+
         // Create a span with l10n-id for "Display" text
         const span = document.createElement('span');
         span.setAttribute('data-l10n-id', 'display-monitor');
         span.textContent = 'Display'; // fallback text
-        
+
         // Set the content as "Display X" where X is the display number
         item.appendChild(span);
         item.appendChild(document.createTextNode(` ${i + 1}`));
-        
+
         if (i === 0) {
           item.setAttribute("checked", "true");
           this.display = item;
@@ -382,18 +375,18 @@ class DisplayPanel {
         }
         displays.appendChild(item);
       }
-      
+
       // Translate the newly created elements
       if (document.l10n) {
         await document.l10n.translateFragment(displays);
       }
-      
+
       // Add event listener only once
       if (!displays.hasAttribute("data-listener-added")) {
         displays.addEventListener("sl-select", this);
         displays.setAttribute("data-listener-added", "true");
       }
-      
+
       this.log("Displays initialized successfully");
     } catch (error) {
       this.error(`Failed to initialize displays: ${error}`);
@@ -403,34 +396,32 @@ class DisplayPanel {
   async initExtensions() {
     this.log("Initializing extensions...");
     const extensions = this.panel.querySelector("#extensions");
-    
+
     if (!extensions) {
       this.error("Extensions menu not found!");
       return;
     }
-    
+
     try {
       // Clear existing extension options
       extensions.innerHTML = "";
-      
+
       // Use localized extension mode names
       const extensionModes = [
-        { key: 'display-extension-none', value: 'none', fallback: 'None' },
-        { key: 'display-extension-extended', value: 'extended', fallback: 'Extended' },
-        { key: 'display-extension-mirror', value: 'mirror', fallback: 'Mirror' }
+        { key: 'display-extension-mirror', value: 0, fallback: 'Mirror' },
+        { key: 'display-extension-extended', value: 1, fallback: 'Extended' }
       ];
-      this.log(`Creating ${extensionModes.length} extension options`);
-      
+
       for (let index = 0; index < extensionModes.length; index++) {
         const ext = extensionModes[index];
         const item = document.createElement("sl-menu-item");
         item.setAttribute("type", "checkbox");
         item.dataset.mode = ext.value;
-        
+
         // Set l10n-id and fallback text
         item.setAttribute('data-l10n-id', ext.key);
         item.textContent = ext.fallback; // fallback text
-        
+
         if (index === 0) {
           item.setAttribute("checked", "true");
           this.extension = item;
@@ -438,18 +429,18 @@ class DisplayPanel {
         }
         extensions.appendChild(item);
       }
-      
+
       // Translate the newly created elements
       if (document.l10n) {
         await document.l10n.translateFragment(extensions);
       }
-      
+
       // Add event listener only once
       if (!extensions.hasAttribute("data-listener-added")) {
         extensions.addEventListener("sl-select", this);
         extensions.setAttribute("data-listener-added", "true");
       }
-      
+
       this.log("Extensions initialized successfully");
     } catch (error) {
       this.error(`Failed to initialize extensions: ${error}`);
@@ -469,11 +460,11 @@ class DisplayPanel {
     const header = this.panel.querySelector("#display-header");
     const content = this.panel.querySelector("#display-choose");
     const icon = header?.querySelector(".expand-icon");
-    
+
     if (content && header) {
       const isCollapsed = content.style.display === "none" || !content.style.display;
       content.style.display = isCollapsed ? "block" : "none";
-      
+
       if (icon) {
         icon.style.transform = isCollapsed ? "rotate(180deg)" : "rotate(0deg)";
       }
@@ -484,21 +475,21 @@ class DisplayPanel {
     const header = this.panel.querySelector("#extension-header");
     const content = this.panel.querySelector("#extension-choose");
     const icon = header?.querySelector(".expand-icon");
-    
+
     if (content && header) {
       const isCollapsed = content.style.display === "none" || !content.style.display;
       content.style.display = isCollapsed ? "block" : "none";
-      
+
       if (icon) {
         icon.style.transform = isCollapsed ? "rotate(180deg)" : "rotate(0deg)";
       }
     }
   }
 
-  async setScreenResolution(displayNum, width, height) {
+  setScreenResolution(displayNum, mode, width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(0, 0, parseInt(width), parseInt(height)));
+        this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(displayNum, mode, parseInt(width), parseInt(height)));
         this.log(`Resolution changed to ${width}x${height}`);
       } else {
         this.error("b2GScreenManager not available");
@@ -512,15 +503,15 @@ class DisplayPanel {
     const header = this.panel.querySelector("#resolution-header");
     const content = this.panel.querySelector("#resolution-choose");
     const icon = header?.querySelector(".expand-icon");
-    
+
     if (content && header) {
       const isHidden = content.style.display === "none";
       content.style.display = isHidden ? "block" : "none";
-      
+
       if (icon) {
         icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
       }
-      
+
       this.log(`Resolution section ${isHidden ? 'expanded' : 'collapsed'}`);
     }
   }
@@ -529,15 +520,15 @@ class DisplayPanel {
     const header = this.panel.querySelector("#display-header");
     const content = this.panel.querySelector("#display-choose");
     const icon = header?.querySelector(".expand-icon");
-    
+
     if (content && header) {
       const isHidden = content.style.display === "none";
       content.style.display = isHidden ? "block" : "none";
-      
+
       if (icon) {
         icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
       }
-      
+
       this.log(`Display section ${isHidden ? 'expanded' : 'collapsed'}`);
     }
   }
@@ -546,15 +537,15 @@ class DisplayPanel {
     const header = this.panel.querySelector("#extension-header");
     const content = this.panel.querySelector("#extension-choose");
     const icon = header?.querySelector(".expand-icon");
-    
+
     if (content && header) {
       const isHidden = content.style.display === "none";
       content.style.display = isHidden ? "block" : "none";
-      
+
       if (icon) {
         icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
       }
-      
+
       this.log(`Extension section ${isHidden ? 'expanded' : 'collapsed'}`);
     }
   }

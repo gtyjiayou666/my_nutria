@@ -52,7 +52,6 @@ display-choose-extension = 画面拡張を選択
 
 # Display options
 display-monitor = ディスプレイ
-display-extension-none = なし
 display-extension-extended = 拡張
 display-extension-mirror = ミラー
 

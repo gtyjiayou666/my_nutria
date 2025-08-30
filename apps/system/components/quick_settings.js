@@ -244,44 +244,6 @@ class QuickSettings extends HTMLElement {
       console.log(`QuickSettings: Switching wallpaper for isDesktop: ${isDesktop}`);
       window.wallpaperManager.switchWallpaper(isDesktop);
     }
-
-    // 设置窗口大小
-    let w = 0;
-    let h = 0;
-    if (!isDesktop) {
-      h = window.screen.height;
-      w = Math.min(h / 1.5, window.screen.width);
-    } else {
-      w = window.screen.width;
-      h = window.screen.height;
-    }
-
-    console.log(`QuickSettings: Setting window size - w: ${w}, h: ${h}, isInitializing: ${isInitializing}`);
-    
-    // 设置窗口大小
-    if (window.top) {
-      const changeEvent = new CustomEvent("changeSize", {
-        detail: {
-          x: ((window.screen.width - w) / 2) | 0,
-          y: 0,
-          width: w,
-          height: h
-        }
-      });
-      
-      if (isInitializing) {
-        // 初始化时立即设置，无延迟
-        window.top.dispatchEvent(changeEvent);
-        console.log(`QuickSettings: Applied initial window size immediately`);
-      } else {
-        // 非初始化时保持原有的延迟逻辑
-        setTimeout(() => {
-          window.top.dispatchEvent(changeEvent);
-        }, 300);
-      }
-    }
-
-    console.log(`QuickSettings: Desktop mode settings applied successfully`);
   }
 
   connectedCallback() {
@@ -834,33 +796,6 @@ class QuickSettings extends HTMLElement {
 
     // 应用新的桌面模式设置（非初始化，保持动画）
     await this.applyDesktopModeSettings(newIsDesktop, newSessionType, false);
-
-    // 获取窗口尺寸
-    let w = 0;
-    let h = 0;
-    if (!newIsDesktop) {
-      h = window.screen.height;
-      w = Math.min(h / 1.5, window.screen.width);
-    } else {
-      w = window.screen.width;
-      h = window.screen.height;
-    }
-
-    // 执行窗口大小变化动画
-    setTimeout(() => {
-      window.top.dispatchEvent(new CustomEvent("changeSize", {
-        detail: {
-          x: ((window.screen.width - w) / 2) | 0,
-          y: 0,
-          width: w,
-          height: h
-        }
-      }));
-      setTimeout(() => {
-        overlay.style.opacity = "0";
-        overlay.style.display = "none";
-      }, 100);
-    }, 300);
   }
 }
 

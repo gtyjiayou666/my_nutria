@@ -391,7 +391,6 @@ class DisplayPreferences extends HTMLElement {
     this.theme?.removeAttribute("checked");
     this.theme = event.detail.item;
     // Set the new settings value.
-    console.log(`nutria.theme: will switch to ${event.detail.item.dataset.theme}`);
     let setting = {
       name: "nutria.theme",
       value: event.detail.item.dataset.theme,
