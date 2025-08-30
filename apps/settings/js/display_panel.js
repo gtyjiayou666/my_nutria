@@ -498,7 +498,7 @@ class DisplayPanel {
   async setScreenResolution(displayNum, width, height) {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
-        await this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(0, 0, parseInt(width), parseInt(height)));
+        this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(0, 0, parseInt(width), parseInt(height)));
         this.log(`Resolution changed to ${width}x${height}`);
       } else {
         this.error("b2GScreenManager not available");

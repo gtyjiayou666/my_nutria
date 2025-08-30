@@ -283,7 +283,6 @@ class DisplayPreferences extends HTMLElement {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
 
         let num = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenNum());
-        console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",num)
         let availableDisplays = [];
 
         for (var i = 0; i < num; i++) {
