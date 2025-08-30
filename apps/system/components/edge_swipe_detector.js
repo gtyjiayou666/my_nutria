@@ -8,14 +8,11 @@ class EdgeSwipeDetector extends EventTarget {
     // 边缘检测区域宽度（像素）
     this.edgeWidth = 30;
     
-    // 最小滑动距离才触发手势 - 降低门槛使手势更容易触发
-    this.minSwipeDistance = 60;
-    
-    // 最大滑动时间（毫秒） - 增加时间给用户更多操作空间
-    this.maxSwipeTime = 1500;
-    
-    // 最大垂直偏移，超过则认为不是水平滑动 - 增加容差
-    this.maxVerticalDeviation = 150;
+    // 手势阈值配置
+    this.minSwipeDistance = 60;        // 最小滑动距离才触发手势
+    this.commitThreshold = 120;        // 确认退出的阈值距离
+    this.maxSwipeTime = 1500;          // 最大滑动时间（毫秒）
+    this.maxVerticalDeviation = 150;   // 最大垂直偏移
     
     // 当前手势状态
     this.isGesturing = false;
@@ -25,6 +22,11 @@ class EdgeSwipeDetector extends EventTarget {
     this.isFromEdge = false;
     this.isDesktopMode = false;
     this.currentPointerId = -1;
+    
+    // 新增手势状态管理
+    this.swipeState = 'none';          // 'none' | 'swiping' | 'ready_to_exit' | 'committed'
+    this.currentDistance = 0;          // 当前滑动距离
+    this.maxReachedDistance = 0;       // 本次手势达到的最大距离
     
     // 只在移动模式下启用
     this.enabled = false;
@@ -150,6 +152,11 @@ class EdgeSwipeDetector extends EventTarget {
       this.currentPointerId = pointerId;
       this.swipeDirection = isFromLeftEdge ? 'right' : 'left';
       
+      // 初始化新的手势状态
+      this.swipeState = 'swiping';
+      this.currentDistance = 0;
+      this.maxReachedDistance = 0;
+      
       // 创建并显示滑动箭头提示
       this.createSwipeIndicator(clientX, clientY, this.swipeDirection);
       
@@ -189,30 +196,56 @@ class EdgeSwipeDetector extends EventTarget {
       return;
     }
     
-    // 更新滑动箭头位置和进度
-    this.updateSwipeIndicator(clientX, clientY, deltaX);
+    // 计算当前滑动距离（绝对值）
+    this.currentDistance = Math.abs(deltaX);
+    this.maxReachedDistance = Math.max(this.maxReachedDistance, this.currentDistance);
     
-    // 检查是否达到最小滑动距离
-    const distance = Math.abs(deltaX);
-    if (distance >= this.minSwipeDistance) {
-      // 检查滑动方向是否正确（从边缘向内滑动）
-      const isLeftEdgeSwipeRight = this.startX <= this.edgeWidth && deltaX > 0;
-      const isRightEdgeSwipeLeft = this.startX >= window.innerWidth - this.edgeWidth && deltaX < 0;
-      
-      if (isLeftEdgeSwipeRight || isRightEdgeSwipeLeft) {
-        this.log(`Valid edge swipe detected: distance=${distance}, deltaX=${deltaX}, time=${elapsed}ms`);
+    // 检查滑动方向是否正确（从边缘向内滑动）
+    const isLeftEdgeSwipeRight = this.startX <= this.edgeWidth && deltaX > 0;
+    const isRightEdgeSwipeLeft = this.startX >= window.innerWidth - this.edgeWidth && deltaX < 0;
+    const isValidDirection = isLeftEdgeSwipeRight || isRightEdgeSwipeLeft;
+    
+    if (!isValidDirection) {
+      // 滑动方向错误，取消手势
+      this.removeSwipeIndicator();
+      this.reset();
+      return;
+    }
+    
+    // 状态管理和视觉反馈
+    const prevState = this.swipeState;
+    
+    if (this.currentDistance >= this.commitThreshold) {
+      // 达到确认退出阈值
+      if (this.swipeState !== 'ready_to_exit') {
+        this.swipeState = 'ready_to_exit';
+        this.log(`Swipe ready to exit at distance: ${this.currentDistance}px`);
         
-        // 显示成功动画
-        this.showSwipeSuccess();
-        
-        // 延迟触发返回手势，让用户看到成功反馈
-        setTimeout(() => {
-          this.triggerBackGesture();
-          this.removeSwipeIndicator();
-          this.reset();
-        }, 100);
+        // 触发触觉反馈表示达到阈值
+        if (window.hapticFeedback && window.hapticFeedback.trigger) {
+          window.hapticFeedback.trigger('medium');
+        }
+      }
+    } else if (this.currentDistance >= this.minSwipeDistance) {
+      // 达到最小滑动距离但未达到确认阈值
+      if (this.swipeState !== 'swiping') {
+        this.swipeState = 'swiping';
       }
     }
+    
+    // 检查是否从ready_to_exit状态回拉到阈值以下
+    if (prevState === 'ready_to_exit' && this.currentDistance < this.commitThreshold) {
+      this.swipeState = 'swiping';
+      this.log(`Swipe pulled back below threshold, distance: ${this.currentDistance}px`);
+      
+      // 轻微触觉反馈表示离开退出区域
+      if (window.hapticFeedback && window.hapticFeedback.trigger) {
+        window.hapticFeedback.trigger('light');
+      }
+    }
+    
+    // 更新滑动指示器
+    this.updateSwipeIndicator(clientX, clientY, deltaX);
   }
   
   handlePointerUp(event) {
@@ -221,9 +254,37 @@ class EdgeSwipeDetector extends EventTarget {
     // 只处理相同的指针
     if (event.pointerId !== this.currentPointerId) return;
     
-    this.log('Pointer up, gesture ended');
-    this.removeSwipeIndicator();
-    this.reset();
+    this.log(`Pointer up, gesture ended. State: ${this.swipeState}, distance: ${this.currentDistance}px, max: ${this.maxReachedDistance}px`);
+    
+    // 判断是否应该触发退出
+    if (this.swipeState === 'ready_to_exit' && this.currentDistance >= this.commitThreshold) {
+      this.log('Triggering exit on pointer up - threshold reached and maintained');
+      
+      // 显示成功动画
+      this.showSwipeSuccess();
+      
+      // 触发退出手势
+      setTimeout(() => {
+        this.triggerBackGesture();
+        this.removeSwipeIndicator();
+        this.reset();
+      }, 150); // 稍微延长动画时间让用户看到反馈
+      
+    } else {
+      // 未达到阈值或已回拉，不触发退出
+      const reason = this.currentDistance < this.commitThreshold ? 
+        'threshold not reached' : 'pulled back before release';
+      this.log(`Not triggering exit: ${reason}`);
+      
+      // 显示取消动画
+      this.showSwipeCancel();
+      
+      // 延迟清理，让用户看到取消反馈
+      setTimeout(() => {
+        this.removeSwipeIndicator();
+        this.reset();
+      }, 300);
+    }
   }
   
   handlePointerCancel(event) {
@@ -309,6 +370,11 @@ class EdgeSwipeDetector extends EventTarget {
     this.startTime = 0;
     this.currentPointerId = -1;
     this.swipeDirection = null;
+    
+    // 重置新的状态变量
+    this.swipeState = 'none';
+    this.currentDistance = 0;
+    this.maxReachedDistance = 0;
   }
   
   log(message) {
@@ -333,10 +399,11 @@ class EdgeSwipeDetector extends EventTarget {
   setParameters(params) {
     if (params.edgeWidth !== undefined) this.edgeWidth = params.edgeWidth;
     if (params.minSwipeDistance !== undefined) this.minSwipeDistance = params.minSwipeDistance;
+    if (params.commitThreshold !== undefined) this.commitThreshold = params.commitThreshold;
     if (params.maxSwipeTime !== undefined) this.maxSwipeTime = params.maxSwipeTime;
     if (params.maxVerticalDeviation !== undefined) this.maxVerticalDeviation = params.maxVerticalDeviation;
     
-    this.log(`Parameters updated: edgeWidth=${this.edgeWidth}, minSwipeDistance=${this.minSwipeDistance}`);
+    this.log(`Parameters updated: edgeWidth=${this.edgeWidth}, minSwipeDistance=${this.minSwipeDistance}, commitThreshold=${this.commitThreshold}`);
   }
   
   // 创建滑动箭头指示器
@@ -442,34 +509,56 @@ class EdgeSwipeDetector extends EventTarget {
   updateSwipeIndicator(x, y, deltaX) {
     if (!this.swipeIndicator) return;
     
-    // 计算滑动进度 (0-1)
-    const progress = Math.min(Math.abs(deltaX) / this.minSwipeDistance, 1);
+    // 计算基于commitThreshold的滑动进度 (0-1)
+    const progress = Math.min(Math.abs(deltaX) / this.commitThreshold, 1);
+    const minProgress = Math.min(Math.abs(deltaX) / this.minSwipeDistance, 1);
     
     // 更新位置
     this.swipeIndicator.style.left = `${x - 20}px`;
     this.swipeIndicator.style.top = `${y - 20}px`;
     
-    // 更新进度指示器
+    // 获取元素
     const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
+    const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
+    
     if (progressElement) {
       const angle = progress * 360;
+      let color = '#2196F3'; // 默认蓝色
+      
+      // 根据状态改变颜色
+      if (this.swipeState === 'ready_to_exit') {
+        color = '#4CAF50'; // 绿色表示可以退出
+      } else if (minProgress > 0.5) {
+        color = '#FF9800'; // 橙色表示正在滑动
+      }
+      
       progressElement.style.background = `
         conic-gradient(
-          #4CAF50 0deg ${angle}deg,
+          ${color} 0deg ${angle}deg,
           rgba(255, 255, 255, 0.3) ${angle}deg 360deg
         )
       `;
-      
-      // 当接近完成时改变颜色
-      if (progress > 0.8) {
-        progressElement.style.borderTopColor = '#4CAF50';
-        const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
-        if (arrow) {
-          arrow.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
-          arrow.style.color = 'white';
-        }
+      progressElement.style.borderTopColor = color;
+    }
+    
+    if (arrow) {
+      // 根据状态更新箭头样式
+      if (this.swipeState === 'ready_to_exit') {
+        arrow.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
+        arrow.style.color = 'white';
+        arrow.textContent = '→';
+      } else if (minProgress > 0.3) {
+        arrow.style.backgroundColor = 'rgba(255, 152, 0, 0.9)';
+        arrow.style.color = 'white';
+        arrow.textContent = '→';
+      } else {
+        arrow.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        arrow.style.color = '#333';
+        arrow.textContent = '→';
       }
     }
+    
+    this.log(`Swipe indicator updated: progress=${progress.toFixed(2)}, state=${this.swipeState}, distance=${Math.abs(deltaX).toFixed(0)}px`);
   }
   
   // 显示成功动画
@@ -480,6 +569,13 @@ class EdgeSwipeDetector extends EventTarget {
     if (arrow) {
       arrow.classList.add('success');
       arrow.textContent = '✓';
+      arrow.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
+      arrow.style.color = 'white';
+    }
+    
+    const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
+    if (progressElement) {
+      progressElement.style.background = 'rgba(76, 175, 80, 0.9)';
     }
     
     // 触发强烈的触觉反馈
@@ -488,6 +584,30 @@ class EdgeSwipeDetector extends EventTarget {
     }
     
     this.log('Swipe success animation triggered');
+  }
+  
+  // 显示取消动画
+  showSwipeCancel() {
+    if (!this.swipeIndicator) return;
+    
+    const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
+    if (arrow) {
+      arrow.textContent = '✗';
+      arrow.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+      arrow.style.color = 'white';
+    }
+    
+    const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
+    if (progressElement) {
+      progressElement.style.background = 'rgba(244, 67, 54, 0.3)';
+    }
+    
+    // 轻微触觉反馈表示取消
+    if (window.hapticFeedback && window.hapticFeedback.trigger) {
+      window.hapticFeedback.trigger('light');
+    }
+    
+    this.log('Swipe cancel animation triggered');
   }
   
   // 移除滑动指示器
