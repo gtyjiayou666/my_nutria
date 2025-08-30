@@ -195,23 +195,54 @@ class StatusBar extends HTMLElement {
     };
 
     homeElem.onclick = this.homeClick = () => {
+      console.log("StatusBar: Home button clicked");
+      
       // 检查是否为桌面模式
       const isDesktopMode = this.classList.contains('desktop-mode');
+      console.log(`StatusBar: isDesktopMode = ${isDesktopMode}`);
       
       if (this.isCarouselOpen) {
+        console.log("StatusBar: Closing carousel");
         actionsDispatcher.dispatch("close-carousel");
       }
       
       if (isDesktopMode) {
-        // 桌面模式：不最小化当前应用，只是回到桌面状态但保持应用可见
-        // 这里我们可以选择不执行任何操作，或者只是聚焦到桌面
-        console.log("Desktop mode: Home button clicked, keeping current app visible");
-        return; // 不执行go-home操作，保持当前应用可见
+        // 桌面模式：不最小化当前应用，但执行一些home相关操作
+        console.log("Desktop mode: Home button clicked");
+        
+        // 关闭任何打开的搜索面板
+        if (document.getElementById('main-search-panel')?.classList.contains('open')) {
+          console.log("StatusBar: Closing search panel");
+          this.closeSearchPanel();
+        }
+        
+        // 在桌面模式下，我们可以：
+        // 1. 显示桌面背景（不最小化应用）
+        // 2. 或者切换到homescreen但保持其他应用在后台
+        console.log("StatusBar: Dispatching go-home for desktop mode");
+        actionsDispatcher.dispatch("go-home");
+        
+        // 提供触觉反馈表示按钮有响应
+        if (window.hapticFeedback) {
+          console.log("StatusBar: Providing haptic feedback");
+          window.hapticFeedback.vibrate('light');
+        }
       } else {
         // 移动模式：保持原有行为
+        console.log("Mobile mode: Dispatching go-home");
         actionsDispatcher.dispatch("go-home");
       }
     };
+
+    // 添加直接的addEventListener作为backup
+    homeElem.addEventListener('click', (e) => {
+      console.log("StatusBar: Home button direct addEventListener triggered");
+    });
+    
+    // 添加pointerdown事件作为测试
+    homeElem.addEventListener('pointerdown', (e) => {
+      console.log("StatusBar: Home button pointerdown triggered");
+    });
 
     let gridElem = this.getElem(`sl-icon[name="${this.carouselIcon}"]`);
     hapticFeedback.register(gridElem);
@@ -1242,7 +1273,12 @@ class StatusBar extends HTMLElement {
         { once: true }
       );
     } else if (!state.fromLockscreen) {
+      // 确保在非lockscreen情况下，Home按钮有正确的事件处理器
       moreElem.classList.remove("hidden");
+      if (homeElem.onclick !== this.homeClick) {
+        homeElem.onclick = this.homeClick;
+        homeElem.oncontextmenu = this.homeContextMenu;
+      }
     }
   }
 
@@ -1455,6 +1491,49 @@ class StatusBar extends HTMLElement {
 
     console.log(`StatusBar: Current classes after update:`, this.className);
     console.log(`StatusBar: Status bar visibility:`, window.getComputedStyle(this).display);
+    
+    // 确保Home按钮始终有正确的事件处理器
+    this.ensureHomeButtonHandler();
+  }
+
+  ensureHomeButtonHandler() {
+    const homeElem = this.getElem(`sl-icon[name="home"]`);
+    if (homeElem) {
+      console.log('StatusBar: Checking Home button event handler');
+      console.log('StatusBar: homeElem.onclick:', homeElem.onclick);
+      console.log('StatusBar: this.homeClick:', this.homeClick);
+      
+      // 检查Home按钮的样式和可见性
+      const computedStyle = window.getComputedStyle(homeElem);
+      console.log('StatusBar: Home button display:', computedStyle.display);
+      console.log('StatusBar: Home button visibility:', computedStyle.visibility);
+      console.log('StatusBar: Home button pointer-events:', computedStyle.pointerEvents);
+      console.log('StatusBar: Home button opacity:', computedStyle.opacity);
+      
+      // 强制重新分配事件处理器
+      console.log('StatusBar: Force restoring Home button event handler');
+      homeElem.onclick = this.homeClick;
+      homeElem.oncontextmenu = this.homeContextMenu;
+      
+      // 重新注册触觉反馈
+      if (window.hapticFeedback) {
+        window.hapticFeedback.register(homeElem);
+      }
+      
+      // 添加额外的事件监听器作为备用
+      homeElem.addEventListener('click', (e) => {
+        console.log('StatusBar: Home button addEventListener fired');
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.homeClick) {
+          this.homeClick();
+        }
+      });
+      
+      console.log('StatusBar: Home button handler setup complete');
+    } else {
+      console.error('StatusBar: Home button element not found!');
+    }
   }
 
   enableDesktopTaskbar() {
@@ -1648,6 +1727,9 @@ class StatusBar extends HTMLElement {
     if (this.isCarouselOpen) {
       return;
     }
+
+    // 确保Home按钮始终有正确的事件处理器
+    this.ensureHomeButtonHandler();
 
     // We switched from homescreen <-> content, reorder the sections
     // so they get events properly.
