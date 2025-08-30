@@ -46,6 +46,9 @@ display-title = Display Preferences
 display-prefer-dark = Use Dark Mode
 display-choose-homescreen = Choose Your Homescreen
 display-choose-theme = Choose Your theme
+display-choose-resolution = Choose Resolution
+display-choose = Choose Display
+display-choose-extension = Choose Extension
 
 # Search engines panel
 search-title = Search Engines

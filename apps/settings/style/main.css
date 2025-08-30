@@ -298,3 +298,34 @@ sl-select:focus-within[data-user-valid]::part(control) {
   border-color: var(--sl-color-success-600);
   box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-success-300);
 }
+
+/* Display panel specific styles */
+.clickable {
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin: -0.5rem;
+  margin-bottom: 0.5em;
+}
+
+.clickable:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.expand-icon {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.collapsible {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.collapsible.hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}

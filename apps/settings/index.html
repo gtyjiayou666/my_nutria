@@ -241,7 +241,26 @@
           <span data-l10n-id="display-choose-theme"></span>
         </header>
         <sl-menu id="themes"></sl-menu>
-        
+
+        <header class="clickable" id="display-header">
+          <sl-icon name="monitor"></sl-icon>&nbsp;
+          <span data-l10n-id="display-choose"></span>
+          <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
+        </header>
+        <sl-menu id="displays" class="collapsible hidden"></sl-menu>
+
+        <header class="clickable" id="resolution-header">
+          <sl-icon name="monitor"></sl-icon>&nbsp;
+          <span data-l10n-id="display-choose-resolution"></span>
+          <sl-icon name="chevron-down" class="expand-icon"></sl-icon>
+        </header>
+        <sl-menu id="resolutions" class="collapsible hidden"></sl-menu>
+
+        <header>
+          <sl-icon name="palette"></sl-icon>&nbsp;
+          <span data-l10n-id="display-choose-extension"></span>
+        </header>
+        <sl-menu id="extensions"></sl-menu>
       </div>
     </template>
 
