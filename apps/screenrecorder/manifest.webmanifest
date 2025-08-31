@@ -14,6 +14,17 @@
     "core": true,
     "developer": {
       "name": "The Capyloon team"
+    },
+    "permissions": {
+      "content-manager": {},
+      "dweb": {},
+      "settings": {
+        "access": "readwrite"
+      },
+      "web-view": {}
+    },
+    "serviceworker": {
+      "script_url": "sw.js"
     }
   },
   "version": "1.0"

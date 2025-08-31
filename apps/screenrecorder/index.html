@@ -18,12 +18,43 @@
 </head>
 
 <body>
-  <h1>Screen Recorder</h1>
-  <button id="startBtn">Start Recording</button>
-  <button id="stopBtn" class="hidden">Stop Recording</button>
-  <p id="status"></p>
+  
+  <h1>🎥 FireScreen</h1>
 
-  <!-- <script src="./js/bootstrap.js"></script> -->
+  <div class="control">
+    <div class="status" id="statusText">初始化中...</div>
+    <div class="duration" id="duration">00:00:00</div>
+
+    <label>分辨率</label>
+    <select id="resolution">
+      <option value="1280x720">720p</option>
+      <option value="1920x1080" selected>1080p</option>
+      <option value="800x600">800x600</option>
+    </select>
+
+    <label>帧率</label>
+    <select id="framerate">
+      <option value="30">30 fps</option>
+      <option value="24">24 fps</option>
+      <option value="15">15 fps</option>
+    </select>
+
+    <label>格式</label>
+    <select id="format">
+      <option value="avi" selected>AVI</option>
+    </select>
+
+    <button id="recordBtn" disabled>🔴 开始录制</button>
+  </div>
+
+  <div id="previewContainer">
+    <h3>🎬 录制完成</h3>
+    <video id="preview" controls></video>
+    <a id="downloadLink" download>⬇️ 下载视频</a>
+  </div>
+
+  <script type="module" src="./js/bootstrap.js"></script>
+
 </body>
 
 </html>

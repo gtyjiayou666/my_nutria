@@ -36,6 +36,6 @@ addLink(
   `http://shared.localhost:${window.config.port}/style/themes/default/theme.css`
 );
 
-// let depGraphLoaded = new Promise((resolve) => {
-//   loadSharedScript("js/dep_graph.js").onload = resolve;
-// });
+let depGraphLoaded = new Promise((resolve) => {
+  loadSharedScript("js/dep_graph.js").onload = resolve;
+});
