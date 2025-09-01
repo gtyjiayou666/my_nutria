@@ -13,6 +13,11 @@
   --statusbar-desktop-background: rgba(240, 240, 240, 0.95);
   --statusbar-desktop-text-color: #333;
   
+  /* 搜索框响应式变量 */
+  --search-input-width: 27%;
+  --search-input-min-width: 200px;
+  --search-input-max-width: 400px;
+  
   /* 确保默认状态下状态栏是可见的 */
   display: block;
 }
@@ -72,11 +77,6 @@
   grid-gap: 0.25em !important;
   flex-shrink: 1 !important;
   min-width: auto !important;
-  position: relative !important; /* 相对定位 */
-  top: 0 !important; /* 固定顶部位置 */
-  height: 100% !important; /* 占满容器高度 */
-  justify-content: flex-start !important; /* 左对齐 */
-  flex-wrap: nowrap !important; /* 不换行 */
 }
 
 :host:not(.desktop-mode) .center {
@@ -551,31 +551,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  align-content: center; /* 确保grid内容垂直居中 */
   grid-gap: 0.25em;
   justify-content: center;
   height: 100%;
-  overflow: hidden; /* 防止内容溢出 */
-  place-items: center; /* 强制所有grid item居中对齐 */
-}
-
-/* 响应式网格布局调整 */
-@media (max-width: 768px) {
-  :host .container {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); /* 允许左右区域收缩，中间区域保持自适应 */
-    grid-gap: 0.15em; /* 减少间距 */
-    align-items: center; /* 强制垂直居中 */
-    place-items: center; /* 确保所有item居中 */
-  }
-}
-
-@media (max-width: 480px) {
-  :host .container {
-    grid-template-columns: minmax(0, 2fr) auto minmax(0, 1fr); /* 给左侧更多空间用于搜索框，右侧保持紧凑 */
-    grid-gap: 0.1em;
-    align-items: center; /* 强制垂直居中 */
-    place-items: center; /* 确保所有item居中 */
-  }
 }
 
 :host .container:not(.homescreen) {
@@ -622,59 +600,24 @@ sl-icon {
 }
 
 .left {
-  overflow: visible; /* 改为visible以支持绝对定位的搜索框 */
+  overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
-  align-self: center; /* 确保left区域在grid中垂直居中 */
   grid-gap: 0.25em;
-  min-width: 0; /* 允许 flex 容器收缩 */
-  flex-wrap: nowrap; /* 强制不换行 */
-  justify-content: flex-start; /* 左对齐内容 */
-  position: relative; /* 相对定位作为绝对定位的容器 */
-  top: 0; /* 固定顶部位置 */
-  height: 100%; /* 占满容器高度 */
-  min-height: var(--statusbar-height, 3em); /* 最小高度 */
 }
 
 .left-text {
   text-overflow: ellipsis;
   flex: 1;
-  min-width: 0; /* 允许文本区域收缩 */
-  overflow: hidden; /* 确保文本不溢出 */
 }
 
 .right {
   display: flex;
   align-items: center;
-  align-self: center; /* 确保right区域在grid中垂直居中 */
   justify-content: flex-end;
   grid-gap: 0.25em;
-  flex-shrink: 0; /* 防止右侧按钮区域收缩，确保开始按钮始终可见 */
-  min-width: fit-content; /* 确保右侧区域有足够空间显示按钮 */
-  flex-wrap: nowrap; /* 强制不换行 */
-}
-
-/* 小屏幕下的额外优化 */
-@media (max-width: 480px) {
-  .left {
-    grid-gap: 0.1em; /* 大幅减少左侧元素间距 */
-    min-width: 0; /* 允许更大程度收缩 */
-    position: relative !important; /* 强制相对定位 */
-    top: 0 !important; /* 固定顶部位置 */
-    transform: none !important; /* 清除任何变换 */
-    align-items: center !important; /* 强制垂直居中 */
-  }
-  
-  .right {
-    grid-gap: 0.1em; /* 大幅减少右侧元素间距 */
-  }
-  
-  .left-text {
-    font-size: 0.8rem; /* 明显减小标题文字 */
-    display: none; /* 在小屏幕下隐藏标题文本以节省空间 */
-  }
 }
 
 .insecure {
@@ -830,8 +773,8 @@ sl-badge[variant="primary"]::part(base) {
 
 /* 搜索面板样式 - 确保不阻挡按钮点击 */
 #search-panel {
-  height: 3.5em;
-  padding: 0.5em;
+  height: var(--statusbar-desktop-height, 48px); /* 与底部栏高度一致 */
+  padding: 0;
   position: relative;
   bottom: 0;
   left: 0;
@@ -840,11 +783,12 @@ sl-badge[variant="primary"]::part(base) {
   transition: all 0.3s;
   z-index: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* 改为水平布局 */
   color: white;
   background: transparent;
   pointer-events: none;
-  justify-content: flex-end;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中，与底部栏其他元素对齐 */
 }
 
 #search-panel .input {
@@ -864,6 +808,57 @@ sl-badge[variant="primary"]::part(base) {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
+  /* 确保搜索面板在桌面模式下正确定位 */
+  position: relative;
+  transform: none;
+  margin: 0;
+}
+
+/* 桌面模式下搜索面板的响应式布局 */
+:host(.desktop-mode) #search-panel .input {
+  /* 桌面模式下继承全局响应式变量 */
+  width: var(--search-input-width);
+  min-width: var(--search-input-min-width);
+  max-width: var(--search-input-max-width);
+  transition: width 0.3s ease; /* 添加平滑过渡 */
+  /* 移除冲突的定位样式，由父容器处理居中 */
+  left: auto;
+  transform: none;
+  margin: 0;
+}
+
+/* 桌面模式下的额外媒体查询优化 */
+@media (min-width: 1024px) {
+  :host(.desktop-mode) {
+    --search-input-width: 30%;
+    --search-input-min-width: 250px;
+    --search-input-max-width: 500px;
+  }
+}
+
+@media (min-width: 1400px) {
+  :host(.desktop-mode) {
+    --search-input-width: 35%;
+    --search-input-min-width: 300px;
+    --search-input-max-width: 600px;
+  }
+}
+
+@media (min-width: 1800px) {
+  :host(.desktop-mode) {
+    --search-input-width: 40%;
+    --search-input-min-width: 350px;
+    --search-input-max-width: 700px;
+  }
+}
+
+/* 小桌面屏幕适配 */
+@media (max-width: 1023px) and (min-width: 800px) {
+  :host(.desktop-mode) {
+    --search-input-width: 20%;
+    --search-input-min-width: 180px;
+    --search-input-max-width: 350px;
+  }
 }
 
 #search-panel.open {
@@ -887,6 +882,20 @@ sl-badge[variant="primary"]::part(base) {
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-end !important;
+  align-items: center; /* 水平居中对齐 */
+}
+
+/* 修复搜索框在打开状态下的位置 */
+#search-panel.open .input {
+  position: relative;
+  bottom: 0; /* 重置底部定位 */
+  margin-bottom: 2em; /* 给底部留出空间 */
+  align-self: center; /* 确保自身居中 */
+  /* 在打开状态下也由父容器处理居中 */
+  left: auto;
+  transform: none;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* 强制确保搜索面板打开时覆盖所有限制 */
@@ -925,23 +934,22 @@ sl-badge[variant="primary"]::part(base) {
 #search-panel .input {
   display: flex;
   align-items: center;
-  width: clamp(80px, 15vw, 250px); /* 超极致缩小：最小80px，视窗宽度仅15%，最大250px */
-  margin: 0; /* 移除auto margin */
+  width: var(--search-input-width);
+  margin: 0; /* 移除auto margin，因为父容器已经居中 */
   font-size: 1rem;
   background-color: white;
   color: black;
   border-radius: 8px;
   padding: 0.5em;
   gap: 0.25em;
+  min-width: var(--search-input-min-width); /* 使用CSS变量 */
+  max-width: var(--search-input-max-width); /* 使用CSS变量 */
   box-sizing: border-box; /* 确保padding包含在宽度内 */
-  flex-shrink: 1; /* 允许进一步收缩 */
-  min-height: 0; /* 防止flex item强制高度 */
-  max-height: 3em; /* 限制最大高度 */
-  position: absolute; /* 绝对定位 */
-  top: 50%; /* 垂直居中 */
-  left: 0.5em; /* 固定左边距 */
-  transform: translateY(-50%); /* 精确垂直居中 */
-  z-index: 10; /* 确保在上层 */
+  position: relative; /* 确保定位稳定 */
+  flex-shrink: 0; /* 防止意外收缩导致位置偏移 */
+  /* 移除手动居中样式，由父容器处理 */
+  left: auto;
+  transform: none;
 }
 
 #search-panel .input sl-icon {
@@ -1069,11 +1077,11 @@ sl-badge[variant="primary"]::part(base) {
   display: none;
 }
 
-/* Desktop mode */
+/* Desktop mode - 响应式媒体查询 */
 @media (min-width: 800px) {
-  #search-panel .input {
-    width: clamp(150px, 20vw, 300px); /* 桌面模式适度大小 */
-    margin: auto;
+  :host {
+    --search-input-width: 50%;
+    --search-input-max-width: 500px;
   }
 
   #search-results-container {
@@ -1088,43 +1096,146 @@ sl-badge[variant="primary"]::part(base) {
   }
 }
 
-/* 中等屏幕优化 */
-@media (min-width: 481px) and (max-width: 799px) {
-  #search-panel .input {
-    width: clamp(100px, 18vw, 200px); /* 中等屏幕超级收缩 */
-    margin: 0 auto;
-    padding: 0.3em;
+/* 平板设备响应式 */
+@media (min-width: 600px) and (max-width: 799px) {
+  :host {
+    --search-input-width: 40%;
+    --search-input-min-width: 250px;
+    --search-input-max-width: 350px;
+  }
+
+  #search-results-container {
+    width: 80% !important;
+    left: 10% !important;
+    right: 10% !important;
   }
 }
 
-/* 小屏幕优化 */
-@media (max-width: 480px) {
-  #search-panel .input {
-    width: clamp(60px, 20vw, 130px); /* 小屏幕最大程度收缩 */
-    padding: 0.2em; /* 极小内边距 */
-    margin: 0 0.1em; /* 极小左右边距 */
-    font-size: 0.75rem; /* 很小的字体 */
-    gap: 0.1em; /* 减小图标间距 */
+/* 小屏幕设备响应式 */
+@media (max-width: 599px) {
+  :host {
+    --search-input-width: 90%;
+    --search-input-min-width: 200px;
+    --search-input-max-width: 300px;
   }
-  
-  #search-panel .input sl-icon {
-    font-size: 0.9rem; /* 很小的图标尺寸 */
+
+  #search-results-container {
+    width: 95% !important;
+    left: 2.5% !important;
+    right: 2.5% !important;
   }
 }
 
-/* 超小屏幕优化 */
-@media (max-width: 320px) {
-  #search-panel .input {
-    width: clamp(50px, 25vw, 100px); /* 超小屏幕极限收缩 */
-    padding: 0.15em;
-    margin: 0 0.05em;
-    font-size: 0.7rem;
-    gap: 0.05em;
+/* 超大屏幕优化 */
+@media (min-width: 1200px) {
+  :host {
+    --search-input-width: 35%;
+    --search-input-max-width: 500px;
+  }
+
+  #search-results-container {
+    width: 60% !important;
+    left: 20% !important;
+    right: 20% !important;
+  }
+}
+
+/* 超宽屏幕优化 */
+@media (min-width: 1600px) {
+  :host {
+    --search-input-width: 25%;
+    --search-input-max-width: 600px;
+  }
+
+  #search-results-container {
+    width: 50% !important;
+    left: 25% !important;
+    right: 25% !important;
+  }
+}
+
+/* 桌面模式下的容器响应式调整 */
+:host(.desktop-mode) .container {
+  /* 在不同屏幕尺寸下调整容器布局 */
+  min-width: 0; /* 允许收缩 */
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+/* 桌面模式下左右区域的响应式调整 */
+@media (max-width: 1200px) {
+  :host(.desktop-mode) .left {
+    min-width: 80px; /* 减少最小宽度 */
+    flex-shrink: 1; /* 允许收缩 */
   }
   
-  #search-panel .input sl-icon {
-    font-size: 0.8rem;
+  :host(.desktop-mode) .right {
+    min-width: 120px; /* 减少最小宽度 */
+    flex-shrink: 1; /* 允许收缩 */
   }
+  
+  :host(.desktop-mode) .frame-list {
+    flex: 1;
+    min-width: 0; /* 允许收缩到0 */
+  }
+}
+
+@media (max-width: 900px) {
+  :host(.desktop-mode) .left {
+    min-width: 60px;
+  }
+  
+  :host(.desktop-mode) .right {
+    min-width: 100px;
+  }
+  
+  /* 在较小屏幕上隐藏一些非必要元素 */
+  :host(.desktop-mode) .left-text {
+    display: none;
+  }
+  
+  :host(.desktop-mode) .battery-icon {
+    font-size: 16px;
+  }
+}
+
+/* 搜索框在极小屏幕下的处理 */
+@media (max-width: 600px) {
+  :host(.desktop-mode) {
+    --search-input-width: 90%;
+    --search-input-min-width: 150px;
+    --search-input-max-width: 250px;
+  }
+  
+  :host(.desktop-mode) #search-panel .input {
+    font-size: 0.9rem;
+    padding: 0.4em;
+  }
+  
+  /* 在极小屏幕下进一步收缩桌面模式元素 */
+  :host(.desktop-mode) .left {
+    min-width: 40px;
+  }
+  
+  :host(.desktop-mode) .right {
+    min-width: 80px;
+    gap: 4px;
+  }
+  
+  :host(.desktop-mode) sl-icon {
+    font-size: 18px;
+  }
+}
+
+/* 修复搜索框打开状态下的居中问题 */
+#search-panel.open .input {
+  position: relative;
+  bottom: 0; /* 重置底部定位 */
+  margin-bottom: 2em; /* 给底部留出空间 */
+  align-self: center; /* 确保自身居中 */
+  transform: translateX(-50%); /* 保持水平居中 */
+  left: 50%;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* 搜索结果项目样式 */
