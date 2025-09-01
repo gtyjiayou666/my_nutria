@@ -1,20 +1,23 @@
 // Starts and attach some event listeners to open and close the search panel.
+function stringToBoolean(str) {
+  try {
+    return JSON.parse(str.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 // 处理搜索框可见性的函数
 function handleSearchPanelVisibility(isDesktop) {
   const searchPanel = document.getElementById("search-panel");
-  console.log("HomeScreen: handleSearchPanelVisibility called with isDesktop =", isDesktop);
-  console.log("HomeScreen: Found search panel element:", searchPanel);
-
   if (searchPanel) {
     if (isDesktop) {
       // 桌面模式：隐藏搜索框
-      console.log("HomeScreen: Setting search panel to hidden (desktop mode)");
       searchPanel.style.setProperty('display', 'none', 'important');
       searchPanel.style.setProperty('visibility', 'hidden', 'important');
       searchPanel.style.setProperty('opacity', '0', 'important');
       searchPanel.style.setProperty('pointer-events', 'none', 'important');
-      
+
       // 同时设置搜索框本身不可交互
       const searchBox = document.getElementById("search");
       if (searchBox) {
@@ -23,14 +26,12 @@ function handleSearchPanelVisibility(isDesktop) {
         searchBox.disabled = true;
       }
     } else {
-      // 移动模式：显示搜索框
-      console.log("HomeScreen: Setting search panel to visible (mobile mode)");
       searchPanel.style.setProperty('display', 'flex', 'important');
       searchPanel.style.setProperty('flex-direction', 'column', 'important');
       searchPanel.style.setProperty('visibility', 'visible', 'important');
       searchPanel.style.setProperty('opacity', '1', 'important');
       searchPanel.style.removeProperty('pointer-events');
-      
+
       // 同时恢复搜索框本身的交互
       const searchBox = document.getElementById("search");
       if (searchBox) {
@@ -119,7 +120,8 @@ function rearrangeOutsideApps(actionsStore, newPerLine) {
   const container = document.getElementById('actions-panel');
   const appElements = getAllAppElements();
 
-  if (!container || !actionsStore || appElements.length === 0) return;
+  if (!container || !actionsStore || appElements.length === 0)
+    return;
 
   // 找出所有超出窗口的 app
   const outsideApps = [];
@@ -443,7 +445,7 @@ function maybeOpenURL(url, details = {}) {
   return true;
 }
 
-
+let isDesktop = false;
 function handleHashChange() {
 
   const hash = window.location.hash.substring(1);
@@ -455,6 +457,9 @@ function handleHashChange() {
 
   console.log("Hash changed:", hash);
 
+  if (hash === "lock" || hash === "unlock") {
+    return;
+  }
   try {
 
     const data = JSON.parse(decodeURIComponent(hash));
@@ -463,23 +468,12 @@ function handleHashChange() {
       console.warn("Received hash data without 'action' field:", data);
       return;
     }
-
     switch (data.action) {
       case "desktop-mode-changed":
-        console.log("Hash command: desktop-mode-changed received. isDesktop =", data.isDesktop);
         // 触发桌面模式切换事件，让其他组件可以响应
-        window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
-          detail: { isDesktop: data.isDesktop }
-        }));
-
-        // 确保DOM已加载后再处理搜索框
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', () => {
-            handleSearchPanelVisibility(data.isDesktop);
-          });
-        } else {
-          handleSearchPanelVisibility(data.isDesktop);
-        }
+        const actionsWall = document.getElementById('actions-wall');
+        actionsWall.changeMode(data.isDesktop);
+        handleSearchPanelVisibility(data.isDesktop);
         break;
 
       default:
@@ -496,45 +490,16 @@ window.addEventListener('hashchange', handleHashChange);
 document.addEventListener("DOMContentLoaded", async () => {
   await depGraphLoaded;
 
-  // 立即设置搜索框的初始可见性状态
-  (() => {
-    const getCurrentDesktopMode = () => {
-      // 优先检查 embedder.sessionType，这是最可靠的
-      if (window.embedder && window.embedder.sessionType) {
-        const sessionType = window.embedder.sessionType;
-        const isDesktop = (sessionType === "desktop" || sessionType === "session");
-        console.log(`Bootstrap: getCurrentDesktopMode - embedder.sessionType = ${sessionType}, isDesktop = ${isDesktop}`);
-        return isDesktop;
-      }
-      
-      // 检查 wallpaperManager
-      if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-        console.log(`Bootstrap: getCurrentDesktopMode - wallpaperManager.isDesktop = ${window.wallpaperManager.isDesktop}`);
-        return window.wallpaperManager.isDesktop;
-      }
-      
-      // 检查 QuickSettings 的状态
-      const quickSettings = document.querySelector('quick-settings');
-      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-        console.log(`Bootstrap: getCurrentDesktopMode - quickSettings.isDesktop = ${quickSettings.isDesktop}`);
-        return quickSettings.isDesktop;
-      }
-      
-      // 最终默认为移动模式（非桌面模式），这样搜索框会显示
-      console.log("Bootstrap: getCurrentDesktopMode - using fallback = false (mobile mode)");
-      return false;
-    };
-    
-    const currentDesktopMode = getCurrentDesktopMode();
-    console.log(`Bootstrap: Initial desktop mode detection: ${currentDesktopMode}`);
-    handleSearchPanelVisibility(currentDesktopMode);
-  })();
-
   graph = new ParallelGraphLoader(addSharedDeps(addShoelaceDeps(kDeps)));
   await Promise.all(
     ["shared-fluent", "main"].map((dep) => graph.waitForDeps(dep))
   );
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const isDesktop = urlParams.get('isDesktop');
+  const actionsWall = document.getElementById('actions-wall');
+  actionsWall.changeMode(stringToBoolean(isDesktop));
+  handleSearchPanelVisibility(stringToBoolean(isDesktop));
   let actionsPanel = document.getElementById("actions-panel");
   let searchBox = document.getElementById("search-box");
 
@@ -549,217 +514,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     let module = result.get("search panel");
     panelManager = new module.SearchPanel();
     panelManager.init();
-    
-    // 确保 panelManager 创建后立即使用正确的桌面模式状态
-    const getCurrentDesktopMode = () => {
-      // 优先检查 embedder.sessionType，这是最可靠的
-      if (window.embedder && window.embedder.sessionType) {
-        const sessionType = window.embedder.sessionType;
-        return (sessionType === "desktop" || sessionType === "session");
-      }
-      
-      const quickSettings = document.querySelector('quick-settings');
-      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-        return quickSettings.isDesktop;
-      }
-      
-      if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-        return window.wallpaperManager.isDesktop;
-      }
-      
-      return false;
-    };
-    
-    const currentDesktopMode = getCurrentDesktopMode();
-    console.log(`Bootstrap: ensurePanelManager - Setting desktop mode: ${currentDesktopMode}`);
-    
-    // 立即设置正确的可见性状态
-    panelManager.updateSearchPanelVisibility(currentDesktopMode);
+
   }
 
   async function openSearchPanel() {
-    console.log("Bootstrap: openSearchPanel() called");
     await ensurePanelManager();
-    
-    console.log("Bootstrap: openSearchPanel() - calling panelManager.onOpen()");
     panelManager.onOpen();
     actionsPanel.classList.add("hide");
   }
+
 
   function closeSearchPanel() {
     actionsPanel.classList.remove("hide");
     searchBox.value = "";
     panelManager.onClose();
-    
-    // 在移动模式下，需要确保搜索框仍然可见
-    const getCurrentDesktopMode = () => {
-      // 优先检查 embedder.sessionType，这是最可靠的
-      if (window.embedder && window.embedder.sessionType) {
-        const sessionType = window.embedder.sessionType;
-        return (sessionType === "desktop" || sessionType === "session");
-      }
-      
-      // 检查 wallpaperManager
-      if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-        return window.wallpaperManager.isDesktop;
-      }
-      
-      // 检查 QuickSettings 的状态
-      const quickSettings = document.querySelector('quick-settings');
-      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-        return quickSettings.isDesktop;
-      }
-      
-      // 最终默认为移动模式
-      return false;
-    };
-    
-    const currentDesktopMode = getCurrentDesktopMode();
-    if (!currentDesktopMode) {
-      // 移动模式：确保搜索框保持可见
-      console.log("Bootstrap: closeSearchPanel() - Keeping search panel visible in mobile mode");
-      handleSearchPanelVisibility(false);
-    }
   }
 
   searchBox.addEventListener("blur", async () => {
     console.log("SearchBox: blur event triggered");
-    
-    // 确保 panelManager 已创建
-    if (!panelManager) {
-      console.log("SearchBox: blur - panelManager not ready, skipping");
-      return;
-    }
-    
-    // 检查当前桌面模式
-    const getCurrentDesktopMode = () => {
-      // 优先检查 embedder.sessionType，这是最可靠的
-      if (window.embedder && window.embedder.sessionType) {
-        const sessionType = window.embedder.sessionType;
-        const isDesktop = (sessionType === "desktop" || sessionType === "session");
-        console.log(`SearchBox: blur - embedder.sessionType = ${sessionType}, isDesktop = ${isDesktop}`);
-        return isDesktop;
-      }
-      
-      if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-        console.log(`SearchBox: blur - wallpaperManager.isDesktop = ${window.wallpaperManager.isDesktop}`);
-        return window.wallpaperManager.isDesktop;
-      }
-      
-      const quickSettings = document.querySelector('quick-settings');
-      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-        console.log(`SearchBox: blur - QuickSettings.isDesktop = ${quickSettings.isDesktop}`);
-        return quickSettings.isDesktop;
-      }
-      
-      console.log("SearchBox: blur - using fallback = false (mobile mode)");
-      return false;
-    };
-    
-    const isDesktop = getCurrentDesktopMode();
-    console.log(`SearchBox: blur event - isDesktop=${isDesktop}`);
-    
-    // 使用 setTimeout 来确保这个处理在其他事件之后执行
-    setTimeout(() => {
-      if (isDesktop) {
-        // 桌面模式：搜索框应该隐藏，不应该响应blur事件
-        console.log("SearchBox: blur in desktop mode - search box should be hidden, skipping blur handling");
-        return;
-      } else {
-        // 移动模式：只关闭搜索结果，但保持搜索框可见
-        console.log("SearchBox: blur in mobile mode - only closing results, keeping search box visible");
-        if (panelManager && panelManager.onClose) {
-          panelManager.onClose();
-        }
-        if (panelManager && panelManager.clearAllResults) {
-          panelManager.clearAllResults();
-        }
-        actionsPanel.classList.remove("hide");
-        searchBox.value = "";
-        
-        // 确保搜索框在移动模式下保持可见
-        console.log("SearchBox: blur - ensuring search box remains visible in mobile mode");
-        handleSearchPanelVisibility(false);
-      }
-    }, 50);
+    closeSearchPanel();
+    panelManager.clearAllResults();
   });
 
   searchBox.addEventListener("focus", async () => {
-    console.log("SearchBox: focus event triggered");
-    
-    // 检查当前桌面模式状态
-    const getCurrentDesktopMode = () => {
-      // 优先检查 embedder.sessionType，这是最可靠的
-      if (window.embedder && window.embedder.sessionType) {
-        const sessionType = window.embedder.sessionType;
-        const isDesktop = (sessionType === "desktop" || sessionType === "session");
-        console.log(`SearchBox: focus - embedder.sessionType = ${sessionType}, isDesktop = ${isDesktop}`);
-        return isDesktop;
-      }
-      
-      if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-        console.log(`SearchBox: focus - wallpaperManager.isDesktop = ${window.wallpaperManager.isDesktop}`);
-        return window.wallpaperManager.isDesktop;
-      }
-      
-      const quickSettings = document.querySelector('quick-settings');
-      if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-        console.log(`SearchBox: focus - QuickSettings.isDesktop = ${quickSettings.isDesktop}`);
-        return quickSettings.isDesktop;
-      }
-      
-      console.log("SearchBox: focus - using fallback = false (mobile mode)");
-      return false;
-    };
-    
-    const isDesktop = getCurrentDesktopMode();
-    console.log(`SearchBox: focus event - isDesktop=${isDesktop}`);
-    
-    if (isDesktop) {
-      // 桌面模式：搜索框应该被隐藏，如果被点击则立即blur
-      console.log("SearchBox: focus in desktop mode - search box should be hidden, blurring immediately");
-      searchBox.blur();
-      return;
-    }
-    
-    // 移动模式：确保 panelManager 已创建
-    await ensurePanelManager();
-    
-    // 移动模式：确保搜索框可见并打开搜索面板
-    console.log("SearchBox: focus in mobile mode - ensuring visibility and opening panel");
-    handleSearchPanelVisibility(false);
-    panelManager.updateSearchPanelVisibility(false);
     openSearchPanel();
-
-    // 移动模式下，允许虚拟键盘
-    searchBox.removeAttribute('inputmode');
-  });
-
-  // 添加click事件监听器用于调试
-  searchBox.addEventListener("click", () => {
-    console.log("SearchBox: click event triggered");
-    
-    // 优先检查 embedder.sessionType
-    if (window.embedder && window.embedder.sessionType) {
-      const sessionType = window.embedder.sessionType;
-      const isDesktop = (sessionType === "desktop" || sessionType === "session");
-      console.log(`SearchBox: click - embedder.sessionType = ${sessionType}, isDesktop = ${isDesktop}`);
-    }
-    
-    if (window.wallpaperManager) {
-      console.log(`SearchBox: click - wallpaperManager.isDesktop = ${window.wallpaperManager.isDesktop}`);
-    }
-    
-    const quickSettings = document.querySelector('quick-settings');
-    if (quickSettings) {
-      console.log(`SearchBox: click - QuickSettings.isDesktop = ${quickSettings.isDesktop}`);
-    }
-    
-    // 检查 actionsWall 的值（可能有问题的源头）
-    const actionsWall = document.querySelector('actions-wall');
-    if (actionsWall && typeof actionsWall.isDesktopMode === 'function') {
-      console.log(`SearchBox: click - actionsWall.isDesktopMode() = ${actionsWall.isDesktopMode()} (WARNING: This might be unreliable)`);
-    }
   });
 
   searchBox.addEventListener("keydown", (event) => {
@@ -859,7 +637,6 @@ async function displayQRCodeResult(text) {
 }
 
 async function addToHome(data) {
-  console.log(`add-to-home data: ${JSON.stringify(data)}`);
   let actionsWall = document.querySelector("actions-wall");
   if (data.siteInfo) {
     let siteInfo = data.siteInfo;
@@ -885,63 +662,3 @@ async function addToHome(data) {
   return true;
 }
 
-// 监听桌面模式变化事件
-window.addEventListener('desktop-mode-changed', (event) => {
-  console.log("HomeScreen: Received desktop-mode-changed event:", event.detail);
-  const isDesktop = event.detail?.isDesktop;
-  if (isDesktop !== undefined) {
-    handleSearchPanelVisibility(isDesktop);
-  }
-});
-
-// 页面加载完成后，检查初始的桌面模式状态
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("HomeScreen: DOMContentLoaded - checking initial desktop mode state");
-  
-  // 延迟检查，确保system组件已经初始化
-  setTimeout(() => {
-    let initialIsDesktop = false;
-    let detectionSource = "fallback";
-    
-    // 尝试从多个来源获取初始状态
-    if (window.embedder && window.embedder.sessionType) {
-      initialIsDesktop = (window.embedder.sessionType === "desktop" || window.embedder.sessionType === "session");
-      detectionSource = "embedder.sessionType";
-      console.log("HomeScreen: Got initial desktop state from embedder.sessionType:", window.embedder.sessionType, "->", initialIsDesktop);
-    } else if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-      initialIsDesktop = window.wallpaperManager.isDesktop;
-      detectionSource = "wallpaperManager.isDesktop";
-      console.log("HomeScreen: Got initial desktop state from wallpaperManager:", initialIsDesktop);
-    } else if (window.actionsWall && typeof window.actionsWall.isDesktopMode === 'function') {
-      initialIsDesktop = window.actionsWall.isDesktopMode();
-      detectionSource = "actionsWall.isDesktopMode";
-      console.log("HomeScreen: Got initial desktop state from actionsWall:", initialIsDesktop);
-    } else {
-      console.log("HomeScreen: No desktop state source available, using fallback (false)");
-    }
-    
-    console.log(`HomeScreen: Applying initial search panel visibility with isDesktop = ${initialIsDesktop} (from ${detectionSource})`);
-    handleSearchPanelVisibility(initialIsDesktop);
-    
-    // 再次延迟检查，以防初始检查太早
-    setTimeout(() => {
-      let secondCheckIsDesktop = false;
-      let secondSource = "fallback";
-      
-      if (window.embedder && window.embedder.sessionType) {
-        secondCheckIsDesktop = (window.embedder.sessionType === "desktop" || window.embedder.sessionType === "session");
-        secondSource = "embedder.sessionType";
-      } else if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-        secondCheckIsDesktop = window.wallpaperManager.isDesktop;
-        secondSource = "wallpaperManager.isDesktop";
-      }
-      
-      if (secondCheckIsDesktop !== initialIsDesktop) {
-        console.log(`HomeScreen: Second check shows different state: ${secondCheckIsDesktop} (from ${secondSource}), updating...`);
-        handleSearchPanelVisibility(secondCheckIsDesktop);
-      } else {
-        console.log(`HomeScreen: Second check confirms initial state: ${secondCheckIsDesktop}`);
-      }
-    }, 500);
-  }, 200); // 增加到200ms延迟，确保其他组件已初始化
-});

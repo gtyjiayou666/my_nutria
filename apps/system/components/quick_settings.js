@@ -4,6 +4,8 @@ class QuickSettings extends HTMLElement {
   constructor() {
     super();
 
+    const originalSessionType = embedder.sessionType;
+    this.isDesktop = (originalSessionType === "desktop" || originalSessionType === "session");
     let shadow = this.attachShadow({ mode: "open" });
 
     shadow.innerHTML = `
@@ -92,8 +94,6 @@ class QuickSettings extends HTMLElement {
       }
     };
 
-    // 初始化桌面模式状态，与 wallpaperManager 保持同步
-    // 立即初始化，确保启动时使用正确的样式
     this.initializeDesktopState();
 
     shadow.querySelector("#new-feature-icon").onclick = () => {
@@ -102,123 +102,9 @@ class QuickSettings extends HTMLElement {
     };
   }
 
-  async initializeDesktopState() {
-    try {
-      // 首次启动时，以 embedder.sessionType 为主
-      const originalSessionType = embedder.sessionType;
-      let savedDesktopState;
-      let savedSessionType;
-      
-      console.log(`QuickSettings: Original embedder.sessionType: ${originalSessionType}`);
-      
-      // 从设置中读取保存的状态
-      const settings = await apiDaemon.getSettings();
-      
-      try {
-        const desktopResult = await settings.get("ui.desktop-mode");
-        savedDesktopState = desktopResult.value;
-        console.log(`QuickSettings: Loaded desktop state from settings: ${savedDesktopState}`);
-      } catch (e) {
-        savedDesktopState = null; // 设置不存在，表示首次启动
-        console.log(`QuickSettings: No saved desktop state found (first startup)`);
-      }
-      
-      try {
-        const sessionResult = await settings.get("b2g.session-type");
-        savedSessionType = sessionResult.value;
-        console.log(`QuickSettings: Loaded session type from settings: ${savedSessionType}`);
-      } catch (e) {
-        savedSessionType = null; // 设置不存在，表示首次启动
-        console.log(`QuickSettings: No saved session type found (first startup)`);
-      }
-
-      // 判断是否为首次启动
-      const isFirstStartup = (savedDesktopState === null || savedSessionType === null);
-      
-      if (isFirstStartup) {
-        // 首次启动：以 embedder.sessionType 为准
-        console.log(`QuickSettings: First startup detected, using embedder.sessionType as primary source`);
-        this.isDesktop = (originalSessionType === "desktop" || originalSessionType === "session");
-        embedder.sessionType = originalSessionType; // 保持原值
-        
-        // 保存初始状态到设置
-        try {
-          await settings.set([
-            { name: "ui.desktop-mode", value: this.isDesktop },
-            { name: "b2g.session-type", value: originalSessionType }
-          ]);
-          console.log(`QuickSettings: Saved initial state - desktop: ${this.isDesktop}, sessionType: ${originalSessionType}`);
-        } catch (e) {
-          console.error(`QuickSettings: Failed to save initial state: ${e}`);
-        }
-      } else {
-        // 非首次启动：使用保存的设置
-        console.log(`QuickSettings: Using saved settings`);
-        
-        // 确保两个状态保持一致
-        if ((savedDesktopState && savedSessionType !== "desktop" && savedSessionType !== "session") || 
-            (!savedDesktopState && savedSessionType !== "mobile")) {
-          // 以桌面状态为准，调整sessionType
-          savedSessionType = savedDesktopState ? "desktop" : "mobile";
-          console.log(`QuickSettings: Adjusted session type to match desktop state: ${savedSessionType}`);
-        }
-
-        this.isDesktop = savedDesktopState;
-        
-        // 同步设置 embedder.sessionType
-        if (embedder.sessionType !== savedSessionType) {
-          console.log(`QuickSettings: Updating embedder.sessionType from ${embedder.sessionType} to ${savedSessionType}`);
-          embedder.sessionType = savedSessionType;
-        }
-      }
-
-      // 与 wallpaperManager 保持同步
-      if (window.wallpaperManager) {
-        window.wallpaperManager.isDesktop = this.isDesktop;
-      } else {
-        // 如果 wallpaperManager 还未加载，等待其准备就绪后同步状态
-        window.addEventListener('wallpaper-manager-ready', () => {
-          window.wallpaperManager.isDesktop = this.isDesktop;
-          console.log(`QuickSettings: Synchronized state to wallpaperManager: ${this.isDesktop}`);
-        });
-      }
-
-      console.log(`QuickSettings: Desktop state initialized to ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
-      
-      // 根据初始桌面模式状态应用相应的样式和设置（标记为初始化）
-      await this.applyDesktopModeSettings(this.isDesktop, embedder.sessionType, true);
-      
-      // 初始化完成后，发送当前桌面模式状态到homescreen
-      console.log(`QuickSettings: Sending initial desktop state to homescreen: ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
-      actionsDispatcher.dispatch("desktop-mode-changed", { 
-        isDesktop: this.isDesktop, 
-        sessionType: embedder.sessionType 
-      });
-      
-      // 发送初始的桌面模式状态
-      setTimeout(() => {
-        actionsDispatcher.dispatch("desktop-mode-changed", { 
-          isDesktop: this.isDesktop, 
-          sessionType: embedder.sessionType 
-        });
-        console.log(`QuickSettings: Sent initial desktop state: ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
-      }, 1000); // 延迟1秒，确保其他组件已经加载完成
-    } catch (e) {
-      console.error(`QuickSettings: Failed to initialize desktop state: ${e}`);
-      // 发生错误时，回退到原始的 embedder.sessionType
-      this.isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
-      console.log(`QuickSettings: Error fallback - desktop: ${this.isDesktop}, sessionType: ${embedder.sessionType}`);
-    }
-  }
-
-  // 应用桌面模式的设置和样式
-  async applyDesktopModeSettings(isDesktop, sessionType, isInitializing = false) {
-    console.log(`QuickSettings: Applying desktop mode settings - isDesktop: ${isDesktop}, sessionType: ${sessionType}, isInitializing: ${isInitializing}`);
-    
-    // 根据桌面模式状态控制虚拟键盘
-    if (isDesktop) {
+  initializeDesktopState() {
+    if (this.isDesktop) {
       // 桌面模式：禁用虚拟键盘
-      console.log("QuickSettings: Setting up desktop mode - disabling virtual keyboard");
       Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
       embedder.useVirtualKeyboard = false;
       // 如果当前有虚拟键盘打开，强制关闭
@@ -227,7 +113,6 @@ class QuickSettings extends HTMLElement {
       }
     } else {
       // 移动模式：启用虚拟键盘
-      console.log("QuickSettings: Setting up mobile mode - enabling virtual keyboard");
       Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
       embedder.useVirtualKeyboard = true;
     }
@@ -235,15 +120,37 @@ class QuickSettings extends HTMLElement {
     // 更新AppsList的桌面模式状态
     const appsList = document.querySelector('apps-list');
     if (appsList && typeof appsList.updateDesktopMode === 'function') {
-      console.log(`QuickSettings: Updating apps-list desktop mode to ${isDesktop}`);
-      appsList.updateDesktopMode(isDesktop);
+      appsList.updateDesktopMode(this.isDesktop);
     }
 
-    // 切换壁纸
-    if (window.wallpaperManager) {
-      console.log(`QuickSettings: Switching wallpaper for isDesktop: ${isDesktop}`);
-      window.wallpaperManager.switchWallpaper(isDesktop);
+    window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
+      detail: { isDesktop: this.isDesktop }
+    }));
+  }
+
+  // 应用桌面模式的设置和样式
+  async applyDesktopModeSettings() {
+    // 根据桌面模式状态控制虚拟键盘
+    if (this.isDesktop) {
+      // 桌面模式：禁用虚拟键盘
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
+      embedder.useVirtualKeyboard = false;
+      // 如果当前有虚拟键盘打开，强制关闭
+      if (window.inputMethod && window.inputMethod.opened) {
+        window.inputMethod.close();
+      }
+    } else {
+      // 移动模式：启用虚拟键盘
+      Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
+      embedder.useVirtualKeyboard = true;
     }
+
+    // 更新AppsList的桌面模式状态
+    const appsList = document.querySelector('apps-list');
+    if (appsList && typeof appsList.updateDesktopMode === 'function') {
+      appsList.updateDesktopMode(this.isDesktop);
+    }
+
   }
 
   connectedCallback() {
@@ -744,55 +651,19 @@ class QuickSettings extends HTMLElement {
   }
 
   async handleNewFeatureClick() {
+    let newIsDesktop = !this.isDesktop;
 
-    // 获取当前实际的 isDesktop 状态
-    let currentIsDesktop = this.isDesktop;
-    if (window.wallpaperManager && window.wallpaperManager.isDesktop !== this.isDesktop) {
-      // 如果状态不同步，以 wallpaperManager 为准
-      currentIsDesktop = window.wallpaperManager.isDesktop;
-      this.isDesktop = currentIsDesktop;
-    }
-
-    // 切换到新状态
-    let newIsDesktop = !currentIsDesktop;
     this.isDesktop = newIsDesktop;
 
-    // 同步更新 embedder.sessionType
-    // desktop模式对应 "desktop" sessionType，mobile模式对应 "mobile" sessionType
-    const newSessionType = newIsDesktop ? "desktop" : "mobile";
-    const oldSessionType = embedder.sessionType;
-    
-    console.log(`QuickSettings: Switching sessionType from ${oldSessionType} to ${newSessionType}`);
-    embedder.sessionType = newSessionType;
-
-    // 保存新状态到设置中，包括sessionType
-    try {
-      const settings = await apiDaemon.getSettings();
-      await settings.set([
-        { name: "ui.desktop-mode", value: newIsDesktop },
-        { name: "b2g.session-type", value: newSessionType }
-      ]);
-      console.log(`QuickSettings: Saved desktop state (${newIsDesktop}) and session type (${newSessionType}) to settings`);
-    } catch (e) {
-      console.error(`QuickSettings: Failed to save desktop state and session type: ${e}`);
-    }
-
-    console.log(`Switching desktop mode from ${currentIsDesktop} to ${newIsDesktop}, sessionType: ${oldSessionType} -> ${newSessionType}`);
-
-    // 发送桌面模式切换事件
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
-      detail: { isDesktop: newIsDesktop, sessionType: newSessionType }
+      detail: { isDesktop: this.isDesktop }
     }));
 
-    // 通过 actionsDispatcher 通知 homescreen 桌面模式切换
-    console.log(`QuickSettings: Dispatching desktop-mode-changed event with isDesktop=${newIsDesktop}, sessionType=${newSessionType}`);
-    actionsDispatcher.dispatch("desktop-mode-changed", { 
-      isDesktop: newIsDesktop, 
-      sessionType: newSessionType 
+    actionsDispatcher.dispatch("desktop-mode-changed", {
+      isDesktop: this.isDesktop
     });
 
-    // 应用新的桌面模式设置（非初始化，保持动画）
-    await this.applyDesktopModeSettings(newIsDesktop, newSessionType, false);
+    await this.applyDesktopModeSettings();
   }
 }
 

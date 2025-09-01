@@ -952,12 +952,6 @@ class ContentWindow extends HTMLElement {
       window.wm.updateFrameList();
     }
     
-    // 额外的快速更新，确保即时响应
-    setTimeout(() => {
-      if (window.wm && window.wm.updateFrameList) {
-        window.wm.updateFrameList();
-      }
-    }, 10); // 10ms后再次更新
 
     actionsDispatcher.addListener("keyboard-opening", this.openKeyboard);
     actionsDispatcher.addListener("keyboard-closing", this.closeKeyboard);

@@ -5,8 +5,9 @@
 class AppIcon extends HTMLElement {
   constructor(data) {
     super();
+    this.isDesktop = null;
     this.init(data);
-    
+
     // 双击相关属性
     this.lastClickTime = 0;
     this.doubleClickDelay = 300; // 300ms内的第二次点击视为双击
@@ -18,7 +19,7 @@ class AppIcon extends HTMLElement {
     this.data = data;
     this.icon =
       typeof data.icon == "string" ||
-      Object.getPrototypeOf(data.icon) === URL.prototype
+        Object.getPrototypeOf(data.icon) === URL.prototype
         ? data.icon
         : URL.createObjectURL(data.icon);
   }
@@ -34,61 +35,32 @@ class AppIcon extends HTMLElement {
 
     // 移除简单的onclick，使用更复杂的点击处理
     this.addEventListener('click', this.handleClick.bind(this));
-    
-    // 检查并应用桌面模式样式
-    this.updateDesktopMode();
-    
-    // 监听桌面模式变化
-    window.addEventListener('desktop-mode-changed', () => {
-      this.updateDesktopMode();
-    });
+
   }
-  
+
   // 更新桌面模式样式
-  updateDesktopMode() {
-    if (this.isDesktopMode()) {
+  updateDesktopMode(isDesktop) {
+    this.isDesktop = isDesktop;
+    if (isDesktop) {
       this.classList.add('desktop-mode');
     } else {
       this.classList.remove('desktop-mode');
     }
   }
-  
-  // 检查是否为桌面模式
-  isDesktopMode() {
-    // 检查父级AppsList的桌面模式状态
-    const appsList = this.closest('apps-list');
-    if (appsList) {
-      return appsList.classList.contains('desktop-mode');
-    }
-    
-    // 检查 QuickSettings 的状态
-    const quickSettings = document.querySelector('quick-settings');
-    if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-      return quickSettings.isDesktop;
-    }
-    
-    // 检查 wallpaperManager
-    if (window.wallpaperManager && typeof window.wallpaperManager.isDesktop !== 'undefined') {
-      return window.wallpaperManager.isDesktop;
-    }
-    
-    // 默认为桌面模式
-    return true;
-  }
-  
+
   handleClick(event) {
     event.preventDefault();
-    
+
     // 检查是否在应用列表中
     const isInAppsList = this.closest('apps-list') !== null;
-    
-    if (this.isDesktopMode() && !isInAppsList) {
+
+    if (this.isDesktop && !isInAppsList) {
       // 桌面模式且不在应用列表中：双击打开应用（桌面图标行为）
       const now = Date.now();
       const timeSinceLastClick = now - this.lastClickTime;
-      
+
       console.log(`AppIcon desktop mode click: timeSinceLastClick=${timeSinceLastClick}, doubleClickDelay=${this.doubleClickDelay}`);
-      
+
       if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
         // 双击检测到，立即打开应用
         console.log('AppIcon double-click detected in desktop mode - opening application');
@@ -102,12 +74,12 @@ class AppIcon extends HTMLElement {
         // 第一次点击或时间间隔太长，等待可能的第二次点击
         console.log('AppIcon first click in desktop mode - waiting for potential double-click');
         this.lastClickTime = now;
-        
+
         // 清除之前的timeout
         if (this.clickTimeout) {
           clearTimeout(this.clickTimeout);
         }
-        
+
         this.clickTimeout = setTimeout(() => {
           // 单击处理（在桌面模式下显示选中效果）
           console.log('AppIcon single-click timeout - highlighting app');
@@ -122,9 +94,8 @@ class AppIcon extends HTMLElement {
       this.openApplication();
     }
   }
-  
+
   openApplication() {
-    console.log(`AppIcon: Opening application in ${this.isDesktopMode() ? 'desktop' : 'mobile'} mode`);
     this.dispatchEvent(
       new CustomEvent("open-bookmark", {
         bubbles: true,
@@ -137,7 +108,7 @@ class AppIcon extends HTMLElement {
       })
     );
   }
-  
+
   highlightApp() {
     // 先清除所有其他应用的高亮
     const appsList = this.closest('apps-list');
@@ -148,11 +119,11 @@ class AppIcon extends HTMLElement {
         }
       });
     }
-    
+
     // 高亮当前应用
     this.classList.add('selected');
     console.log('AppIcon: Application highlighted');
-    
+
     // 3秒后自动取消高亮
     setTimeout(() => {
       this.classList.remove('selected');
@@ -171,7 +142,7 @@ customElements.define("app-icon", AppIcon);
 class AppsList extends LitElement {
   constructor() {
     super();
-
+    this.isDesktop = null;
     this.appsNodes = [];
 
     window.appsManager.addEventListener("app-installed", this);
@@ -180,10 +151,10 @@ class AppsList extends LitElement {
     this.contextMenuOpen = false;
     this.contextMenuHandler = this.captureContextMenuEvent.bind(this);
     this.buildAppsNodes();
-    
+
     // 绑定全局点击处理器
     this.globalClickHandler = this.handleGlobalClick.bind(this);
-    
+
     // 监听桌面模式状态变化
     this.initializeDesktopMode();
   }
@@ -201,42 +172,44 @@ class AppsList extends LitElement {
   initializeDesktopMode() {
     // 监听桌面模式状态变化
     window.addEventListener('desktop-mode-changed', (event) => {
-      this.updateDesktopMode(event.detail.isDesktop);
+      this.isDesktop = event.detail.isDesktop;
+      this.updateDesktopMode();
     });
-    
+
     // 初始状态检查
     // 从QuickSettings获取当前桌面模式状态
     const quickSettings = document.querySelector('quick-settings');
     if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-      this.updateDesktopMode(quickSettings.isDesktop);
+      this.isDesktop = quickSettings.isDesktop;
+      this.updateDesktopMode();
     } else {
       // 如果QuickSettings还未初始化，等待其准备就绪
       window.addEventListener('quick-settings-connected', () => {
         const quickSettings = document.querySelector('quick-settings');
         if (quickSettings && typeof quickSettings.isDesktop !== 'undefined') {
-          this.updateDesktopMode(quickSettings.isDesktop);
+          this.isDesktop = quickSettings.isDesktop;
+          this.updateDesktopMode();
         }
       });
     }
   }
 
-  updateDesktopMode(isDesktop) {
-    console.log(`AppsList: Updating desktop mode to ${isDesktop}`);
-    if (isDesktop) {
+  updateDesktopMode() {
+    if (this.isDesktop) {
       this.classList.add('desktop-mode');
     } else {
       this.classList.remove('desktop-mode');
     }
-    
+
     // 更新所有子应用图标的桌面模式样式
     this.updateChildren();
   }
-  
+
   // 更新所有子元素的桌面模式样式
   updateChildren() {
     this.appsNodes.forEach(appIcon => {
       if (appIcon && typeof appIcon.updateDesktopMode === 'function') {
-        appIcon.updateDesktopMode();
+        appIcon.updateDesktopMode(this.isDesktop);
       }
     });
   }
@@ -246,10 +219,10 @@ class AppsList extends LitElement {
     if (!this.contains(event.target)) {
       // 检查是否点击了开始按钮或快速启动按钮，如果是则不关闭
       const target = event.target;
-      const isStartButton = target.closest('[data-l10n-id="quickstart"]') || 
-                           target.closest('.start-button') ||
-                           target.closest('quicklaunch-button');
-      
+      const isStartButton = target.closest('[data-l10n-id="quickstart"]') ||
+        target.closest('.start-button') ||
+        target.closest('quicklaunch-button');
+
       if (!isStartButton) {
         event.preventDefault();
         event.stopPropagation();
@@ -265,7 +238,7 @@ class AppsList extends LitElement {
     }
 
     this.canOpen = false;
-    
+
     // 为桌面模式添加备用计时器
     const setCanOpenFallback = setTimeout(() => {
       if (!this.canOpen) {
@@ -273,7 +246,7 @@ class AppsList extends LitElement {
         this.canOpen = true;
       }
     }, 500); // 500ms后强制设置canOpen为true
-    
+
     this.addEventListener(
       "transitionend",
       () => {
@@ -285,10 +258,7 @@ class AppsList extends LitElement {
     );
     this.classList.add("open");
 
-    // 检查是否为桌面模式
-    const isDesktopMode = this.classList.contains('desktop-mode');
-    
-    if (!isDesktopMode) {
+    if (!this.isDesktop) {
       // 移动模式：保持原有行为，显示桌面背景
       // Ensure we always show the homescreen as background with wallpaper visible
       window.wm.goHomeInstant();
@@ -305,10 +275,10 @@ class AppsList extends LitElement {
       // 桌面模式：不切换到桌面，保持当前应用可见
       console.log('AppsList: Desktop mode - not switching to homescreen, keeping current app visible');
     }
-    
+
     this.focus();
     embedder.addSystemEventListener("keypress", this, true);
-    
+
     // 添加全局点击监听器，延迟添加以避免立即触发
     setTimeout(() => {
       document.addEventListener("click", this.globalClickHandler, true);
@@ -319,11 +289,8 @@ class AppsList extends LitElement {
     embedder.removeSystemEventListener("keypress", this, true);
     this.closeContextMenu();
     this.classList.remove("open");
-    
-    // 检查是否为桌面模式
-    const isDesktopMode = this.classList.contains('desktop-mode');
-    
-    if (!isDesktopMode) {
+
+    if (!this.isDesktop) {
       // 移动模式：恢复homescreen的内容可见性
       // Restore the homescreen content visibility
       let homescreenFrame = window.wm.homescreenFrame();
@@ -335,7 +302,7 @@ class AppsList extends LitElement {
       // 桌面模式：不需要恢复homescreen，保持当前应用可见
       console.log('AppsList: Desktop mode - not restoring homescreen, keeping current app visible');
     }
-    
+
     // 移除全局点击监听器
     document.removeEventListener("click", this.globalClickHandler, true);
   }
@@ -364,7 +331,7 @@ class AppsList extends LitElement {
         }
         break;
       case "contextmenu":
-         //console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        //console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         event.preventDefault();
         this.openContextMenu(event, event.target.data);
         break;

@@ -164,7 +164,11 @@ const customRunner = {
     return async () => {
       timingFromStart("wm.openFrame for homescreen");
       let { url, display } = await homescreenManager.launchInfo();
-      window.wm.openFrame(url, { isHomescreen: true, details: { display } });
+      let isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
+      const params = new URLSearchParams({
+        isDesktop: isDesktop
+      });
+      window.wm.openFrame(`${url}?${params}`, { isHomescreen: true, details: { display } });
       return Promise.resolve();
     };
   },
@@ -172,7 +176,8 @@ const customRunner = {
   wallpaperReady: () => {
     return () => {
       return new Promise((resolve) => {
-        window.wallpaperManager = new window.WallpaperManager();
+        let isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
+        window.wallpaperManager = new window.WallpaperManager(isDesktop);
         window.wallpaperManager.addEventListener("wallpaper-ready", resolve, {
           once: true,
         });
@@ -532,7 +537,7 @@ document.addEventListener(
 
     await graph.waitForDeps("phase1");
     await graph.waitForDeps("launch");
-    
+
     await manageFTU();
     keyManager.registerShortPressAction(config.powerKey, "power");
     keyManager.registerLongPressAction(config.powerKey, "power");

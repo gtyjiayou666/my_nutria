@@ -2,8 +2,9 @@
 // 主要用于移动模式下的退出应用手势
 
 class EdgeSwipeDetector extends EventTarget {
-  constructor() {
+  constructor(isDesktop) {
     super();
+    this.isDesktop = isDesktop;
     
     // 边缘检测区域宽度（像素）
     this.edgeWidth = 30;
@@ -48,35 +49,8 @@ class EdgeSwipeDetector extends EventTarget {
       this.updateMode(event.detail.isDesktop);
     });
     
-    // 监听来自 actionsDispatcher 的桌面模式变化
-    if (window.actionsDispatcher) {
-      actionsDispatcher.addListener("desktop-mode-changed", (_name, data) => {
-        this.updateMode(data.isDesktop);
-      });
-    }
-    
-    // 获取初始状态 - 从 QuickSettings 或其他地方
-    this.initializeMode();
-    
-    this.log('Edge swipe detector initialized');
   }
   
-  async initializeMode() {
-    // 尝试从设置中获取桌面模式状态
-    try {
-      if (window.apiDaemon) {
-        const settings = await apiDaemon.getSettings();
-        const result = await settings.get("ui.desktop-mode");
-        this.updateMode(result.value);
-      } else {
-        // 默认为移动模式（启用边缘滑动）
-        this.updateMode(false);
-      }
-    } catch (e) {
-      // 如果获取设置失败，默认为移动模式
-      this.updateMode(false);
-    }
-  }
   
   updateMode(isDesktop) {
     this.isDesktopMode = isDesktop;
@@ -628,5 +602,5 @@ class EdgeSwipeDetector extends EventTarget {
 
 // 创建全局边缘滑动检测器实例
 if (typeof window !== 'undefined') {
-  window.edgeSwipeDetector = new EdgeSwipeDetector();
+  window.edgeSwipeDetector = new EdgeSwipeDetector((embedder.sessionType === "desktop" || embedder.sessionType === "session"));
 }

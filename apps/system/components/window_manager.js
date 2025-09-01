@@ -681,6 +681,9 @@ class CaretManager {
 class WindowManager extends HTMLElement {
   constructor() {
     super();
+    
+    this.isDesktop = embedder.sessionType !== "mobile";
+
     this.keys = new WindowManagerKeys(this);
     this.log(`constructor`);
 
@@ -922,43 +925,29 @@ class WindowManager extends HTMLElement {
     });
 
     actionsDispatcher.addListener("desktop-mode-changed", (_name, data) => {
-      console.log("WindowManager: Received 'desktop-mode-changed' command from system");
-      console.log("WindowManager: Data received:", data);
-
-      // 向 homescreen 发送桌面模式切换信息
+      this.isDesktop = data.isDesktop;
       const homescreenFrame = this.homescreenFrame();
       if (homescreenFrame && homescreenFrame.webView) {
-        // 获取当前的 src URL
         let currentSrc = homescreenFrame.webView.src;
-
-        // 创建一个 URL 对象
         const url = new URL(currentSrc);
-
-        // 构造要发送的数据对象
         const messageData = {
           action: "desktop-mode-changed",
           isDesktop: data.isDesktop,
         };
-
         const newHash = encodeURIComponent(JSON.stringify(messageData));
         url.hash = newHash;
 
         const newSrc = url.toString();
 
         if (newSrc !== currentSrc) {
-          console.log("Updating webView src to send desktop-mode-changed message via hash:", newSrc);
           homescreenFrame.webView.setAttribute('src', newSrc);
         } else {
           console.log("Hash is already up-to-date.");
         }
       }
-
-      // 关键修复：强制刷新carousel布局以应用新的模式
       if (this.isCarouselOpen) {
         console.log("WindowManager: Refreshing carousel layout for mode change");
-        // 强制重新计算carousel布局
         this.closeCarousel();
-        // 延迟重新打开，确保布局重置
         setTimeout(() => {
           this.openCarousel();
         }, 100);
@@ -1534,8 +1523,6 @@ class WindowManager extends HTMLElement {
       this.ensureActiveFrameVisibility();
     }
 
-    let verticalMode = embedder.sessionType === "mobile";
-
     let updateCarouselAttr = (frameCount) => {
       this.carousel.classList.remove("single-row");
       this.carousel.classList.remove("two-rows");
@@ -1559,7 +1546,7 @@ class WindowManager extends HTMLElement {
     let screenshotPercent = embedder.sessionType === "mobile" ? 75 : 50;
     let marginPercent = (100 - screenshotPercent) / 2;
 
-    if (verticalMode) {
+    if (!this.isDesktop) {
       this.carousel.classList.add("vertical");
       updateCarouselAttr(frameCount);
       // 清理桌面模式的内联样式
@@ -1625,7 +1612,7 @@ class WindowManager extends HTMLElement {
       });
     };
 
-    if (!verticalMode) {
+    if (this.isDesktop) {
       this.carouselObserver = new IntersectionObserver(
         intersectionCallback,
         options
@@ -1633,7 +1620,7 @@ class WindowManager extends HTMLElement {
     }
 
     // Left padding div.
-    if (!verticalMode) {
+    if (this.isDesktop) {
       let padding = document.createElement("div");
       padding.classList.add("padding");
       this.carouselObserver.observe(padding);
@@ -1653,7 +1640,7 @@ class WindowManager extends HTMLElement {
       }
 
       let screenshot = document.createElement("div");
-      if (!verticalMode) {
+      if (this.isDesktop) {
         screenshot.classList.add("sideline");
       }
       let id = frame.getAttribute("id");
@@ -1726,7 +1713,7 @@ class WindowManager extends HTMLElement {
             screenshot.remove();
             this.closeFrame(id);
             let frameCount = Object.keys(this.frames).length;
-            if (!verticalMode) {
+            if (this.isDesktop) {
               // Update the grid columns definitions.
               if (frameCount > 0) {
                 this.carousel.style.gridTemplateColumns = `${marginPercent}% repeat(${frameCount}, ${screenshotPercent}%) ${marginPercent}%`;
@@ -1753,7 +1740,7 @@ class WindowManager extends HTMLElement {
         },
         { once: true }
       );
-      if (!verticalMode) {
+      if (this.isDesktop) {
         this.carouselObserver.observe(screenshot);
       }
       this.carousel.appendChild(screenshot);
@@ -1765,7 +1752,7 @@ class WindowManager extends HTMLElement {
     // open a new frame.
     let screenshot = document.createElement("div");
     screenshot.classList.add("screenshot", "show", "new-tab");
-    if (!verticalMode) {
+    if (this.isDesktop) {
       screenshot.classList.add("sideline");
     }
     screenshot.setAttribute("frame", "<new-tab>");
@@ -1786,13 +1773,13 @@ class WindowManager extends HTMLElement {
       },
       { once: true }
     );
-    if (!verticalMode) {
+    if (this.isDesktop) {
       this.carouselObserver.observe(screenshot);
     }
     this.carousel.appendChild(screenshot);
 
     // Right padding div.
-    if (!verticalMode) {
+    if (this.isDesktop) {
       let padding = document.createElement("div");
       padding.classList.add("padding");
       this.carouselObserver.observe(padding);

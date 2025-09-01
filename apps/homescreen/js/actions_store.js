@@ -214,6 +214,34 @@ class ActionsStore extends EventTarget {
     return await this.loadOrUseDefaults(!alreadyCreated);
   }
 
+  // 获取 widget 的大小信息
+  getWidgetSize(action) {
+    // 尝试从 DOM 元素获取 widget 大小
+    const actionElement = document.getElementById(`action-${action.id}`);
+    if (actionElement) {
+      if (actionElement.classList.contains('widget-2x2')) {
+        return { width: 2, height: 2 };
+      } else if (actionElement.classList.contains('widget-2x1')) {
+        return { width: 2, height: 1 };
+      } else if (actionElement.classList.contains('widget-1x2')) {
+        return { width: 1, height: 2 };
+      }
+    }
+
+    // 尝试从 action.size 属性获取
+    if (action.size) {
+      if (action.size === '2x2') {
+        return { width: 2, height: 2 };
+      } else if (action.size === '2x1') {
+        return { width: 2, height: 1 };
+      } else if (action.size === '1x2') {
+        return { width: 1, height: 2 };
+      }
+    }
+
+    // 默认为 1x1
+    return { width: 1, height: 1 };
+  }
   // Returns the list of empty 1x1 slots in the wall.
   getEmptySlots(width) {
     // Set the minimum height to 10 to let enough moving space.
@@ -221,13 +249,15 @@ class ActionsStore extends EventTarget {
     let slots = new Set();
     this.actions.forEach((action) => {
       let [x, y] = action.position.split(",");
+      let size = this.getWidgetSize(action);
       x = x | 0;
       y = y | 0;
-      if (y > maxHeight) {
-        maxHeight = y;
+      for (let i = 0; i < size.width; i++) {
+        for (let j = 0; j < size.height; j++) {
+          let position = `${i + x},${j + y}`;
+          slots.add(position);
+        }
       }
-      let position = `${x},${y}`;
-      slots.add(position);
     });
 
     // Add an empty row at the top: add 2 because we are 0 based.
@@ -251,16 +281,16 @@ class ActionsStore extends EventTarget {
         const oldPosition = action.position;
         action.position = position;
         this.updateAction(action);
-        
+
         // 触发位置更新事件，通知 UI 更新
         this.dispatchEvent(new CustomEvent("position-updated", {
-          detail: { 
-            actionId: id, 
-            oldPosition: oldPosition, 
-            newPosition: position 
+          detail: {
+            actionId: id,
+            oldPosition: oldPosition,
+            newPosition: position
           }
         }));
-        
+
         this.log(`Updated position for action ${id} from ${oldPosition} to ${position}`);
       }
     });

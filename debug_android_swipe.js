@@ -76,8 +76,6 @@ function testTraditionalBack() {
 
 // 模拟边缘滑动事件
 function simulateEdgeSwipe() {
-    console.log('\n👆 模拟边缘滑动:');
-    
     if (window.edgeSwipeDetector) {
         // 创建模拟的边缘滑动事件
         const mockEvent = new CustomEvent('edge-swipe-back', {
@@ -88,16 +86,13 @@ function simulateEdgeSwipe() {
             }
         });
         
-        console.log('触发边缘滑动事件...');
         window.edgeSwipeDetector.dispatchEvent(mockEvent);
         
         // 直接调用 triggerBackGesture
         if (typeof window.edgeSwipeDetector.triggerBackGesture === 'function') {
-            console.log('直接调用 triggerBackGesture...');
             window.edgeSwipeDetector.triggerBackGesture();
         }
         
-        console.log('✅ 边缘滑动模拟完成');
     } else {
         console.log('❌ 无法模拟：EdgeSwipeDetector 未找到');
     }

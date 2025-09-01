@@ -1,4 +1,3 @@
-// Wallpaper manager
 
 class ColorUtil {
   constructor(rgb) {
@@ -26,31 +25,14 @@ class ColorUtil {
 }
 
 class WallpaperManager extends EventTarget {
-  constructor() {
+  constructor(isDesktop) {
     super();
-    this.isDesktop = true; // 临时默认值，将从设置中加载
-    this.mobileWallpaper = null;
-    this.desktopWallpaper = null;
-    this.isReady = false; // 添加准备状态标志
-    
-    this.initializeDesktopState().then(() => {
-      return this.loadOrUseDefault();
-    }).then(() => {
+    this.isDesktop = isDesktop;
+    this.loadOrUseDefault().then(() => {
       this.log(`ready`);
       this.updateBackground();
-      this.isReady = true;
       this.dispatchEvent(new CustomEvent("wallpaper-ready"));
-      // 发送 wallpaper manager 准备就绪事件
       window.dispatchEvent(new CustomEvent("wallpaper-manager-ready"));
-      console.log(`WallpaperManager: Ready, initial desktop mode: ${this.isDesktop}`);
-      
-      // 初始化完成后立即发送一次状态同步事件，确保所有组件状态一致
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
-          detail: { isDesktop: this.isDesktop }
-        }));
-        console.log(`WallpaperManager: Initial state sync event sent, isDesktop: ${this.isDesktop}`);
-      }, 100);
     });
 
     actionsDispatcher.addListener("set-wallpaper", (_name, url) => {
@@ -172,29 +154,6 @@ class WallpaperManager extends EventTarget {
     console.error(`WallpaperManager: ${msg}`);
   }
 
-  async initializeDesktopState() {
-    try {
-      // 从设置中读取桌面模式状态
-      const settings = await apiDaemon.getSettings();
-      let savedDesktopState;
-      try {
-        const result = await settings.get("ui.desktop-mode");
-        savedDesktopState = result.value;
-        console.log(`WallpaperManager: Loaded desktop state from settings: ${savedDesktopState}`);
-      } catch (e) {
-        // 如果设置不存在，使用默认值
-        savedDesktopState = true; // 默认桌面模式
-        console.log(`WallpaperManager: No saved desktop state found, using default: ${savedDesktopState}`);
-      }
-      
-      this.isDesktop = savedDesktopState;
-      console.log(`WallpaperManager: Desktop state initialized to ${this.isDesktop}`);
-    } catch (e) {
-      console.error(`WallpaperManager: Failed to initialize desktop state: ${e}`);
-      this.isDesktop = true; // 默认桌面模式
-    }
-  }
-
   fetchAsBlob(url) {
     return fetch(url)
       .then((response) => {
@@ -283,19 +242,9 @@ class WallpaperManager extends EventTarget {
   }
 
   async loadDefaultWallpaper() {
-    // 加载移动版壁纸（默认显示）
-    let mobileImage = await this.fetchAsBlob("./resources/default-wallpaper.webp");
-    this.log(`got mobile wallpaper blob ${mobileImage}`);
-    this.mobileWallpaper = mobileImage;
-    
-    // 加载桌面版壁纸（隐藏状态）
-    let desktopImage = await this.fetchAsBlob("./resources/newdesktop.png");
-    this.log(`got desktop wallpaper blob ${desktopImage}`);
-    this.desktopWallpaper = desktopImage;
-    
-    // 根据当前模式保存对应的壁纸
-    let currentImage = this.isDesktop ? this.desktopWallpaper : this.mobileWallpaper;
-    await this.save(currentImage);
+    let image = await this.fetchAsBlob("./resources/default-wallpaper.webp");
+    this.log(`got default blob ${image}`);
+    await this.save(image);
   }
 
   // Retrieve the list of wallpapers from the content manager.
@@ -327,55 +276,6 @@ class WallpaperManager extends EventTarget {
 
   asURL() {
     return this.currentResource.variantUrl("default");
-  }
-
-  // 获取当前桌面模式状态
-  getCurrentDesktopState() {
-    return this.isDesktop;
-  }
-
-  // 检查 wallpaper manager 是否准备就绪
-  isWallpaperManagerReady() {
-    return this.isReady;
-  }
-
-  // 切换桌面/移动模式的壁纸
-  async switchWallpaper(isDesktop) {
-    this.log(`switchWallpaper to ${isDesktop ? 'desktop' : 'mobile'} mode`);
-    
-    // 更新内部状态
-    const wasDesktop = this.isDesktop;
-    this.isDesktop = isDesktop;
-    
-    console.log(`WallpaperManager: Switching from ${wasDesktop} to ${isDesktop}`);
-    
-    // 立即发送桌面模式切换事件，即使壁纸还未加载完成
-    window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
-      detail: { isDesktop }
-    }));
-    
-    // 确保两张壁纸都已加载
-    if (!this.mobileWallpaper || !this.desktopWallpaper) {
-      console.log('WallpaperManager: Loading default wallpapers...');
-      await this.loadDefaultWallpaper();
-      // 如果壁纸加载失败，仍然发送事件确保UI状态正确
-      if (!this.mobileWallpaper || !this.desktopWallpaper) {
-        console.warn('WallpaperManager: Failed to load wallpapers');
-        return;
-      }
-    }
-    
-    // 根据模式选择对应的壁纸
-    let targetImage = isDesktop ? this.desktopWallpaper : this.mobileWallpaper;
-    
-    // 保存新壁纸
-    this.ignoreNextChange = true;
-    await this.save(targetImage);
-    
-    // 更新背景
-    this.updateBackground();
-    
-    console.log(`WallpaperManager: Successfully switched to ${isDesktop ? 'desktop' : 'mobile'} mode`);
   }
 }
 

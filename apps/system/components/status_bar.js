@@ -108,15 +108,15 @@ import { ensurePanelManager } from '../js/bootstrap.js';
 class StatusBar extends HTMLElement {
   constructor() {
     super();
-
+    this.isDesktop = embedder.sessionType === "desktop" || embedder.sessionType === "session";
     this.shadow = this.attachShadow({ mode: "open" });
 
     this.carouselIcon =
-      embedder.sessionType === "mobile" ? "layout-grid" : "columns";
+      this.isDesktop ? "layout-grid" : "columns";
 
     this.shadow.innerHTML = `
     <link rel="stylesheet" href="components/status_bar.css">
-      <div class="container homescreen session-${embedder.sessionType}">
+      <div class="container homescreen session-${this.isDesktop}">
         <div class="left">
           <sl-icon class="static battery-icon homescreen-icon" name="battery-charging"></sl-icon>
           <img class="favicon" />
@@ -195,38 +195,25 @@ class StatusBar extends HTMLElement {
     };
 
     homeElem.onclick = this.homeClick = () => {
-      console.log("StatusBar: Home button clicked");
-      
-      // 检查是否为桌面模式
-      const isDesktopMode = this.classList.contains('desktop-mode');
-      console.log(`StatusBar: isDesktopMode = ${isDesktopMode}`);
-      
       if (this.isCarouselOpen) {
         console.log("StatusBar: Closing carousel");
         actionsDispatcher.dispatch("close-carousel");
       }
-      
-      if (isDesktopMode) {
+
+      if (this.isDesktop) {
         // 桌面模式：不最小化当前应用，但执行一些home相关操作
         console.log("Desktop mode: Home button clicked");
-        
+
         // 关闭任何打开的搜索面板
         if (document.getElementById('main-search-panel')?.classList.contains('open')) {
           console.log("StatusBar: Closing search panel");
           this.closeSearchPanel();
         }
-        
+
         // 在桌面模式下，我们可以：
         // 1. 显示桌面背景（不最小化应用）
         // 2. 或者切换到homescreen但保持其他应用在后台
-        console.log("StatusBar: Dispatching go-home for desktop mode");
         actionsDispatcher.dispatch("go-home");
-        
-        // 提供触觉反馈表示按钮有响应
-        if (window.hapticFeedback) {
-          console.log("StatusBar: Providing haptic feedback");
-          window.hapticFeedback.vibrate('light');
-        }
       } else {
         // 移动模式：保持原有行为
         console.log("Mobile mode: Dispatching go-home");
@@ -238,7 +225,7 @@ class StatusBar extends HTMLElement {
     homeElem.addEventListener('click', (e) => {
       console.log("StatusBar: Home button direct addEventListener triggered");
     });
-    
+
     // 添加pointerdown事件作为测试
     homeElem.addEventListener('pointerdown', (e) => {
       console.log("StatusBar: Home button pointerdown triggered");
@@ -296,14 +283,11 @@ class StatusBar extends HTMLElement {
     let quickLaunchDesktopElem = this.getElem(`svg.quicklaunch.desktop-mode`);
     hapticFeedback.register(quickLaunchDesktopElem);
     quickLaunchDesktopElem.onpointerdown = async () => {
-      // 桌面模式下的开始按钮行为：不最小化应用，直接显示菜单
-      const isDesktopMode = this.classList.contains('desktop-mode');
-      
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
       }
-      
-      if (isDesktopMode) {
+
+      if (this.isDesktop) {
         // 桌面模式：直接显示应用列表，不最小化当前应用
         const appsList = document.getElementById("apps-list");
         if (appsList) {
@@ -367,18 +351,18 @@ class StatusBar extends HTMLElement {
       this.updateState("", this.state);
     });
 
-    if (embedder.sessionType !== "mobile") {
-      actionsDispatcher.addListener(
-        "update-frame-list",
-        this.updateFrameList.bind(this)
-      );
+    actionsDispatcher.addListener(
+      "update-frame-list",
+      this.updateFrameList.bind(this)
+    );
+    if (this.isDesktop) {
 
       // 设置高频检查机制，确保桌面模式下任务栏及时更新
-      this.frameListUpdateInterval = setInterval(() => {
-        if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
-          window.wm.updateFrameList();
-        }
-      }, 2000); // 改为每200毫秒检查一次，提高响应速度
+      // this.frameListUpdateInterval = setInterval(() => {
+      //   if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
+      //     window.wm.updateFrameList();
+      //   }
+      // }, 2000); // 改为每200毫秒检查一次，提高响应速度
 
       // 监听窗口管理器的frame变化事件
       if (window.wm) {
@@ -438,8 +422,7 @@ class StatusBar extends HTMLElement {
       // Add right-click context menu for frame list items
       this.getElem(`.frame-list`).oncontextmenu = (event) => {
         // Only show context menu in desktop mode
-        const isDesktop = this.classList.contains('desktop-mode');
-        if (!isDesktop) {
+        if (!this.isDesktop) {
           return; // Allow default context menu behavior in mobile mode
         }
 
@@ -564,15 +547,15 @@ class StatusBar extends HTMLElement {
 
       // 回退处理：使用本地实现
       this.opensearchEngine = this.opensearchEngine || new OpenSearch();
-      
+
       // 检查是否有主搜索面板的默认搜索结果组件
       const mainSearchPanel = document.getElementById('main-search-panel');
       let defaultSearchResults = null;
-      
+
       if (mainSearchPanel) {
         defaultSearchResults = mainSearchPanel.querySelector('#main-default-search-results');
       }
-      
+
       // 如果没有主搜索面板的组件，回退到shadow DOM中的组件
       if (!defaultSearchResults) {
         defaultSearchResults = this.defaultSearchResults;
@@ -587,10 +570,10 @@ class StatusBar extends HTMLElement {
 
       let input = this.searchBox.value.trim();
       this.searchBox.blur();
-      
+
       // 关闭搜索面板
       this.closeSearchPanel();
-      
+
       if (!this.maybeOpenURL(input)) {
         // Keyword search, redirect to the current search engine.
         this.maybeOpenURL(this.opensearchEngine.getSearchUrlFor(input), { search: input });
@@ -969,22 +952,20 @@ class StatusBar extends HTMLElement {
   setupSwipeDetector() {
     const swipeDetector = new SwipeDetector(this);
     swipeDetector.addEventListener("swipe-down", () => {
-      const isDesktopMode = this.classList.contains('desktop-mode');
-      
+
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
-        if (!isDesktopMode) {
+        if (!this.isDesktop) {
           // 移动模式：回到桌面
           actionsDispatcher.dispatch("go-home");
         }
       }
     });
     swipeDetector.addEventListener("swipe-up", () => {
-      const isDesktopMode = this.classList.contains('desktop-mode');
-      
+
       if (this.isCarouselOpen) {
         actionsDispatcher.dispatch("close-carousel");
-        if (!isDesktopMode) {
+        if (!this.isDesktop) {
           // 移动模式：回到桌面
           actionsDispatcher.dispatch("go-home");
         }
@@ -1029,11 +1010,8 @@ class StatusBar extends HTMLElement {
   }
 
   updateFrameList(_name, list) {
-    // 检查当前是否为桌面模式
-    const isDesktopMode = this.classList.contains('desktop-mode');
-
     // 移动模式下不显示任务栏中的应用
-    if (!isDesktopMode) {
+    if (!this.isDesktop) {
       let frames = this.getElem(`.frame-list`);
       if (frames) {
         frames.innerHTML = "";
@@ -1370,31 +1348,20 @@ class StatusBar extends HTMLElement {
   }
 
   initializeDesktopMode() {
-    // 设置默认状态，与 wallpaperManager 保持一致（默认桌面模式）
-    const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
-    const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
-    const screenElement = document.getElementById('screen');
-
-    // 检查 wallpaperManager 是否已加载并获取当前状态
-    let currentIsDesktop = window.wallpaperManager ? window.wallpaperManager.isDesktop : true; // 默认桌面模式
-
     // 立即设置正确的状态
-    this.updateQuicklaunchPosition(currentIsDesktop);
+    this.updateQuicklaunchPosition(this.isDesktop);
 
     // 监听桌面模式状态变化
     if (window.wallpaperManager) {
       // 监听桌面模式切换事件
       window.addEventListener('desktop-mode-changed', (event) => {
-        console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
         this.updateQuicklaunchPosition(event.detail.isDesktop);
       });
     } else {
       // 如果 wallpaperManager 还未加载，等待其加载完成
       window.addEventListener('wallpaper-manager-ready', () => {
-        console.log(`StatusBar: WallpaperManager ready, setting desktop mode to ${window.wallpaperManager.isDesktop}`);
-        this.updateQuicklaunchPosition(window.wallpaperManager.isDesktop);
+        this.updateQuicklaunchPosition(this.isDesktop);
         window.addEventListener('desktop-mode-changed', (event) => {
-          console.log(`StatusBar: Desktop mode changed to ${event.detail.isDesktop}`);
           this.updateQuicklaunchPosition(event.detail.isDesktop);
         });
       });
@@ -1402,50 +1369,44 @@ class StatusBar extends HTMLElement {
   }
 
   updateQuicklaunchPosition(isDesktop) {
+    this.isDesktop = isDesktop;
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
     const appsList = document.getElementById('apps-list');
 
-    console.log(`StatusBar: updateQuicklaunchPosition to ${isDesktop ? 'desktop' : 'mobile'} mode`);
-    console.log(`StatusBar: Current classes before update:`, this.className);
-
-    if (isDesktop) {
+    if (this.isDesktop) {
       // 桌面模式：重新组织状态栏布局
       this.enableDesktopTaskbar();
       if (mobileQuicklaunch) {
         mobileQuicklaunch.style.display = 'none';
       }
+
       if (desktopQuicklaunch) {
         desktopQuicklaunch.style.display = 'initial';
       }
-      // 添加桌面模式样式类
+
       this.classList.add('desktop-mode');
       if (screenElement) {
         screenElement.classList.add('desktop-mode');
       }
-      // 确保apps-list在桌面模式下有正确的样式
+
       if (appsList) {
         appsList.classList.add('desktop-mode');
       }
 
-      // 显示搜索面板
       if (this.searchPanel) {
         this.searchPanel.style.display = 'flex';
         this.searchPanel.style.visibility = 'visible';
         this.searchPanel.style.opacity = '1';
       }
 
-      // 桌面模式下显示任务栏应用
       if (window.wm && window.wm.updateFrameList) {
         // 触发frame list更新以显示后台应用
         console.log('StatusBar: Forcing frame list update on desktop mode switch');
         window.wm.updateFrameList();
       }
-
-      console.log(`StatusBar: Added desktop-mode class, current classes:`, this.className);
     } else {
-      // 移动模式：恢复原始布局
       this.disableDesktopTaskbar();
       if (mobileQuicklaunch) {
         mobileQuicklaunch.style.display = 'initial';
@@ -1462,10 +1423,6 @@ class StatusBar extends HTMLElement {
       if (appsList) {
         appsList.classList.remove('desktop-mode');
       }
-
-      console.log(`StatusBar: Removed desktop-mode class, current classes:`, this.className);
-      console.log(`StatusBar: Search panel element:`, this.searchPanel);
-
       // 隐藏搜索面板
       if (this.searchPanel) {
         this.searchPanel.style.display = 'none';
@@ -1485,13 +1442,11 @@ class StatusBar extends HTMLElement {
       if (mainSearchPanel && mainSearchPanel.classList.contains('open')) {
         this.closeSearchPanel();
       }
-
-      console.log(`StatusBar: Mobile mode restored, display:`, this.style.display);
     }
 
     console.log(`StatusBar: Current classes after update:`, this.className);
     console.log(`StatusBar: Status bar visibility:`, window.getComputedStyle(this).display);
-    
+
     // 确保Home按钮始终有正确的事件处理器
     this.ensureHomeButtonHandler();
   }
@@ -1502,24 +1457,24 @@ class StatusBar extends HTMLElement {
       console.log('StatusBar: Checking Home button event handler');
       console.log('StatusBar: homeElem.onclick:', homeElem.onclick);
       console.log('StatusBar: this.homeClick:', this.homeClick);
-      
+
       // 检查Home按钮的样式和可见性
       const computedStyle = window.getComputedStyle(homeElem);
       console.log('StatusBar: Home button display:', computedStyle.display);
       console.log('StatusBar: Home button visibility:', computedStyle.visibility);
       console.log('StatusBar: Home button pointer-events:', computedStyle.pointerEvents);
       console.log('StatusBar: Home button opacity:', computedStyle.opacity);
-      
+
       // 强制重新分配事件处理器
       console.log('StatusBar: Force restoring Home button event handler');
       homeElem.onclick = this.homeClick;
       homeElem.oncontextmenu = this.homeContextMenu;
-      
+
       // 重新注册触觉反馈
       if (window.hapticFeedback) {
         window.hapticFeedback.register(homeElem);
       }
-      
+
       // 添加额外的事件监听器作为备用
       homeElem.addEventListener('click', (e) => {
         console.log('StatusBar: Home button addEventListener fired');
@@ -1529,7 +1484,7 @@ class StatusBar extends HTMLElement {
           this.homeClick();
         }
       });
-      
+
       console.log('StatusBar: Home button handler setup complete');
     } else {
       console.error('StatusBar: Home button element not found!');
@@ -1729,7 +1684,7 @@ class StatusBar extends HTMLElement {
     }
 
     // 确保Home按钮始终有正确的事件处理器
-    this.ensureHomeButtonHandler();
+    // this.ensureHomeButtonHandler();
 
     // We switched from homescreen <-> content, reorder the sections
     // so they get events properly.
@@ -1764,7 +1719,7 @@ class StatusBar extends HTMLElement {
     this.state = state;
 
     // Update the frame list state.
-    if (embedder.sessionType !== "mobile") {
+    if (this.isDesktop) {
       if (this.currentActive !== state.id) {
         let selector = this.currentActive
           ? `#shortcut-${this.currentActive}`
@@ -1797,13 +1752,10 @@ class StatusBar extends HTMLElement {
   }
 
   showTaskbarContextMenu(event, frameId) {
-    // Check if we're in desktop mode - in mobile mode, we shouldn't show taskbar context menu
-    const isDesktop = this.classList.contains('desktop-mode');
-    if (!isDesktop) {
+    if (!this.isDesktop) {
       return; // Don't show context menu in mobile mode
     }
 
-    // Remove any existing taskbar context menu
     const existingMenu = document.querySelector('.taskbar-context-menu');
     if (existingMenu) {
       existingMenu.remove();
