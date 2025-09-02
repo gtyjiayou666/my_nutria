@@ -26,11 +26,8 @@
     <div class="duration" id="duration">00:00:00</div>
 
     <label>分辨率</label>
-    <select id="resolution">
-      <option value="1280x720">720p</option>
-      <option value="1920x1080" selected>1080p</option>
-      <option value="800x600">800x600</option>
-    </select>
+    <span id="resolution">
+    </span>
 
     <label>帧率</label>
     <select id="framerate">
@@ -50,7 +47,6 @@
   <div id="previewContainer">
     <h3>🎬 录制完成</h3>
     <video id="preview" controls></video>
-    <a id="downloadLink" download>⬇️ 下载视频</a>
   </div>
 
   <script type="module" src="./js/bootstrap.js"></script>

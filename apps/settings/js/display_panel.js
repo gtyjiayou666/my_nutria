@@ -23,9 +23,6 @@ class DisplayPanel {
   }
 
   async handleEvent(event) {
-    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-    console.log(event);
-    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
     if (event.type === "panel-ready") {
       this.init();
     } else if (event.type === "sl-change") {
@@ -62,7 +59,6 @@ class DisplayPanel {
         };
         await this.settings.set([setting]);
       } else if (kind == "resolutions") {
-        console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
         if (this.resolution === event.detail.item) {
           this.resolution.checked = true;
           return;
@@ -148,7 +144,6 @@ class DisplayPanel {
     if (modeSwitch) {
       modeSwitch.checked = isDarkMode;
       modeSwitch.addEventListener("sl-change", this);
-      this.log(`Dark mode switch initialized: ${isDarkMode}`);
     } else {
       this.error("Dark mode switch not found!");
     }
@@ -232,17 +227,14 @@ class DisplayPanel {
     let extensionHeader = this.panel.querySelector("#extension-header");
     if (extensionHeader) {
       extensionHeader.addEventListener("click", this);
-      this.log("Extension header click listener added");
     }
 
     this.ready = true;
-    this.log("Display panel initialization completed successfully!");
 
     // Ensure all dynamically created content is translated
     if (document.l10n) {
       try {
         await document.l10n.translateFragment(this.panel);
-        this.log("Final translation applied to display panel");
       } catch (error) {
         this.error(`Failed to apply final translation: ${error}`);
       }
@@ -250,7 +242,6 @@ class DisplayPanel {
   }
 
   async initResolutions() {
-    this.log("Initializing resolutions...");
     let resolutions = this.panel.querySelector("#resolutions");
     if (!resolutions) {
       this.error("Resolutions menu not found!");
@@ -263,7 +254,6 @@ class DisplayPanel {
     try {
       // Get available resolutions from the backend
       let availableResolutions = await this.getAvailableResolutions();
-      this.log(`Found ${availableResolutions.length} available resolutions`);
 
       // Get current resolution
       let currentResolution = await this.getCurrentResolution();
@@ -290,7 +280,6 @@ class DisplayPanel {
         resolutions.setAttribute("data-listener-added", "true");
       }
 
-      this.log("Resolutions initialized successfully");
     } catch (error) {
       this.error(`Failed to initialize resolutions: ${error}`);
     }
@@ -338,7 +327,6 @@ class DisplayPanel {
   }
 
   async initDisplays() {
-    this.log("Initializing displays...");
     const displays = this.panel.querySelector("#displays");
 
     if (!displays) {
@@ -371,7 +359,6 @@ class DisplayPanel {
         if (i === 0) {
           item.setAttribute("checked", "true");
           this.display = item;
-          this.log(`Set default display: Display ${i + 1}`);
         }
         displays.appendChild(item);
       }
@@ -387,14 +374,12 @@ class DisplayPanel {
         displays.setAttribute("data-listener-added", "true");
       }
 
-      this.log("Displays initialized successfully");
     } catch (error) {
       this.error(`Failed to initialize displays: ${error}`);
     }
   }
 
   async initExtensions() {
-    this.log("Initializing extensions...");
     const extensions = this.panel.querySelector("#extensions");
 
     if (!extensions) {
@@ -425,7 +410,6 @@ class DisplayPanel {
         if (index === 0) {
           item.setAttribute("checked", "true");
           this.extension = item;
-          this.log(`Set default extension: ${ext.fallback}`);
         }
         extensions.appendChild(item);
       }
@@ -440,8 +424,6 @@ class DisplayPanel {
         extensions.addEventListener("sl-select", this);
         extensions.setAttribute("data-listener-added", "true");
       }
-
-      this.log("Extensions initialized successfully");
     } catch (error) {
       this.error(`Failed to initialize extensions: ${error}`);
     }
@@ -490,7 +472,6 @@ class DisplayPanel {
     try {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
         this.domRequestToPromise(navigator.b2g.b2GScreenManager.setResolution(displayNum, mode, parseInt(width), parseInt(height)));
-        this.log(`Resolution changed to ${width}x${height}`);
       } else {
         this.error("b2GScreenManager not available");
       }

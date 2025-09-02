@@ -355,7 +355,7 @@ class StatusBar extends HTMLElement {
       "update-frame-list",
       this.updateFrameList.bind(this)
     );
-    if (this.isDesktop) {
+    // if (this.isDesktop) {
 
       // 设置高频检查机制，确保桌面模式下任务栏及时更新
       // this.frameListUpdateInterval = setInterval(() => {
@@ -368,7 +368,6 @@ class StatusBar extends HTMLElement {
       if (window.wm) {
         this.frameChangeListener = () => {
           if (this.classList.contains('desktop-mode')) {
-            console.log('StatusBar: Frame change detected, updating taskbar');
             setTimeout(() => {
               if (window.wm && window.wm.updateFrameList) {
                 window.wm.updateFrameList();
@@ -445,7 +444,7 @@ class StatusBar extends HTMLElement {
           this.showTaskbarContextMenu(event, frameId);
         }
       };
-    }
+    // }
 
 
 

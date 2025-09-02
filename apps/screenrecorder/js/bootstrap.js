@@ -32,7 +32,6 @@ const elements = {
     duration: document.getElementById('duration'),
     previewContainer: document.getElementById('previewContainer'),
     preview: document.getElementById('preview'),
-    downloadLink: document.getElementById('downloadLink'),
     resolution: document.getElementById('resolution'),
     framerate: document.getElementById('framerate'),
     format: document.getElementById('format')
@@ -51,6 +50,16 @@ async function waitForContentManager() {
     console.info("✅ contentManager 已就绪");
 }
 
+function updateResolutionOptions() {
+    const el = document.getElementById('resolution');
+    const width = window.screen.width;
+    const height = window.screen.height;
+
+    let resolutionLabel = `${width}x${height}`;
+
+    el.textContent = resolutionLabel;
+}
+
 // ✅ 初始化录屏服务
 async function initRecorder() {
     try {
@@ -60,6 +69,8 @@ async function initRecorder() {
         showError("❌ contentManager 不可用: " + err.message);
         return;
     }
+    updateResolutionOptions();
+    window.addEventListener('resize', updateResolutionOptions);
 
     // 检查 B2G screenRecorderService
     if (!navigator.b2g || !navigator.b2g.screenRecorderService) {
@@ -73,7 +84,9 @@ async function initRecorder() {
     // 绑定事件
     elements.recordBtn.addEventListener('click', handleRecordToggle);
     startStatusPolling();
+
     updateUI();
+
 }
 
 // ✅ 轮询录制状态
@@ -104,7 +117,7 @@ async function handleRecordToggle() {
 
 // ✅ 开始录制
 async function startRecording() {
-    const resolution = elements.resolution.value;
+    const resolution = elements.resolution.textContent;
     const framerate = parseInt(elements.framerate.value);
     const format = elements.format.value;
     const [width, height] = resolution.split('x').map(Number);
@@ -185,8 +198,6 @@ async function onRecordingStop() {
         // 设置预览和下载
         elements.preview.src = url;
         elements.preview.load();
-        elements.downloadLink.href = url;
-        elements.downloadLink.download = `screen_rec_${new Date().toISOString().slice(0, 19)}.${elements.format.value}`;
 
         showPreview();
         updateStatus("✅ 已保存到【Screen Recordings】");
@@ -239,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             graph.waitForDeps(dep)
         )
     );
-    console.info("📄 FireScreen 页面加载完成");
+
     initRecorder();
 });
 
