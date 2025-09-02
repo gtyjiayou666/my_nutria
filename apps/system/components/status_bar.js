@@ -357,98 +357,94 @@ class StatusBar extends HTMLElement {
     );
     // if (this.isDesktop) {
 
-      // 设置高频检查机制，确保桌面模式下任务栏及时更新
-      // this.frameListUpdateInterval = setInterval(() => {
-      //   if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
-      //     window.wm.updateFrameList();
-      //   }
-      // }, 2000); // 改为每200毫秒检查一次，提高响应速度
+    // 设置高频检查机制，确保桌面模式下任务栏及时更新
+    // this.frameListUpdateInterval = setInterval(() => {
+    //   if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
+    //     window.wm.updateFrameList();
+    //   }
+    // }, 2000); // 改为每200毫秒检查一次，提高响应速度
 
-      // 监听窗口管理器的frame变化事件
-      if (window.wm) {
-        this.frameChangeListener = () => {
-          if (this.classList.contains('desktop-mode')) {
-            setTimeout(() => {
-              if (window.wm && window.wm.updateFrameList) {
-                window.wm.updateFrameList();
-              }
-            }, 50); // 50ms延迟确保状态稳定
-          }
-        };
+    // 监听窗口管理器的frame变化事件
+    if (window.wm) {
+      this.frameChangeListener = () => {
+        if (this.classList.contains('desktop-mode')) {
+          setTimeout(() => {
+            if (window.wm && window.wm.updateFrameList) {
+              window.wm.updateFrameList();
+            }
+          }, 50); // 50ms延迟确保状态稳定
+        }
+      };
 
-        // 监听frame相关事件
-        window.wm.addEventListener('frameopen', this.frameChangeListener);
-        window.wm.addEventListener('frameclose', this.frameChangeListener);
-        window.wm.addEventListener('frameactivate', this.frameChangeListener);
+      // 监听frame相关事件
+      window.wm.addEventListener('frameopen', this.frameChangeListener);
+      window.wm.addEventListener('frameclose', this.frameChangeListener);
+      window.wm.addEventListener('frameactivate', this.frameChangeListener);
+    }
+
+    this.getElem(`.frame-list`).onclick = (event) => {
+      let target = event.target;
+      let frameDiv = null;
+
+      // 向上查找，直到找到frame div元素或到达frame-list容器
+      while (target && target !== event.currentTarget) {
+        if (target.id && target.id.startsWith('shortcut-')) {
+          frameDiv = target;
+          break;
+        }
+        target = target.parentElement;
       }
 
-      this.getElem(`.frame-list`).onclick = (event) => {
-        let target = event.target;
-        let frameDiv = null;
+      if (!frameDiv) {
+        console.log('No frame div found for click');
+        return;
+      }
 
-        // 向上查找，直到找到frame div元素或到达frame-list容器
-        while (target && target !== event.currentTarget) {
-          if (target.id && target.id.startsWith('shortcut-')) {
-            frameDiv = target;
-            break;
-          }
-          target = target.parentElement;
+      // 检查是否点击了音频控制图标
+      if (event.target.localName === "sl-icon" &&
+        (event.target.getAttribute("name") === "volume-1" ||
+          event.target.getAttribute("name") === "volume-x")) {
+        // Toggle the muted state of the frame
+        let frameId = frameDiv.getAttribute("id").split("-")[1];
+        window.wm.toggleMutedState(frameId);
+        return;
+      }
+
+      // 否则切换到该frame
+      let id = frameDiv.getAttribute("id").split("-")[1];
+      if (this.isCarouselOpen) {
+        actionsDispatcher.dispatch("close-carousel");
+      }
+      window.wm.switchToFrame(id);
+    };
+
+    // Add right-click context menu for frame list items
+    this.getElem(`.frame-list`).oncontextmenu = (event) => {
+      // Only show context menu in desktop mode
+      if (!this.isDesktop) {
+        return; // Allow default context menu behavior in mobile mode
+      }
+
+      event.preventDefault();
+
+      let target = event.target;
+      let frameDiv = null;
+
+      // 向上查找，直到找到frame div元素或到达frame-list容器
+      while (target && target !== event.currentTarget) {
+        if (target.id && target.id.startsWith('shortcut-')) {
+          frameDiv = target;
+          break;
         }
+        target = target.parentElement;
+      }
 
-        if (!frameDiv) {
-          console.log('No frame div found for click');
-          return;
-        }
-
-        // 检查是否点击了音频控制图标
-        if (event.target.localName === "sl-icon" &&
-          (event.target.getAttribute("name") === "volume-1" ||
-            event.target.getAttribute("name") === "volume-x")) {
-          // Toggle the muted state of the frame
-          let frameId = frameDiv.getAttribute("id").split("-")[1];
-          window.wm.toggleMutedState(frameId);
-          return;
-        }
-
-        // 否则切换到该frame
-        let id = frameDiv.getAttribute("id").split("-")[1];
-        if (this.isCarouselOpen) {
-          actionsDispatcher.dispatch("close-carousel");
-        }
-        window.wm.switchToFrame(id);
-      };
-
-      // Add right-click context menu for frame list items
-      this.getElem(`.frame-list`).oncontextmenu = (event) => {
-        // Only show context menu in desktop mode
-        if (!this.isDesktop) {
-          return; // Allow default context menu behavior in mobile mode
-        }
-
-        event.preventDefault();
-
-        let target = event.target;
-        let frameDiv = null;
-
-        // 向上查找，直到找到frame div元素或到达frame-list容器
-        while (target && target !== event.currentTarget) {
-          if (target.id && target.id.startsWith('shortcut-')) {
-            frameDiv = target;
-            break;
-          }
-          target = target.parentElement;
-        }
-
-        if (frameDiv) {
-          let frameId = frameDiv.getAttribute("id").split("-")[1];
-          this.showTaskbarContextMenu(event, frameId);
-        }
-      };
+      if (frameDiv) {
+        let frameId = frameDiv.getAttribute("id").split("-")[1];
+        this.showTaskbarContextMenu(event, frameId);
+      }
+    };
     // }
-
-
-
-
 
 
 
@@ -526,8 +522,8 @@ class StatusBar extends HTMLElement {
       }
 
       if (event.key === "Tab") {
-        this.defaultSearchResults.onTabKey(event);
-        this.event.preventDefault();
+        // this.defaultSearchResults.onTabKey(event);
+        event.preventDefault();
       }
     });
 

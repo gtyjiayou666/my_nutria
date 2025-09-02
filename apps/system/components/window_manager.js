@@ -259,7 +259,22 @@ class WindowManagerKeys {
         case "CapsLock":
         case "Shift":
         case "Alt":
+        case "Tab":
+        case "NumLock":
+          return;
         case "Backspace":
+          if (this.candidateContainer.style.display !== 'none') {
+            event.preventDefault();
+            this.inputText = this.inputText.slice(0, -1);
+            if (this.inputText.length != 0) {
+              navigator.b2g.inputMethod.setComposition(this.inputText, 0, this.inputText.length);
+              this.reInputText(this.inputText);
+              this.updateCandidateUI(this.inputText, this.candidateList, this.highlightedIndex);
+            } else {
+              navigator.b2g.inputMethod.endComposition("");
+              this.clearInputText();
+            }
+          }
           return;
         case 'ArrowUp':
           if (this.candidateContainer.style.display !== 'none') {
@@ -320,7 +335,6 @@ class WindowManagerKeys {
         this.updateCandidateUI(this.inputText, this.candidateList, this.highlightedIndex);
         return; // 处理完立即返回
       } else if (event.key >= '0' && event.key <= '9') {
-        event.preventDefault();
         if (this.candidateContainer.style.display === 'inline-block') {
           event.preventDefault();
           if (event.key >= '1' && event.key <= '7') {
@@ -681,7 +695,7 @@ class CaretManager {
 class WindowManager extends HTMLElement {
   constructor() {
     super();
-    
+
     this.isDesktop = embedder.sessionType !== "mobile";
 
     this.keys = new WindowManagerKeys(this);
