@@ -1,9 +1,9 @@
 // Display preferences component for system
-
+// main.js
 class DisplayPreferences extends HTMLElement {
   constructor() {
     super();
-    this.log("constructor");
+    this.displayNum = 1;
     this.ready = false;
     this.homescreen = null;
     this.display = null;
@@ -11,6 +11,17 @@ class DisplayPreferences extends HTMLElement {
     this.theme = null;
     this.extension = null;
     this.settings = null;
+    window.addEventListener('resize', async () => {
+      this.displays.innerHTML = '';
+      await this.initDisplays();
+      if (this.displayNum <= 1) {
+        let isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
+        const quickSettings = document.querySelector('quick-settings');
+        if (quickSettings.isDesktop != isDesktop) {
+          quickSettings.handleNewModeClick();
+        }
+      }
+    });
   }
 
   log(msg) {
@@ -206,14 +217,13 @@ class DisplayPreferences extends HTMLElement {
     }
 
     let item = document.createElement("sl-menu-item");
-    item.setAttribute("type", "checkbox");
+    // item.setAttribute("type", "checkbox");
     item.textContent = "project";
     item.dataset.extension = 0;
-    item.setAttribute("checked", "true");
     this.extension = item;
     this.extensions.append(item);
     item = document.createElement("sl-menu-item");
-    item.setAttribute("type", "checkbox");
+    // item.setAttribute("type", "checkbox");
     item.textContent = "extend";
     item.dataset.extension = 1;
     this.extensions.append(item);
@@ -283,6 +293,7 @@ class DisplayPreferences extends HTMLElement {
       if (navigator.b2g && navigator.b2g.b2GScreenManager) {
 
         let num = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getScreenNum());
+        this.displayNum = num;
         let availableDisplays = [];
 
         for (var i = 0; i < num; i++) {
@@ -357,7 +368,6 @@ class DisplayPreferences extends HTMLElement {
   }
 
   async updateDarkMode(event) {
-    this.log(`dark mode = ${event.target.checked}`);
     await this.settings.set([
       {
         name: "ui.prefers.color-scheme",
@@ -399,13 +409,21 @@ class DisplayPreferences extends HTMLElement {
   }
 
   async handleExtensionSelect(event) {
-    if (this.extension === event.detail.item) {
-      this.extension.checked = true;
-      return;
+    this.extension = event.detail.item;
+    if (this.displayNum <= 1) {
+      this.displays.innerHTML = '';
+      await this.initDisplays();
+      if (this.displayNum <= 1) {
+        return;
+      }
     }
     // Uncheck the "old" menu item.
-    this.extension?.removeAttribute("checked");
-    this.extension = event.detail.item;
+    if (this.extension.dataset.extension == 1) {
+      const quickSettings = document.querySelector('quick-settings');
+      if (!quickSettings.isDesktop) {
+        quickSettings.handleNewModeClick();
+      }
+    }
     // Set the new settings value.
     await this.setScreenResolution(this.display.dataset.num, this.resolution.dataset.width, this.resolution.dataset.height);
   }

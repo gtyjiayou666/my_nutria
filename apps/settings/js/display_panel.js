@@ -10,7 +10,6 @@ class DisplayPanel {
     this.resolution = null;
     this.theme = null;
     this.display = null;
-    this.extension = null;
     this.settings = null;
   }
 
@@ -67,7 +66,8 @@ class DisplayPanel {
         this.resolution?.removeAttribute("checked");
         this.resolution = event.detail.item;
         // Set the new screen resolution.
-        this.setScreenResolution(this.display.dataset.num, this.extension.dataset.mode, event.detail.item.dataset.width, event.detail.item.dataset.height);
+        let type = await this.domRequestToPromise(navigator.b2g.b2GScreenManager.getDisplayType());
+        this.setScreenResolution(this.display.dataset.num, type, event.detail.item.dataset.width, event.detail.item.dataset.height);
       } else if (kind == "displays") {
         if (this.display === event.detail.item) {
           this.display.checked = true;
@@ -78,16 +78,6 @@ class DisplayPanel {
         this.display = event.detail.item;
         // Set the new display.
         await this.setDisplay();
-      } else if (kind == "extensions") {
-        if (this.extension === event.detail.item) {
-          this.extension.checked = true;
-          return;
-        }
-        // Uncheck the "old" menu item.
-        this.extension?.removeAttribute("checked");
-        this.extension = event.detail.item;
-        // Set the new extension mode.
-        this.setScreenResolution(this.display.dataset.num, this.extension.dataset.mode, this.resolution.dataset.width, this.resolution.dataset.height);
       }
     } else if (event.type === "click") {
       // Handle resolution header click for collapse/expand
@@ -95,10 +85,6 @@ class DisplayPanel {
         this.toggleResolutionSection();
       } else if (event.target.id === "display-header" || event.target.closest("#display-header")) {
         this.toggleDisplaySection();
-      } else if (event.target.id === "extension-header" || event.target.closest("#extension-header")) {
-        this.toggleExtensionSection();
-      } else if (event.target.id === "extension-header" || event.target.closest("#extension-header")) {
-        this.toggleExtensionSection();
       }
     }
   }
@@ -208,10 +194,9 @@ class DisplayPanel {
     homescreens.addEventListener("sl-select", this);
     themes.addEventListener("sl-select", this);
 
-    // Initialize resolution, display and extension options
+    // Initialize resolution, display  options
     await this.initDisplays();
     await this.initResolutions();
-    await this.initExtensions();
 
     // Add event listeners for headers click
     let resolutionHeader = this.panel.querySelector("#resolution-header");
@@ -222,11 +207,6 @@ class DisplayPanel {
     let displayHeader = this.panel.querySelector("#display-header");
     if (displayHeader) {
       displayHeader.addEventListener("click", this);
-    }
-
-    let extensionHeader = this.panel.querySelector("#extension-header");
-    if (extensionHeader) {
-      extensionHeader.addEventListener("click", this);
     }
 
     this.ready = true;
@@ -379,56 +359,6 @@ class DisplayPanel {
     }
   }
 
-  async initExtensions() {
-    const extensions = this.panel.querySelector("#extensions");
-
-    if (!extensions) {
-      this.error("Extensions menu not found!");
-      return;
-    }
-
-    try {
-      // Clear existing extension options
-      extensions.innerHTML = "";
-
-      // Use localized extension mode names
-      const extensionModes = [
-        { key: 'display-extension-mirror', value: 0, fallback: 'Mirror' },
-        { key: 'display-extension-extended', value: 1, fallback: 'Extended' }
-      ];
-
-      for (let index = 0; index < extensionModes.length; index++) {
-        const ext = extensionModes[index];
-        const item = document.createElement("sl-menu-item");
-        item.setAttribute("type", "checkbox");
-        item.dataset.mode = ext.value;
-
-        // Set l10n-id and fallback text
-        item.setAttribute('data-l10n-id', ext.key);
-        item.textContent = ext.fallback; // fallback text
-
-        if (index === 0) {
-          item.setAttribute("checked", "true");
-          this.extension = item;
-        }
-        extensions.appendChild(item);
-      }
-
-      // Translate the newly created elements
-      if (document.l10n) {
-        await document.l10n.translateFragment(extensions);
-      }
-
-      // Add event listener only once
-      if (!extensions.hasAttribute("data-listener-added")) {
-        extensions.addEventListener("sl-select", this);
-        extensions.setAttribute("data-listener-added", "true");
-      }
-    } catch (error) {
-      this.error(`Failed to initialize extensions: ${error}`);
-    }
-  }
-
   async setDisplay() {
     try {
       // Update display-related settings here
@@ -441,21 +371,6 @@ class DisplayPanel {
   toggleDisplaySection() {
     const header = this.panel.querySelector("#display-header");
     const content = this.panel.querySelector("#display-choose");
-    const icon = header?.querySelector(".expand-icon");
-
-    if (content && header) {
-      const isCollapsed = content.style.display === "none" || !content.style.display;
-      content.style.display = isCollapsed ? "block" : "none";
-
-      if (icon) {
-        icon.style.transform = isCollapsed ? "rotate(180deg)" : "rotate(0deg)";
-      }
-    }
-  }
-
-  toggleExtensionSection() {
-    const header = this.panel.querySelector("#extension-header");
-    const content = this.panel.querySelector("#extension-choose");
     const icon = header?.querySelector(".expand-icon");
 
     if (content && header) {
@@ -514,22 +429,6 @@ class DisplayPanel {
     }
   }
 
-  toggleExtensionSection() {
-    const header = this.panel.querySelector("#extension-header");
-    const content = this.panel.querySelector("#extension-choose");
-    const icon = header?.querySelector(".expand-icon");
-
-    if (content && header) {
-      const isHidden = content.style.display === "none";
-      content.style.display = isHidden ? "block" : "none";
-
-      if (icon) {
-        icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
-      }
-
-      this.log(`Extension section ${isHidden ? 'expanded' : 'collapsed'}`);
-    }
-  }
 }
 
 const displayPanel = new DisplayPanel();

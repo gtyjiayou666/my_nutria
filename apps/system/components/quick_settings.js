@@ -4,8 +4,7 @@ class QuickSettings extends HTMLElement {
   constructor() {
     super();
 
-    const originalSessionType = embedder.sessionType;
-    this.isDesktop = (originalSessionType === "desktop" || originalSessionType === "session");
+    this.isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
     let shadow = this.attachShadow({ mode: "open" });
 
     shadow.innerHTML = `
@@ -98,7 +97,7 @@ class QuickSettings extends HTMLElement {
 
     shadow.querySelector("#new-feature-icon").onclick = () => {
       this.drawer.hide();
-      this.handleNewFeatureClick();
+      this.handleNewModeClick();
     };
   }
 
@@ -650,10 +649,8 @@ class QuickSettings extends HTMLElement {
     this.displayPreferences.show();
   }
 
-  async handleNewFeatureClick() {
-    let newIsDesktop = !this.isDesktop;
-
-    this.isDesktop = newIsDesktop;
+  async handleNewModeClick() {
+    this.isDesktop = !this.isDesktop;
 
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
       detail: { isDesktop: this.isDesktop }
