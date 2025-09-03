@@ -100,15 +100,17 @@ body.screen-off {
   grid-template-rows: min-content calc(100vh) min-content;
 }
 
-/* Desktop mode layout adjustments */
+/* Desktop mode layout adjustments - statusbar is now fixed positioned */
 #screen.desktop-mode {
   grid-template-rows:
-    min-content calc(100vh - var(--statusbar-desktop-height) - var(--status-top-height))
-    min-content;
+    min-content calc(100vh - var(--status-top-height))
+    0px;
+  padding-bottom: var(--statusbar-desktop-height, 48px); /* Add padding for fixed statusbar */
 }
 
 #screen.desktop-mode:not(.show-top-status-bar) {
-  grid-template-rows: 0px calc(100vh - var(--statusbar-desktop-height)) min-content;
+  grid-template-rows: 0px calc(100vh) 0px;
+  padding-bottom: var(--statusbar-desktop-height, 48px); /* Add padding for fixed statusbar */
 }
 
 #status-top {
