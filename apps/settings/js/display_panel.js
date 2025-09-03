@@ -360,12 +360,7 @@ class DisplayPanel {
   }
 
   async setDisplay() {
-    try {
-      // Update display-related settings here
-      console.log("Setting display:", this.display?.dataset.num);
-    } catch (error) {
-      console.error("Failed to set display:", error);
-    }
+    await this.initResolutions();
   }
 
   toggleDisplaySection() {
