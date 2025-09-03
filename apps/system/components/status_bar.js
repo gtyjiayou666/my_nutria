@@ -129,13 +129,8 @@ class StatusBar extends HTMLElement {
           </svg>
     <section id="search-panel">
       <div class="input no-blur">
-        <input data-l10n-id="search-box-placeholder" id="search-box" />
-        <sl-icon
-          id="private-browsing"
-          name="venetian-mask"
-          class="hidden"
-        ></sl-icon>
-        <sl-icon id="qr-code" name="qr-code"></sl-icon>
+        <sl-icon name="search" class="search-icon"></sl-icon>
+        <input data-l10n-id="search-box-placeholder" id="search-box" placeholder="搜索" />
         <sl-icon id="clear-search" name="x-circle" class="hidden"></sl-icon>
       </div>
       <div id="search-results" class="hidden">
@@ -461,6 +456,13 @@ class StatusBar extends HTMLElement {
     this.searchBox = this.shadow.getElementById('search-box');
     this.panelManager = null;
 
+    // 确保清除按钮初始状态正确
+    if (this.searchBox.value.length === 0) {
+      this.clearSearch.classList.add('hidden');
+    } else {
+      this.clearSearch.classList.remove('hidden');
+    }
+
 
     this.searchBox.addEventListener("blur", () => {
       // console.log("Search Box: blur");
@@ -510,10 +512,46 @@ class StatusBar extends HTMLElement {
         }
       }
 
+      // 显示或隐藏清除按钮
+      if (e.target.value.length > 0) {
+        this.clearSearch.classList.remove('hidden');
+      } else {
+        this.clearSearch.classList.add('hidden');
+      }
+
       // 触发搜索功能 - 调用SearchPanel的handleEvent方法
       if (this.panelManager && typeof this.panelManager.handleEvent === 'function') {
         this.panelManager.handleEvent();
       }
+    });
+
+    // 添加清除搜索按钮的点击事件监听器
+    this.clearSearch.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 清除搜索框内容
+      this.searchBox.value = '';
+      
+      // 隐藏清除按钮
+      this.clearSearch.classList.add('hidden');
+      
+      // 同步到主搜索面板
+      const mainSearchPanel = document.getElementById('main-search-panel');
+      if (mainSearchPanel) {
+        const mainSearchBox = mainSearchPanel.querySelector('#main-search-box');
+        if (mainSearchBox) {
+          mainSearchBox.value = '';
+        }
+      }
+      
+      // 触发搜索清除
+      if (this.panelManager && typeof this.panelManager.handleEvent === 'function') {
+        this.panelManager.handleEvent();
+      }
+      
+      // 重新聚焦到搜索框
+      this.searchBox.focus();
     });
 
     this.searchBox.addEventListener("keydown", (event) => {
