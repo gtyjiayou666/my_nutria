@@ -212,10 +212,10 @@
   white-space: nowrap;
 }
 
-/* 新功能按钮样式 */
+/* 模式切换图标样式 - 与其他sl-badge内图标保持一致 */
 #new-feature-icon {
   font-size: 1.5em;
-  padding: 0.5em;
+  padding: 0.25em;
   cursor: pointer;
   color: var(--sl-color-neutral-700);
   transition: all 0.2s ease;

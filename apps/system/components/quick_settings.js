@@ -25,7 +25,7 @@ class QuickSettings extends HTMLElement {
         <div class="flex-fill"></div>
         <sl-badge pill variant="neutral" id="tor-icon"><img src="./resources/tor.ico"></sl-badge>
         <sl-badge pill variant="neutral" id="display-preferences-badge"><sl-icon name="monitor" id="display-preferences-icon"></sl-icon></sl-badge>
-        <sl-badge pill variant="neutral" id="mode-toggle-badge"><sl-icon name="layout-grid" id="new-feature-icon"></sl-icon></sl-badge>
+        <sl-badge pill variant="neutral" id="mode-toggle-badge"><sl-icon name="smartphone" id="new-feature-icon"></sl-icon></sl-badge>
         <img id="settings-icon" src="http://settings.localhost:${config.port}/icons/settings.svg"/>
         <sl-icon name="log-out" id="logout-icon"></sl-icon>
         <sl-icon name="lock" id="lock-icon"></sl-icon>
@@ -140,7 +140,7 @@ class QuickSettings extends HTMLElement {
       modeToggleBadge.setAttribute("variant", "primary");
       modeToggleBadge.classList.add("desktop-mode");
       modeToggleBadge.classList.remove("mobile-mode");
-      modeToggleIcon.setAttribute("name", "monitor");
+      modeToggleIcon.setAttribute("name", "laptop");
       modeToggleBadge.title = "切换到移动模式";
     } else {
       modeToggleBadge.setAttribute("variant", "primary");
