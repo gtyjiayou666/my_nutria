@@ -431,6 +431,7 @@ class DisplayPreferences extends HTMLElement {
   async handleDisplaySelect(event) {
     if (this.display === event.detail.item) {
       this.display.checked = true;
+      await this.setDisplay();
       return;
     }
     // Uncheck the "old" menu item.

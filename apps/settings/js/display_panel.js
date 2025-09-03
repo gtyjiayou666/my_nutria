@@ -71,6 +71,7 @@ class DisplayPanel {
       } else if (kind == "displays") {
         if (this.display === event.detail.item) {
           this.display.checked = true;
+          await this.setDisplay();
           return;
         }
         // Uncheck the "old" menu item.
@@ -249,6 +250,7 @@ class DisplayPanel {
         if (currentResolution && res.width === currentResolution.width && res.height === currentResolution.height) {
           item.setAttribute("checked", "true");
           this.resolution = item;
+          currentResolution = null;
         }
 
         resolutions.append(item);
