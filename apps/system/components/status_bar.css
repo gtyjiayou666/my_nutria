@@ -474,9 +474,9 @@
 }
 
 :host(.desktop-mode) .frame-list div {
-  padding: 6px 12px;
-  min-width: 140px; /* 设置最小宽度确保应用名称可见 */
-  max-width: 200px; /* 设置最大宽度防止过度扩展 */
+  padding: 6px 8px; /* 减少左右内边距 */
+  min-width: 40px; /* 大幅减少最小宽度，只需容纳图标 */
+  max-width: 50px; /* 减少最大宽度 */
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
@@ -491,6 +491,10 @@
   user-select: none;
   -webkit-user-select: none;
   position: relative;
+  /* 添加 flex 布局使图标居中 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 确保子元素不会阻止父元素的点击事件 */
@@ -504,7 +508,19 @@
   pointer-events: auto;
   cursor: pointer;
   z-index: 1;
-  position: relative;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: rgba(255, 165, 0, 0.9);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 :host(.desktop-mode) .frame-list div:hover {
@@ -533,18 +549,12 @@
 :host(.desktop-mode) .frame-list div .favicon {
   width: 20px;
   height: 20px;
-  margin-right: 6px;
+  margin-right: 0; /* 移除右边距因为不再有文字 */
   flex-shrink: 0;
 }
 
 :host(.desktop-mode) .frame-list div .app-title {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: none; /* 隐藏应用标题文字 */
 }
 
 :host .container {
