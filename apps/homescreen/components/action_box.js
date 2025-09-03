@@ -328,12 +328,12 @@ class ActionBox extends HTMLElement {
       window.clearTimeout(this.timer);
     } else if (event.type === "contextmenu") {
       event.preventDefault();
-      if (!this.isDesktop)
-        return;
       if (this.longPress == true) {
         this.longPress = false;
         return;
       }
+      if (!this.isDesktop)
+        return;
       this.showContextMenu(event);
     } else {
       console.error(`<action-box> handled unexpected event: ${event.type}`);
