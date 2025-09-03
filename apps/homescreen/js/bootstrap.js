@@ -32,7 +32,6 @@ function handleSearchPanelVisibility(isDesktop) {
       searchPanel.style.setProperty('opacity', '1', 'important');
       searchPanel.style.removeProperty('pointer-events');
 
-      // 同时恢复搜索框本身的交互
       const searchBox = document.getElementById("search");
       if (searchBox) {
         searchBox.style.removeProperty('display');
@@ -48,56 +47,14 @@ function handleSearchPanelVisibility(isDesktop) {
 // 防抖函数，避免频繁触发布局更新
 function debounce(func, wait) {
   let timeout;
-  return function executedFunction(...args) {
+  return function executedFunction() {
     const later = () => {
       clearTimeout(timeout);
-      func(...args);
+      func(false);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
-}
-
-// 检查 app 图标是否在可视区域外或超出网格边界
-function isAppOutsideViewport(appElement, container, perLine) {
-  if (!appElement || !container) return false;
-
-  const appRect = appElement.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
-
-  // 基本的视口检测
-  const outsideViewport = (
-    appRect.right > containerRect.right ||
-    appRect.left < containerRect.left ||
-    appRect.bottom > containerRect.bottom ||
-    appRect.top < containerRect.top
-  );
-
-  // 如果有网格信息，也检查是否超出网格边界
-  if (perLine && window.actionsStore) {
-    const actionId = getActionIdFromElement(appElement);
-    if (actionId) {
-      const action = window.actionsStore.actions.find(a => a.id === actionId);
-      if (action && action.position) {
-        const [x] = action.position.split(',').map(n => parseInt(n));
-        if (x >= perLine) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return outsideViewport;
-}
-
-// 获取所有 app 图标元素
-function getAllAppElements() {
-  const actionsWall = document.getElementById('actions-wall');
-  if (!actionsWall) return [];
-
-  // 查找所有 action-box 或 action-bookmark 元素
-  const appElements = Array.from(actionsWall.querySelectorAll('action-box, action-bookmark'));
-  return appElements;
 }
 
 // 从 DOM 元素获取对应的 action ID
@@ -113,47 +70,6 @@ function getActionIdFromElement(element) {
   }
 
   return id;
-}
-
-// 重新排列超出窗口的 app 图标
-function rearrangeOutsideApps(actionsStore, newPerLine) {
-  const container = document.getElementById('actions-panel');
-  const appElements = getAllAppElements();
-
-  if (!container || !actionsStore || appElements.length === 0)
-    return;
-
-  // 找出所有超出窗口的 app
-  const outsideApps = [];
-  appElements.forEach(appElement => {
-    if (isAppOutsideViewport(appElement, container, newPerLine)) {
-      const appId = getActionIdFromElement(appElement);
-      if (appId) {
-        outsideApps.push({ element: appElement, id: appId });
-      }
-    }
-  });
-
-  if (outsideApps.length === 0) {
-    return;
-  }
-
-  // 获取空闲位置
-  const emptySlots = actionsStore.getEmptySlots(newPerLine);
-
-  // 将超出窗口的 app 移动到空闲位置
-  const emptySlotArray = Array.from(emptySlots);
-  outsideApps.forEach((app, index) => {
-    if (index < emptySlotArray.length) {
-      const newPosition = emptySlotArray[index];
-      actionsStore.updatePositionFor(app.id, newPosition);
-    }
-  });
-
-  // 如果空闲位置不够，重新排列所有 app
-  if (outsideApps.length > emptySlotArray.length) {
-    rearrangeAllApps(actionsStore, newPerLine);
-  }
 }
 
 // 获取 widget 的大小信息
@@ -296,7 +212,7 @@ function rearrangeAllApps(actionsStore, perLine) {
   }
 }
 
-function updateActionLayout() {
+function updateActionLayout(modeChange) {
   const root = document.documentElement;
   const container = document.getElementById('actions-panel');
   if (!container) return;
@@ -329,9 +245,8 @@ function updateActionLayout() {
 
   // 更新 CSS 变量
   root.style.setProperty('--action-per-line', newPerLine);
-
   // 如果每行数量发生变化，重新排列所有 app 图标
-  if (newPerLine !== currentPerLine) {
+  if (newPerLine !== currentPerLine || modeChange === true) {
     // 延迟一点时间等待 DOM 更新
     setTimeout(() => {
       // 尝试获取全局的 actionsStore 实例
@@ -348,6 +263,7 @@ function updateActionLayout() {
     }, 100);
   }
 }
+
 
 // 使用防抖版本的 updateActionLayout
 const debouncedUpdateActionLayout = debounce(updateActionLayout, 250);
@@ -474,6 +390,7 @@ function handleHashChange() {
         const actionsWall = document.getElementById('actions-wall');
         actionsWall.changeMode(data.isDesktop);
         handleSearchPanelVisibility(data.isDesktop);
+        updateActionLayout(true);
         break;
 
       default:
