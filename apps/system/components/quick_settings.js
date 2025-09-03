@@ -24,8 +24,8 @@ class QuickSettings extends HTMLElement {
         <sl-badge pill variant="neutral"><sl-icon class="flashlight-icon inactive" name="flashlight-off"></sl-icon></sl-badge>
         <div class="flex-fill"></div>
         <sl-badge pill variant="neutral" id="tor-icon"><img src="./resources/tor.ico"></sl-badge>
-        <sl-icon name="monitor" id="display-preferences-icon"></sl-icon>
-        <sl-icon name="star" id="new-feature-icon"></sl-icon>
+        <sl-badge pill variant="neutral" id="display-preferences-badge"><sl-icon name="monitor" id="display-preferences-icon"></sl-icon></sl-badge>
+        <sl-badge pill variant="neutral" id="mode-toggle-badge"><sl-icon name="layout-grid" id="new-feature-icon"></sl-icon></sl-badge>
         <img id="settings-icon" src="http://settings.localhost:${config.port}/icons/settings.svg"/>
         <sl-icon name="log-out" id="logout-icon"></sl-icon>
         <sl-icon name="lock" id="lock-icon"></sl-icon>
@@ -86,22 +86,27 @@ class QuickSettings extends HTMLElement {
       );
     };
 
-    shadow.querySelector("#display-preferences-icon").onclick = () => {
+    shadow.querySelector("#display-preferences-badge").onclick = () => {
       if (!embedder.isGonk()) {
         this.drawer.hide();
         this.openDisplayPreferences();
       }
     };
+    
+    // 为显示偏好按钮添加标题提示
+    shadow.querySelector("#display-preferences-badge").title = "显示偏好设置";
 
     this.initializeDesktopState();
 
-    shadow.querySelector("#new-feature-icon").onclick = () => {
+    shadow.querySelector("#mode-toggle-badge").onclick = () => {
       this.drawer.hide();
       this.handleNewModeClick();
     };
   }
 
   initializeDesktopState() {
+    this.updateModeToggleButton();
+    
     if (this.isDesktop) {
       // 桌面模式：禁用虚拟键盘
       Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
@@ -125,6 +130,25 @@ class QuickSettings extends HTMLElement {
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
       detail: { isDesktop: this.isDesktop }
     }));
+  }
+
+  updateModeToggleButton() {
+    const modeToggleBadge = this.shadowRoot.querySelector("#mode-toggle-badge");
+    const modeToggleIcon = this.shadowRoot.querySelector("#new-feature-icon");
+    
+    if (this.isDesktop) {
+      modeToggleBadge.setAttribute("variant", "primary");
+      modeToggleBadge.classList.add("desktop-mode");
+      modeToggleBadge.classList.remove("mobile-mode");
+      modeToggleIcon.setAttribute("name", "monitor");
+      modeToggleBadge.title = "切换到移动模式";
+    } else {
+      modeToggleBadge.setAttribute("variant", "primary");
+      modeToggleBadge.classList.add("mobile-mode");
+      modeToggleBadge.classList.remove("desktop-mode");
+      modeToggleIcon.setAttribute("name", "smartphone");
+      modeToggleBadge.title = "切换到桌面模式";
+    }
   }
 
   // 应用桌面模式的设置和样式
@@ -651,6 +675,9 @@ class QuickSettings extends HTMLElement {
 
   async handleNewModeClick() {
     this.isDesktop = !this.isDesktop;
+    
+    // 更新按钮状态
+    this.updateModeToggleButton();
 
     window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
       detail: { isDesktop: this.isDesktop }

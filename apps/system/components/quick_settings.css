@@ -151,9 +151,26 @@
   transform: scale(1.05);
 }
 
-:host #display-preferences-icon {
-  font-size: 1.5em;
-  padding: 0.5em;
+/* 移除旧的单独样式，现在使用统一的sl-badge样式 */
+
+/* 模式切换按钮的特殊样式 */
+:host #mode-toggle-badge {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+:host #mode-toggle-badge.desktop-mode {
+  --sl-color-primary-600: #0066cc;
+}
+
+:host #mode-toggle-badge.mobile-mode {
+  --sl-color-primary-600: #00aa44;
+}
+
+/* 显示偏好按钮的悬停效果 */
+:host #display-preferences-badge:hover,
+:host #mode-toggle-badge:hover {
+  transform: scale(1.1);
 }
 
 :host .peer {
