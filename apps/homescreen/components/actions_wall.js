@@ -364,23 +364,23 @@ class ActionsWall extends HTMLElement {
         //   this.editing.activeGhost = hover;
         //   this.editing.dropPosition = position;
         // } else {
-          // 移动模式：检查目标位置是否已被占用
-          if (isOccupied) {
-            // 目标位置已被占用，取消激活当前 ghost
-            if (this.editing.activeGhost) {
-              this.editing.activeGhost.setGhostActive(false);
-              this.editing.activeGhost = null;
-            }
-            this.editing.dropPosition = null;
-          } else {
-            // 目标位置可用，正常处理
-            if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
-              this.editing.activeGhost.setGhostActive(false);
-            }
-            hover.setGhostActive(true);
-            this.editing.activeGhost = hover;
-            this.editing.dropPosition = position;
+        // 移动模式：检查目标位置是否已被占用
+        if (isOccupied) {
+          // 目标位置已被占用，取消激活当前 ghost
+          if (this.editing.activeGhost) {
+            this.editing.activeGhost.setGhostActive(false);
+            this.editing.activeGhost = null;
           }
+          this.editing.dropPosition = null;
+        } else {
+          // 目标位置可用，正常处理
+          if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
+            this.editing.activeGhost.setGhostActive(false);
+          }
+          hover.setGhostActive(true);
+          this.editing.activeGhost = hover;
+          this.editing.dropPosition = position;
+        }
         // }
       }
 

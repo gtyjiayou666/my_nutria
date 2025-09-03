@@ -1,6 +1,6 @@
 // <action-box> custom element, representing an item on the homescreen.
 
-const kLongPressDelay = 500;
+const kLongPressDelay = 300;
 
 class ActionBox extends HTMLElement {
   // 在 ActionBox 类中添加
@@ -18,6 +18,7 @@ class ActionBox extends HTMLElement {
 
   constructor() {
     super();
+    this.longPress = false;
     this.contextMenuActive = false; // 初始化上下文菜单状态
     this.isDesktop = true; // 本地桌面模式状态，默认为桌面模式
 
@@ -296,53 +297,43 @@ class ActionBox extends HTMLElement {
 
           // 设置延时，如果在doubleClickDelay时间内没有第二次点击，就高亮应用
           this.clickTimeout = setTimeout(() => {
-            console.log('No double-click detected - highlighting application');
             this.highlightApp();
             this.lastClickTime = 0; // 重置点击时间
           }, this.doubleClickDelay);
         }
       } else {
         // 移动模式：单击直接打开应用
-        console.log('Mobile mode click - opening application immediately');
         this.openApplication();
       }
 
       this.cancelClick = false;
       return;
     } else if (event.type === "pointerdown") {
+      if (event.button !== 0) {
+        return;
+      }
       this.shadowRoot.addEventListener("pointerup", this, { once: true });
       let startPos = { x: event.screenX, y: event.screenY };
       let capturedPointerId = event.pointerId;
-      this.isDragging = false; // 重置拖拽状态
 
-      // 桌面模式：立即开始拖拽（类似Windows）
-      if (this.isDesktopMode()) {
-        // 桌面模式下，缩短长按时间，更快响应拖拽
-        this.timer = window.setTimeout(() => {
-          this.setPointerCapture(capturedPointerId);
-          this.cancelClick = true;
-          this.isDragging = true; // 标记为拖拽模式
-          this.dispatchEvent(
-            new CustomEvent("long-press", { bubbles: true, detail: startPos })
-          );
-        }, 100);
-      } else {
-        // 移动模式：保持原有的长按时间
-        this.timer = window.setTimeout(() => {
-          this.setPointerCapture(capturedPointerId);
-          this.cancelClick = true;
-          this.isDragging = true; // 标记为拖拽模式
-          this.dispatchEvent(
-            new CustomEvent("long-press", { bubbles: true, detail: startPos })
-          );
-        }, kLongPressDelay);
-      }
+      this.timer = window.setTimeout(() => {
+        this.longPress = true;
+        this.setPointerCapture(capturedPointerId);
+        this.cancelClick = true;
+        this.dispatchEvent(
+          new CustomEvent("long-press", { bubbles: true, detail: startPos })
+        );
+      }, kLongPressDelay);
     } else if (event.type === "pointerup") {
       window.clearTimeout(this.timer);
     } else if (event.type === "contextmenu") {
       event.preventDefault();
       if (!this.isDesktop)
         return;
+      if (this.longPress == true) {
+        this.longPress = false;
+        return;
+      }
       this.showContextMenu(event);
     } else {
       console.error(`<action-box> handled unexpected event: ${event.type}`);
