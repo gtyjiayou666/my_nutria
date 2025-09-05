@@ -29,7 +29,7 @@ class ActionBookmark extends HTMLElement {
       // 检查是否为桌面模式，如果是则不直接处理点击
       // 让外层的action-box来处理双击逻辑
       const actionBox = this.closest('action-box');
-      if (actionBox && actionBox.isDesktopMode && actionBox.isDesktopMode()) {
+      if (actionBox && actionBox.isDesktop) {
         console.log('Desktop mode: action-bookmark delegating click to action-box');
         // 在桌面模式下，让action-box处理双击逻辑
         event.preventDefault();

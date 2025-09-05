@@ -7,7 +7,6 @@ class UcanDialog extends LitElement {
     super();
     this.reset();
     this.deferred = null;
-    this.log(`constructor`);
     this.addEventListener("sl-request-close", () => {
       this.deferred.reject();
     });
@@ -50,8 +49,6 @@ class UcanDialog extends LitElement {
   }
 
   render() {
-    this.log(`render ${JSON.stringify(this.requested)}`);
-
     let items = [];
     if (this.requested?.capabilities) {
       this.requested.capabilities.forEach((cap, index) => {
@@ -181,7 +178,6 @@ class UcanDialog extends LitElement {
   // This function returns a promise that resolves with the id of the button
   // that was clicked, or reject if the dialog is dismissed.
   open(requested, dids) {
-    this.log(`open ${requested}`);
     if (!requested) {
       this.error(`invalid data!`);
       return Promise.reject();
@@ -215,14 +211,9 @@ export class Ucan {
     } catch (e) {
       this.error(`Failed to setup UCAN ui: ${e}`);
     }
-    this.log("ready!");
   }
 
   grantCapabilities(requested) {
-    this.log(`grantCapabilities ${requested.url.href} ${requested.audience}`);
-    for (let cap of requested.capabilities) {
-      this.log(`${cap.action} ON ${cap.scope.href}`);
-    }
     return new Promise(async (resolve, reject) => {
       // Get the list of usable DIDs.
       let dids = await this.dweb.getDids();
@@ -248,8 +239,6 @@ export class Ucan {
         return;
       }
 
-      this.log(`UCAN: granted: ${JSON.stringify(answer)}`);
-
       //   this.log(`Using DID: ${JSON.stringify(answer.issuer)}`);
       let notBefore = new Date();
       let expiration = new Date(notBefore.getTime() + answer.seconds * 1000);
@@ -259,7 +248,6 @@ export class Ucan {
         notBefore,
         expiration,
       };
-      this.log(`Resolving query...`);
       resolve(response);
     });
   }

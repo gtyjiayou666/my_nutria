@@ -15,7 +15,6 @@ function peerKey(peer) {
 
 class P2pDiscovery {
   constructor() {
-    this.log("constructor");
 
     this.dweb = null;
     this.settings = null;
@@ -28,8 +27,6 @@ class P2pDiscovery {
     this.did = `did:key:${Math.round(Math.random() * 1000000)}`;
 
     this.init().then(() => {
-      this.log(`ready, device is ${embedder.sessionType}`);
-      this.log(`enabled=${this.enabled} localOnly=${this.localOnly}`);
     });
   }
 
@@ -245,7 +242,6 @@ class P2pDiscovery {
 
       async onTileAction(peer, data) {
         let dialog = document.querySelector("confirm-dialog");
-        this.log(`onTileAction ${JSON.stringify(data)}`);
 
         let name = await this.contactNameForDid(peer.did);
         let source = name || peer.did;
@@ -283,7 +279,6 @@ class P2pDiscovery {
             offer: data.offer,
           });
           let dialResult = await act.start();
-          this.log(`Got dial result: ${JSON.stringify(dialResult)}`);
           return dialResult;
         } else {
           throw new Error("TileRegistationError");
@@ -342,8 +337,6 @@ class P2pDiscovery {
       }
 
       async onDialed(peer, params) {
-        this.log(`onDialed with ${JSON.stringify(params)}`);
-
         if (params.action === "open-url") {
           this.onUrlAction(peer, params.url);
         } else if (params.action === "text") {
@@ -428,7 +421,6 @@ class P2pDiscovery {
       this.onPeerLost.bind(this)
     );
     this.dweb.addEventListener(this.dweb.SESSIONADDED_EVENT, (session) => {
-      this.log(`SESSIONADDED_EVENT: ${JSON.stringify(session)}`);
       this.quickSettings().peerPaired(session);
     });
     this.dweb.addEventListener(this.dweb.SESSIONREMOVED_EVENT, (sessionId) => {

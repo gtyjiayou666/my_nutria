@@ -695,12 +695,8 @@ class CaretManager {
 class WindowManager extends HTMLElement {
   constructor() {
     super();
-
     this.isDesktop = embedder.sessionType !== "mobile";
-
     this.keys = new WindowManagerKeys(this);
-    this.log(`constructor`);
-
     this.caretManager = new CaretManager();
   }
 
@@ -1225,25 +1221,21 @@ class WindowManager extends HTMLElement {
   // Android风格的返回：优先退出应用而不是页面后退
   androidBack() {
     if (!this.activeFrame) {
-      this.log('androidBack: No active frame');
       return;
     }
 
     const currentFrame = this.frames[this.activeFrame];
     if (!currentFrame) {
-      this.log('androidBack: No current frame found');
       return;
     }
 
     // 如果当前是主屏幕，执行页面后退
     if (currentFrame.config.isHomescreen) {
-      this.log('androidBack: On homescreen, performing page back');
       currentFrame.goBack();
       return;
     }
 
     // 如果是应用窗口，直接关闭应用返回主屏幕（Android风格）
-    this.log(`androidBack: Closing app frame ${this.activeFrame} and returning to homescreen`);
     this.closeFrame(this.activeFrame);
   }
 
@@ -1717,7 +1709,6 @@ class WindowManager extends HTMLElement {
       screenshot.querySelector(".close-icon").addEventListener(
         "click",
         (event) => {
-          this.log(`Will close frame ${id}`);
           event.stopPropagation();
           screenshot.classList.add("closing");
           screenshot.ontransitionend = screenshot.ontransitioncancel = () => {
@@ -1744,7 +1735,6 @@ class WindowManager extends HTMLElement {
       screenshot.addEventListener(
         "click",
         () => {
-          this.log(`Will switch to frame ${id}`);
           actionsDispatcher.dispatch("close-carousel");
           this.switchToFrame(id);
           this.forceFrameStateUpdate(id);
@@ -1880,12 +1870,10 @@ class WindowManager extends HTMLElement {
   }
 
   lockSwipe() {
-    this.log(`lockSwipe()`);
     this.classList.add("lock-swipe");
   }
 
   unlockSwipe() {
-    this.log(`unlockSwipe()`);
     this.classList.remove("lock-swipe");
   }
 }

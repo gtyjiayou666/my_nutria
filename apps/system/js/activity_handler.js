@@ -19,7 +19,6 @@ window.addEventListener("serviceworkermessage", ({ detail }) => {
         actionsDispatcher.dispatch("publish-to-ipfs", source.data);
         break;
       case "install-tile":
-        console.log(`TILE: install-tile ${source.data.manifestUrl}`);
         registerTile(source.data.manifestUrl).then((activityResult) => {
           postActivityResult({ activityId, activityResult });
         });

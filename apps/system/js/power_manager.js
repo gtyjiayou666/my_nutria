@@ -162,16 +162,12 @@ class PowerManagerService {
         return;
       }
       this.locked = true;
-      console.log(
-        `==== PowerManagerService::turnOn brightness=${this._currentBrighness}`
-      );
       let screenControlInfo = {
         state: 0, // ScreenState.ON
         brightness: this._currentBrighness || 100,
         external: false,
       };
       await this.service.controlScreen(screenControlInfo);
-      console.log(`==== PowerManagerService::turnOn done`);
       this.locked = false;
       this.isOn = true;
     });
@@ -184,16 +180,12 @@ class PowerManagerService {
       }
       this.locked = true;
       this._currentBrighness = await this.service.screenBrightness;
-      console.log(
-        `==== PowerManagerService::turnOff brightness=${this._currentBrighness}`
-      );
       let screenControlInfo = {
         state: 1, // ScreenState.OFF
         brightness: 0,
         external: false,
       };
       await this.service.controlScreen(screenControlInfo);
-      console.log(`==== PowerManagerService::turnOff done`);
       this.locked = false;
       this.isOn = false;
 
@@ -328,10 +320,6 @@ class PowerManagement {
   // Automatically turn off the screen when idle for too long.
   // TODO: configure with a setting.
   onIdle(topic, duration) {
-    console.log(
-      `PowerManagement: Idle state change to ${topic} for ${duration}s`
-    );
-
     if (topic !== "idle") {
       console.error(`Unexpected idle state change: ${topic}`);
       return;
@@ -345,9 +333,6 @@ class PowerManagement {
     // Don't turn off the screen if the device is plugged in and is not a
     // full screen session.
     if (this.service.isCharging && embedder.sessionType !== "session") {
-      console.log(
-        `PowerManagement: don't turn off the screen of a plugged in device.`
-      );
       return;
     }
 

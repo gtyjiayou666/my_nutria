@@ -39,8 +39,6 @@ export class ActionsDispatcher {
   }
 
   dispatch(action_name, data) {
-    console.log(`ActionsDispatcher::dispatch ${action_name}`);
-
     // dispatch the even data to all listeners for this action.
     if (!this.listeners.has(action_name)) {
       console.warn(`No listeners for ${action_name}`);

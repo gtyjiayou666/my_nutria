@@ -92,7 +92,7 @@ class QuickSettings extends HTMLElement {
         this.openDisplayPreferences();
       }
     };
-    
+
     // 为显示偏好按钮添加标题提示
     shadow.querySelector("#display-preferences-badge").title = "显示偏好设置";
 
@@ -106,7 +106,7 @@ class QuickSettings extends HTMLElement {
 
   initializeDesktopState() {
     this.updateModeToggleButton();
-    
+
     if (this.isDesktop) {
       // 桌面模式：禁用虚拟键盘
       Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
@@ -115,27 +115,26 @@ class QuickSettings extends HTMLElement {
       if (window.inputMethod && window.inputMethod.opened) {
         window.inputMethod.close();
       }
+
+      const appsList = document.querySelector('apps-list');
+      if (appsList && typeof appsList.updateDesktopMode === 'function') {
+        appsList.updateDesktopMode(this.isDesktop);
+      }
+      window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
+        detail: { isDesktop: this.isDesktop }
+      }));
     } else {
       // 移动模式：启用虚拟键盘
       Services.prefs.setBoolPref("dom.inputmethod.enabled", true);
       embedder.useVirtualKeyboard = true;
     }
 
-    // 更新AppsList的桌面模式状态
-    const appsList = document.querySelector('apps-list');
-    if (appsList && typeof appsList.updateDesktopMode === 'function') {
-      appsList.updateDesktopMode(this.isDesktop);
-    }
-
-    window.dispatchEvent(new CustomEvent('desktop-mode-changed', {
-      detail: { isDesktop: this.isDesktop }
-    }));
   }
 
   updateModeToggleButton() {
     const modeToggleBadge = this.shadowRoot.querySelector("#mode-toggle-badge");
     const modeToggleIcon = this.shadowRoot.querySelector("#new-feature-icon");
-    
+
     if (this.isDesktop) {
       modeToggleBadge.setAttribute("variant", "primary");
       modeToggleBadge.classList.add("desktop-mode");
@@ -670,7 +669,7 @@ class QuickSettings extends HTMLElement {
 
   async handleNewModeClick() {
     this.isDesktop = !this.isDesktop;
-    
+
     // 更新按钮状态
     this.updateModeToggleButton();
 

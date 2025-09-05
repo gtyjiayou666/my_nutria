@@ -63,7 +63,6 @@ const UAHelper = {
 
   const windowProvider = {
     openURI(aURI, aOpenWindowInfo, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
-      log(`browserWindow::openURI ${aURI}`);
       throw Error("NOT IMPLEMENTED");
     },
 
@@ -75,7 +74,6 @@ const UAHelper = {
       aTriggeringPrincipal,
       aCsp
     ) {
-      log(`browserWindow::createContentWindow ${aURI} ${aWhere} ${aFlags}`);
       let disposition = null;
       if (aWhere == OPEN_ACTIVITYWINDOW) {
         disposition = "inline";
@@ -94,9 +92,6 @@ const UAHelper = {
     },
 
     openURIInFrame(aURI, aParams, aWhere, aFlags, aName) {
-      log(
-        `browserWindow::openURIInFrame ${aURI} ${aParams} ${aWhere} ${aFlags} ${aName}`
-      );
 
       // Need to return the new WebView here.
       return this.createContentWindowInFrame(
@@ -110,9 +105,6 @@ const UAHelper = {
 
     // Open a new tab in all cases.
     createContentWindowInFrame(aURI, aParams, aWhere, aFlags, aName) {
-      log(
-        `browserWindow::createContentWindowInFrame ${aURI} ${aParams} ${aWhere} ${aFlags} ${aName}`
-      );
 
       // Ci.nsIBrowserDOMWindow.OPEN_PRINT_BROWSER case
       let isPrinting = aWhere == 4;
@@ -146,7 +138,6 @@ const UAHelper = {
     },
 
     canClose() {
-      log(`browserWindow::canClose`);
       return true;
     },
   };
@@ -161,36 +152,25 @@ const UAHelper = {
         window.clearTimeout(processSelector.timer);
       }
       processSelector.timer = window.setTimeout(() => {
-        log(`Creating new preallocated process`);
         embedder.launchPreallocatedProcess();
       }, kPreallocLaunchDelay);
     },
 
     provideProcess(aType, aProcesses, aMaxCount) {
-      log(`provideProcess ${aType} (max=${aMaxCount})`);
-      try {
-        // log(`${JSON.stringify(aProcesses)}`);
-      } catch (e) {
-        log(`Oops: ${e}`);
-      }
 
       // If we find an existing process with no tab, use it.
 
       for (let i = 0; i < aProcesses.length; i++) {
         if (aProcesses[i].tabCount == 0) {
-          log(`Re-using process #${i}, pid=${aProcesses[i].processId}`);
           return i;
         }
       }
 
       // Fallback to creating a new process.
-      log(`No reusable process found, will create a new one.`);
       return processSelector.NEW_PROCESS;
     },
 
     suggestServiceWorkerProcess(scope) {
-      console.log(`suggestServiceWorkerProcess ${scope}`);
-
       let current = embedder.getContentProcesses();
       // console.log(`suggestServiceWorkerProcess ${JSON.stringify(current)}`);
 
@@ -200,9 +180,6 @@ const UAHelper = {
         }
         for (let uri of process.tabURIs) {
           if (uri.href.startsWith(scope)) {
-            console.log(
-              `suggestServiceWorkerProcess will re-use process ${process.processId}`
-            );
             return process.processId;
           }
         }
@@ -215,12 +192,10 @@ const UAHelper = {
 
   const notifications = {
     showNotification(notification) {
-      log(`showNotification: ${JSON.stringify(notification)}`);
       notificationsManager().show(notification);
     },
 
     closeNotification(id) {
-      log(`closeNotification: ${id}`);
       notificationsManager().close(id);
     },
   };
@@ -238,7 +213,6 @@ const UAHelper = {
           }
         } catch (e) {}
         await settings.set([{ name: EME_NOTIFICATION_SETTING, value: true }]);
-        log(`EME: successNotification!`);
         window.toaster.show(await window.utils.l10n("drm-success-title"));
         return;
       }
@@ -278,7 +252,6 @@ const UAHelper = {
 
   const activityChooser = {
     choseActivity(detail) {
-      log(`choseActivity ${JSON.stringify(detail)}`);
       // Don't show the chooser if there's only one option.
       if (detail.choices.length === 1) {
         return Promise.resolve({ id: detail.id, value: 0 });
@@ -304,13 +277,11 @@ const UAHelper = {
   });
   embedder.addEventListener("runtime-ready", (e) => {
     embedder.isReady = true;
-    log(`Embedder event: ${e.type}`);
     embedder.launchPreallocatedProcess();
   });
 
   embedder.delayPreallocatedProcess = processSelector.delayPreallocatedProcess;
   embedder.wrCapture = () => {
-    log(`wrCapture`);
     window.windowUtils.wrCapture();
   };
 
@@ -327,20 +298,9 @@ const UAHelper = {
 
   for (let win of Services.ww.getWindowEnumerator()) {
     let winUtils = win.windowUtils;
-    log(
-      `=== Layer Manager: ${winUtils.layerManagerType} for ${window.location}`
-    );
   }
 
-  log(
-    `WebExtension Signature needed? ${Services.prefs.getBoolPref(
-      "xpinstall.signatures.required"
-    )}`
-  );
-
   let sessionType = Services.prefs.getCharPref("b2g.session-type", "mobile");
-
-  log(`session type is '${sessionType}'`);
 
   // Set some prefs based on the session type.
   if (sessionType == "desktop" || sessionType == "session") {

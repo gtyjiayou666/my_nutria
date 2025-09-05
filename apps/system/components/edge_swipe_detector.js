@@ -21,7 +21,6 @@ class EdgeSwipeDetector extends EventTarget {
     this.startY = 0;
     this.startTime = 0;
     this.isFromEdge = false;
-    this.isDesktopMode = false;
     this.currentPointerId = -1;
     
     // 新增手势状态管理
@@ -53,7 +52,7 @@ class EdgeSwipeDetector extends EventTarget {
   
   
   updateMode(isDesktop) {
-    this.isDesktopMode = isDesktop;
+    this.isDesktop = isDesktop;
     
     if (isDesktop) {
       // 桌面模式：禁用边缘滑动

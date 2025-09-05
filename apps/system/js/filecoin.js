@@ -14,7 +14,6 @@ export class FileCoinService extends EventTarget {
   }
 
   upload(blob, name) {
-    this.log(`upload with key ${this.key}`);
     const formData = new FormData();
     formData.append("file", blob, name);
     const xhr = new XMLHttpRequest();
@@ -22,27 +21,22 @@ export class FileCoinService extends EventTarget {
     const upload = xhr.upload;
 
     upload.onloadstart = () => {
-      this.log("loadstart");
       this.dispatchEvent(new CustomEvent("start"));
     };
 
     upload.onabort = () => {
-      this.log("abort");
       this.dispatchEvent(new CustomEvent("abort"));
     };
 
     upload.ontimeout = () => {
-      this.log("timeout");
       this.dispatchEvent(new CustomEvent("timeout"));
     };
 
     upload.onerror = () => {
-      this.log("error");
       this.dispatchEvent(new CustomEvent("error"));
     };
 
     upload.onprogress = (event) => {
-      this.log("progress");
       this.dispatchEvent(
         new CustomEvent("progress", {
           detail: {
@@ -56,7 +50,6 @@ export class FileCoinService extends EventTarget {
 
     // TODO: manage other xhr events.
     xhr.onload = () => {
-      this.log(`load ${xhr.status} ${xhr.statusText}`);
       if (!xhr.response || xhr.status < 200 || xhr.status >= 300) {
         this.dispatchEvent(new CustomEvent("error"));
       } else {

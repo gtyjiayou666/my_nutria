@@ -62,13 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 //添加部分
 
-function timingFromStart(label) {
-  let now = Date.now();
-  console.log(`Timing '${label}' at ${now - bsLoad}ms`);
-}
 
 function hideLogo() {
-  timingFromStart("hideLogo start");
   actionsDispatcher.removeListener("homescreen-ready", hideLogo);
   let logo = document.getElementById("logo");
   if (!logo) {
@@ -80,7 +75,6 @@ function hideLogo() {
       logo.classList.add("hidden");
       logo.classList.remove("starting");
       logo.classList.remove("byebye");
-      timingFromStart("hideLogo transitionend");
     },
     { once: true }
   );
@@ -162,7 +156,6 @@ const homescreenManager = new HomescreenManager();
 const customRunner = {
   homescreenLauncher: () => {
     return async () => {
-      timingFromStart("wm.openFrame for homescreen");
       let { url, display } = await homescreenManager.launchInfo();
       let isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
       const params = new URLSearchParams({
@@ -199,7 +192,6 @@ async function enableRadio(conn, state) {
   });
   try {
     await status;
-    console.log(`radio power status: ${conn.radioState}`);
   } catch (e) {
     console.log(`failed to enable radio: ${e}`);
   }
@@ -220,11 +212,7 @@ async function setupTelephony() {
   if (!conn) {
     console.error(`No mobile connection available!`);
     return;
-  } else {
-    console.log(
-      `Using connection #1 of ${conns.length}: state=${conn.radioState}`
-    );
-  }
+  } 
 
   await enableRadio(conn, false);
   await enableRadio(conn, true);
@@ -239,7 +227,6 @@ async function setupTelephony() {
       "ril.data.roaming_enabled",
       "ril.data.enabled",
     ]);
-    console.log(`Telephony init=${JSON.stringify(init)}`);
     let dataEnabled = false;
     init.forEach((item) => {
       if (item.name === "ril.data.enabled") {
@@ -247,15 +234,12 @@ async function setupTelephony() {
       }
     });
 
-    console.log(`Telephony Data enabled: ${dataEnabled}`);
     if (dataEnabled) {
       await settings.set([{ name: "ril.data.enabled", value: false }]);
-      console.log(`Telephony Data turned off`);
       await new Promise((resolve) => {
         window.setTimeout(resolve, 5000);
       });
       await settings.set(init);
-      console.log(`Telephony Data turned on`);
     }
   } catch (e) { }
 
@@ -498,15 +482,11 @@ export { ensurePanelManager };
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
-    timingFromStart(
-      `DOMContentLoaded, embedder is ${window.embedderSetupDone}`
-    );
     configureTopStatus();
     Services.prefs.addObserver("ui.status-top.enabled", configureTopStatus);
 
     // Make sure the embedding is setup.
     await window.embedderSetupDone;
-    console.log(`embedderSetupDone, embedder is ${window.embedder}`);
 
     // First wait for the daemon to be up, since we can't load the
     // dependency resolver from shared.localhost before!
@@ -544,7 +524,6 @@ document.addEventListener(
     await graph.waitForDeps("audio volume");
 
     embedder.addEventListener("headphones-status-changed", async (event) => {
-      console.log(`headphone status is now ${event.detail}`);
       if (event.detail === "headset") {
         let msg = await window.utils.l10n("headset-plugged");
         window.toaster.show(msg);
@@ -578,8 +557,6 @@ document.addEventListener(
     //     `D/hal === deviceorientation event: absolute=${event.absolute} a=${event.alpha} b=${event.beta} g=${event.gamma}`
     //   );
     // };
-
-    console.log(`D/hal device events set.`);
 
     const torFilter = new TorProxyChannelFilter();
     setupWebExtensions();

@@ -64,10 +64,7 @@ class Webrtc extends EventTarget {
   }
 
   async handleEvent(event) {
-    console.log(`webrtc: event ${event.type}`);
-
     if (event.type === "icegatheringstatechange") {
-      console.log(`webrtc: gatheringState is ${this.pc.iceGatheringState}`);
       if (this.pc.iceGatheringState === "complete") {
         this._iceGatheringDone();
       }
@@ -189,18 +186,15 @@ class RemoteControl {
 
   setupWebrtcEvents() {
     this.webrtc.addEventListener("channel-open", () => {
-      this.log(`channel open`);
       this.open = true;
       this.webrtc.channel.addEventListener("message", this);
     });
 
     this.webrtc.addEventListener("channel-error", () => {
-      this.log(`channel error`);
       this.reset();
     });
 
     this.webrtc.addEventListener("channel-close", () => {
-      this.log(`channel closed`);
       this.reset();
     });
   }
@@ -256,7 +250,6 @@ class RemoteControl {
     let answer = await this.webrtc.answer();
     // answser is a RTCSessionDescription object that can't be cloned so
     // we do a JSON roundtrip to turn it into a clonable object.
-    this.log(`returning answer: ${answer}`);
     return JSON.parse(JSON.stringify(answer));
   }
 
@@ -283,7 +276,6 @@ class RemoteControl {
 
   // params = { keys: "..." }
   async onKeyPress(params) {
-    this.log(`onKeyPress ${params.keys}`);
 
     // Dispatch the keypress events to the active frame.
     let keys = params.keys.split(",");

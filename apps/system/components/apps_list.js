@@ -5,7 +5,7 @@
 class AppIcon extends HTMLElement {
   constructor(data) {
     super();
-    this.isDesktop = null;
+    this.isDesktop = false;
     this.init(data);
 
     // 双击相关属性
@@ -50,42 +50,7 @@ class AppIcon extends HTMLElement {
 
   handleClick(event) {
     event.preventDefault();
-
-    // 检查是否在应用列表中
-    const isInAppsList = this.closest('apps-list') !== null;
-
-    if (this.isDesktop && !isInAppsList) {
-      // 桌面模式且不在应用列表中：双击打开应用（桌面图标行为）
-      const now = Date.now();
-      const timeSinceLastClick = now - this.lastClickTime;
-
-      if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
-        if (this.clickTimeout) {
-          clearTimeout(this.clickTimeout);
-          this.clickTimeout = null;
-        }
-        this.openApplication();
-        this.lastClickTime = 0; // 重置点击时间
-      } else {
-        // 第一次点击或时间间隔太长，等待可能的第二次点击
-        this.lastClickTime = now;
-
-        // 清除之前的timeout
-        if (this.clickTimeout) {
-          clearTimeout(this.clickTimeout);
-        }
-
-        this.clickTimeout = setTimeout(() => {
-          // 单击处理（在桌面模式下显示选中效果）
-          this.highlightApp();
-          this.clickTimeout = null;
-          this.lastClickTime = 0; // 重置点击时间，为下次双击做准备
-        }, this.doubleClickDelay);
-      }
-    } else {
-      // 移动模式或在应用列表中：单击直接打开应用
-      this.openApplication();
-    }
+    this.openApplication();
   }
 
   openApplication() {
@@ -134,7 +99,7 @@ customElements.define("app-icon", AppIcon);
 class AppsList extends LitElement {
   constructor() {
     super();
-    this.isDesktop = null;
+    this.isDesktop = false;
     this.appsNodes = [];
 
     window.appsManager.addEventListener("app-installed", this);
@@ -261,7 +226,7 @@ class AppsList extends LitElement {
         // Force wallpaper to be visible by ensuring no content windows are showing
         homescreenFrame.style.background = "transparent";
       }
-    } 
+    }
     this.focus();
     embedder.addSystemEventListener("keypress", this, true);
 
@@ -284,7 +249,7 @@ class AppsList extends LitElement {
         homescreenFrame.classList.remove("deactivated");
         homescreenFrame.style.background = "";
       }
-    } 
+    }
 
     // 移除全局点击监听器
     document.removeEventListener("click", this.globalClickHandler, true);
@@ -307,7 +272,7 @@ class AppsList extends LitElement {
             details: event.detail,
           });
           this.close();
-        } 
+        }
         break;
       case "contextmenu":
         event.preventDefault();

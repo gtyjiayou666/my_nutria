@@ -20,7 +20,6 @@ class UAStore extends EventTarget {
   }
 
   async ensureReady() {
-    this.log(`init ${this.current}`);
     if (!this.current) {
       await contentManager.as_superuser();
       let container = await contentManager.ensureTopLevelContainer("system");
@@ -34,16 +33,13 @@ class UAStore extends EventTarget {
           json.forEach((override) => {
             this.entries.set(override.origin, override);
           });
-          this.log(`Loaded ${this.entries.size} entries`);
         } else {
           // Create initial empty resource.
-          this.log(`Creating new store.`);
           this.current = await contentManager.create(
             container,
             "ua-store.json",
             new Blob(["[]"], { type: "application/json" })
           );
-          this.log(`New store created, ${this.current._meta.id}`);
         }
       } catch (e) {
         this.error(JSON.stringify(e));
@@ -63,7 +59,6 @@ class UAStore extends EventTarget {
     let url = new URL(href);
     let origin = url.origin;
 
-    this.log(`setUaFor ${origin} ${ua}`);
     this.entries.set(origin, { origin, ua });
     // Build the json array from the map.
     let json = [];

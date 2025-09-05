@@ -11,13 +11,11 @@ class OpenSearch {
   }
 
   async init() {
-    this.log(`init`);
     this.openSearch = contentManager.getOpenSearchManager((items) => {
       this.searchEngines = [];
       for (let item of items) {
         let meta = item.meta;
         if (meta.tags.includes("enabled")) {
-          this.log(`Adding ${meta.name} ${meta.tags}`);
           this.searchEngines.push(item.variant("default"));
         }
       }
@@ -28,7 +26,6 @@ class OpenSearch {
   // Pick one engine randomly in the list.
   get searchDesc() {
     let index = Math.floor(Math.random() * this.searchEngines.length);
-    this.log(`Will use search engine #${index}`);
     return this.searchEngines[index].OpenSearchDescription;
   }
 

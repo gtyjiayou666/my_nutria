@@ -27,8 +27,7 @@ class ActionActivity extends HTMLElement {
     shadow.querySelector(".activity").onclick = (event) => {
       // 检查是否为桌面模式，如果是则不直接处理点击
       const actionBox = this.closest('action-box');
-      if (actionBox && actionBox.isDesktopMode && actionBox.isDesktopMode()) {
-        console.log('Desktop mode: action-activity delegating click to action-box');
+      if (actionBox && actionBox.isDesktop) {
         event.preventDefault();
         event.stopPropagation();
         return false;

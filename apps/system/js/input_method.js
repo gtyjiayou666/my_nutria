@@ -13,8 +13,6 @@ export class InputMethod {
     this.debug = true;
 
     actionsDispatcher.addListener("ime-focus-changed", (_name, data) => {
-      this.log(`ime-focus-changed ${JSON.stringify(data)}`);
-
       if (data.isFocus === true) {
         if (data.type === "SELECT") {
           // Delegate to the <select-ui> for this content frame.
@@ -74,7 +72,6 @@ export class InputMethod {
   open() {
     try {
       const cancel = () => {
-        this.log(`canceling open animation`);
         this.adjustState();
       };
       // 再次检查虚拟键盘是否启用
@@ -88,9 +85,7 @@ export class InputMethod {
         this.inputMethodDesktop.addEventListener(
           "transitionend",
           () => {
-            this.log(`transitionend in open()`);
             if (this.opened) {
-              this.log(`dispatching keyboard-opening`);
               actionsDispatcher.dispatch("keyboard-opening");
             }
             this.inputMethodDesktop.removeEventListener("transitioncancel", cancel);
@@ -116,9 +111,7 @@ export class InputMethod {
         this.inputMethod.addEventListener(
           "transitionend",
           () => {
-            this.log(`transitionend in open()`);
             if (this.opened) {
-              this.log(`dispatching keyboard-opening`);
               actionsDispatcher.dispatch("keyboard-opening");
             }
             this.inputMethod.removeEventListener("transitioncancel", cancel);
@@ -142,14 +135,11 @@ export class InputMethod {
       return;
     }
 
-    this.log(`input_method::close`);
 
     this.opened = false;
-    this.log(`dispatching keyboard-closing`);
     actionsDispatcher.dispatch("keyboard-closing");
 
     const cancel = () => {
-      this.log(`canceling close animation`);
       this.adjustState();
     };
 
@@ -157,7 +147,6 @@ export class InputMethod {
       this.inputMethodDesktop.addEventListener(
         "transitionend",
         () => {
-          this.log(`transitionend in close()`);
           if (!this.opened) {
             this.inputMethodDesktop.deactivate();
           }
@@ -176,7 +165,6 @@ export class InputMethod {
       this.inputMethod.addEventListener(
         "transitionend",
         () => {
-          this.log(`transitionend in close()`);
           if (!this.opened) {
             this.inputMethod.deactivate();
           }

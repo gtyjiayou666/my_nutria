@@ -5,7 +5,6 @@ class ConfirmDialog extends LitElement {
     super();
     this.data = { title: "", text: "", buttons: [], focused: null };
     this.deferred = null;
-    this.log(`constructor`);
     this.addEventListener("sl-request-close", () => {
       this.deferred.reject();
     });
@@ -41,7 +40,6 @@ class ConfirmDialog extends LitElement {
   }
 
   render() {
-    this.log(`render`);
     let hasRememberMe = !!this.data.rememberMe;
 
     return html` <link rel="stylesheet" href="components/confirm_dialog.css" />

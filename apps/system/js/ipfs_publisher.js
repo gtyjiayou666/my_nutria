@@ -88,14 +88,11 @@ class IpfsPublisher {
     let title = await window.utils.l10n("ipfs-publish-title");
     let icon = "system-icon:upload";
 
-    this.log(`Publish ${name} -> ${tag}`);
-
     // Get the w3storage key from the setting.
     let w3storageToken = null;
     try {
       let settings = await apiDaemon.getSettings();
       let setting = await settings.get("ipfs.w3storage.api-token");
-      this.log(`w3storage setting is ${JSON.stringify(setting)}`);
       w3storageToken = setting.value;
     } catch (e) {
       this.error(`Failed to get w3storage token: ${e}`);
@@ -204,7 +201,6 @@ class IpfsPublisher {
 // Observes file creation in the "shared on ipfs" container and trigger publishing.
 class IpfsObserver {
   constructor() {
-    this.log("constructor");
     this.container = null;
     this.init();
 
@@ -220,14 +216,12 @@ class IpfsObserver {
   }
 
   async ensureContainer() {
-    this.log(`ensureContainer`);
     if (!this.container) {
       await contentManager.as_superuser();
       this.container = await contentManager.ensureTopLevelContainer(
         "shared on ipfs"
       );
 
-      this.log(`ensureContainer got ${this.container}`);
     }
   }
 
@@ -239,7 +233,6 @@ class IpfsObserver {
     await svc.addObserver(this.container, async (change) => {
       // this.log(`Resource changed: ${JSON.stringify(change)}`);
       if (change.kind == lib.ModificationKind.CHILD_CREATED) {
-        this.log(`Will upload ${change.id} to IPFS`);
 
         let resource = await contentManager.resourceFromId(change.id);
 
@@ -282,7 +275,6 @@ class IpfsObserver {
     actionsDispatcher.addListener(
       "publish-resource",
       async (_name, resourceId) => {
-        this.log(`Sharing: ${resourceId}`);
 
         let resource = await contentManager.resourceFromId(resourceId);
         // Retrieve the ipfs tag, to get the url.
@@ -330,7 +322,6 @@ class IpfsObserver {
     // Publish a blob to IPFS:
     // Create a resource in the ipfs sharing folder, using the blob as the default variant.
     actionsDispatcher.addListener("publish-to-ipfs", async (_name, data) => {
-      this.log(`Publish to IPFS: ${data.name}`);
 
       // Update the name if needed to prevent collisions.
       let name = data.name;
@@ -346,7 +337,6 @@ class IpfsObserver {
           name,
           data.blob
         );
-        this.log(`New resource is ${resource.meta.id}`);
       } catch (e) {
         this.error(`Failed to create resource: ${e}`);
       }

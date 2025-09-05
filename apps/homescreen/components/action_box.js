@@ -20,7 +20,7 @@ class ActionBox extends HTMLElement {
     super();
     this.longPress = false;
     this.contextMenuActive = false; // 初始化上下文菜单状态
-    this.isDesktop = true; // 本地桌面模式状态，默认为桌面模式
+    this.isDesktop = false; // 本地桌面模式状态，默认为桌面模式
 
     // 双击相关属性
     this.lastClickTime = 0;
@@ -261,7 +261,6 @@ class ActionBox extends HTMLElement {
         this.isDragging = false;
         return;
       }
-
       // 桌面模式：双击打开应用
       if (this.isDesktop) {
         const now = Date.now();

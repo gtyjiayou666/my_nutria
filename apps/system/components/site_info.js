@@ -437,8 +437,6 @@ class SiteInfo extends HTMLElement {
           let appObject = await service.installPwa(this.state.manifestUrl);
           let msg = await window.utils.l10n("success-add-to-home");
           window.toaster.show(msg, "success");
-          console.log(
-            `SiteInfo: PWA installation success for ${this.state.manifestUrl}: ${appObject}`
           );
         } catch (e) {
           let msg = await window.utils.l10n("error-add-to-home");
@@ -485,20 +483,10 @@ class SiteInfo extends HTMLElement {
   }
 
   async addToHome(activityData) {
-    console.log(
-      `SiteInfo: about to call add-to-home activity for ${JSON.stringify(
-        activityData
-      )}`
-    );
     let activity = new WebActivity("add-to-home", activityData);
     let start = Date.now();
     activity.start().then(
       async (result) => {
-        console.log(
-          `SiteInfo: activity result in ${
-            Date.now() - start
-          }ms is ${JSON.stringify(result)}`
-        );
         let msg = await window.utils.l10n("success-add-to-home");
         window.toaster.show(msg, "success");
       },
