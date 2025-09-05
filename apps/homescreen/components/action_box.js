@@ -78,12 +78,6 @@ class ActionBox extends HTMLElement {
     );
   }
 
-  // 检查是否为桌面模式 - 使用本地缓存的状态
-  isDesktopMode() {
-    // 直接返回本地状态，这个状态通过事件监听器保持同步
-    return this.isDesktop;
-  }
-
   // 显示上下文菜单
   showContextMenu(event) {
     // 隐藏任何现有的上下文菜单
@@ -91,7 +85,7 @@ class ActionBox extends HTMLElement {
 
     // 根据当前模式设置菜单样式类
     this.contextMenu.className = 'context-menu';
-    if (this.isDesktopMode()) {
+    if (this.isDesktop) {
       this.contextMenu.classList.add('desktop-mode');
     } else {
       this.contextMenu.classList.add('mobile-mode');
@@ -235,7 +229,7 @@ class ActionBox extends HTMLElement {
         bubbles: true,
         detail: {
           actionId: this.actionId,
-          fromDoubleClick: this.isDesktopMode()
+          fromDoubleClick: this.isDesktop
         }
       }));
     }
@@ -269,7 +263,7 @@ class ActionBox extends HTMLElement {
       }
 
       // 桌面模式：双击打开应用
-      if (this.isDesktopMode()) {
+      if (this.isDesktop) {
         const now = Date.now();
         const timeSinceLastClick = now - this.lastClickTime;
 

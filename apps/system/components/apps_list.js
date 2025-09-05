@@ -41,7 +41,7 @@ class AppIcon extends HTMLElement {
   // 更新桌面模式样式
   updateDesktopMode(isDesktop) {
     this.isDesktop = isDesktop;
-    if (isDesktop) {
+    if (this.isDesktop) {
       this.classList.add('desktop-mode');
     } else {
       this.classList.remove('desktop-mode');

@@ -60,13 +60,6 @@ class SwipeDetector extends EventTarget {
 }
 
 
-
-
-
-
-
-
-
 const kBindingsModifier = "Control";
 class KeyBindings {
   constructor() {
@@ -87,12 +80,6 @@ class KeyBindings {
     }
   }
 }
-
-
-
-
-
-
 
 
 import { ensurePanelManager } from '../js/bootstrap.js';
@@ -327,19 +314,10 @@ class StatusBar extends HTMLElement {
       "update-frame-list",
       this.updateFrameList.bind(this)
     );
-    // if (this.isDesktop) {
-
-    // 设置高频检查机制，确保桌面模式下任务栏及时更新
-    // this.frameListUpdateInterval = setInterval(() => {
-    //   if (this.classList.contains('desktop-mode') && window.wm && window.wm.updateFrameList) {
-    //     window.wm.updateFrameList();
-    //   }
-    // }, 2000); // 改为每200毫秒检查一次，提高响应速度
-
     // 监听窗口管理器的frame变化事件
     if (window.wm) {
       this.frameChangeListener = () => {
-        if (this.classList.contains('desktop-mode')) {
+        if (this.isDesktop) {
           setTimeout(() => {
             if (window.wm && window.wm.updateFrameList) {
               window.wm.updateFrameList();
@@ -415,20 +393,26 @@ class StatusBar extends HTMLElement {
         this.showTaskbarContextMenu(event, frameId);
       }
     };
-    // }
-
-
-
-    this.keyBindings = new KeyBindings();
     this.searchPanel = this.shadow.getElementById("search-panel");
+    this.isInitSearch = false;
+    if (this.isDesktop) {
+      this.initSearch();
+    }
+
+    // Initialize desktop mode state after all event listeners are set
+    this.initializeDesktopMode();
+
+  }
+
+  initSearch() {
+    if (this.isInitSearch) {
+      return;
+    }
+    this.keyBindings = new KeyBindings();
     this.clearSearch = this.shadow.getElementById("clear-search");
     this.privateBrowsing = this.shadow.getElementById("private-browsing");
     this.searchResults = this.shadow.getElementById("search-results");
     this.defaultSearchResults = this.shadow.getElementById("default-search-results");
-    if (!this.searchPanel) {
-      console.error("search-panel not found in main document.");
-      return;
-    }
     this.searchBox = this.shadow.getElementById('search-box');
     this.panelManager = null;
 
@@ -494,13 +478,13 @@ class StatusBar extends HTMLElement {
     this.clearSearch.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       // 清除搜索框内容
       this.searchBox.value = '';
-      
+
       // 隐藏清除按钮
       this.clearSearch.classList.add('hidden');
-      
+
       // 同步到主搜索面板
       const mainSearchPanel = document.getElementById('main-search-panel');
       if (mainSearchPanel) {
@@ -509,12 +493,12 @@ class StatusBar extends HTMLElement {
           mainSearchBox.value = '';
         }
       }
-      
+
       // 触发搜索清除
       if (this.panelManager && typeof this.panelManager.handleEvent === 'function') {
         this.panelManager.handleEvent();
       }
-      
+
       // 重新聚焦到搜索框
       this.searchBox.focus();
     });
@@ -576,13 +560,7 @@ class StatusBar extends HTMLElement {
         this.maybeOpenURL(this.opensearchEngine.getSearchUrlFor(input), { search: input });
       }
     });
-
-
-
-
-
-    // Initialize desktop mode state after all event listeners are set
-    this.initializeDesktopMode();
+    this.isInitSearch = true;
 
   }
 
@@ -1337,25 +1315,17 @@ class StatusBar extends HTMLElement {
     // 立即设置正确的状态
     this.updateQuicklaunchPosition(this.isDesktop);
 
-    // 监听桌面模式状态变化
-    if (window.wallpaperManager) {
-      // 监听桌面模式切换事件
-      window.addEventListener('desktop-mode-changed', (event) => {
-        this.updateQuicklaunchPosition(event.detail.isDesktop);
-      });
-    } else {
-      // 如果 wallpaperManager 还未加载，等待其加载完成
-      window.addEventListener('wallpaper-manager-ready', () => {
-        this.updateQuicklaunchPosition(this.isDesktop);
-        window.addEventListener('desktop-mode-changed', (event) => {
-          this.updateQuicklaunchPosition(event.detail.isDesktop);
-        });
-      });
-    }
+    // 监听桌面模式切换事件
+    window.addEventListener('desktop-mode-changed', (event) => {
+      this.updateQuicklaunchPosition(event.detail.isDesktop);
+    });
   }
 
   updateQuicklaunchPosition(isDesktop) {
     this.isDesktop = isDesktop;
+    if (this.isDesktop) {
+      this.initSearch();
+    }
     const mobileQuicklaunch = this.getElem('.quicklaunch.mobile-mode');
     const desktopQuicklaunch = this.getElem('svg.quicklaunch.desktop-mode');
     const screenElement = document.getElementById('screen');
