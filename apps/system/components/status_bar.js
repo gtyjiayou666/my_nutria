@@ -20,7 +20,6 @@ class SwipeDetector extends EventTarget {
     let cm = (box.width * window.devicePixelRatio) / (96.0 * 2.56);
     this.xTolerance = Math.round((box.width * 0.5) / cm) || 0;
 
-    this.log(`xTolerance=${this.xTolerance} yTolerance=${this.yTolerance}`);
   }
 
   log(msg) {
@@ -37,8 +36,6 @@ class SwipeDetector extends EventTarget {
       let dx = event.clientX - this.startX;
       let dy = event.clientY - this.startY;
 
-      // this.log(`dx=${dx} dy=${dy} elapsed=${elapsed}`);
-
       if (elapsed > 500) {
         return;
       }
@@ -46,20 +43,16 @@ class SwipeDetector extends EventTarget {
       const xTolerance = this.xTolerance;
       const yTolerance = this.yTolerance;
 
-      if (dx < xTolerance && dx > -xTolerance && dy < -yTolerance) {
-        // this.log("Swiped Up");
+      if (dx < xTolerance && dx > -xTolerance && dy < -yTolerance) 
         this.dispatchEvent(new CustomEvent("swipe-up"));
       }
       if (dx < xTolerance && dx > -xTolerance && dy > yTolerance) {
-        // this.log("Swiped Down");
         this.dispatchEvent(new CustomEvent("swipe-down"));
       }
       if (dy < yTolerance && dy > -yTolerance && dx < -xTolerance) {
-        // this.log("Swiped Left");
         this.dispatchEvent(new CustomEvent("swipe-left"));
       }
       if (dy < yTolerance && dy > -yTolerance && dx > xTolerance) {
-        // this.log("Swiped Right");
         this.dispatchEvent(new CustomEvent("swipe-right"));
       }
     }
@@ -191,17 +184,13 @@ class StatusBar extends HTMLElement {
 
     homeElem.onclick = this.homeClick = () => {
       if (this.isCarouselOpen) {
-        console.log("StatusBar: Closing carousel");
         actionsDispatcher.dispatch("close-carousel");
       }
 
       if (this.isDesktop) {
         // 桌面模式：不最小化当前应用，但执行一些home相关操作
-        console.log("Desktop mode: Home button clicked");
-
         // 关闭任何打开的搜索面板
         if (document.getElementById('main-search-panel')?.classList.contains('open')) {
-          console.log("StatusBar: Closing search panel");
           this.closeSearchPanel();
         }
 
@@ -211,20 +200,9 @@ class StatusBar extends HTMLElement {
         actionsDispatcher.dispatch("go-home");
       } else {
         // 移动模式：保持原有行为
-        console.log("Mobile mode: Dispatching go-home");
         actionsDispatcher.dispatch("go-home");
       }
     };
-
-    // 添加直接的addEventListener作为backup
-    homeElem.addEventListener('click', (e) => {
-      console.log("StatusBar: Home button direct addEventListener triggered");
-    });
-
-    // 添加pointerdown事件作为测试
-    homeElem.addEventListener('pointerdown', (e) => {
-      console.log("StatusBar: Home button pointerdown triggered");
-    });
 
     let gridElem = this.getElem(`sl-icon[name="${this.carouselIcon}"]`);
     hapticFeedback.register(gridElem);
@@ -391,7 +369,6 @@ class StatusBar extends HTMLElement {
       }
 
       if (!frameDiv) {
-        console.log('No frame div found for click');
         return;
       }
 
@@ -463,16 +440,7 @@ class StatusBar extends HTMLElement {
       this.clearSearch.classList.remove('hidden');
     }
 
-
-    this.searchBox.addEventListener("blur", () => {
-      // console.log("Search Box: blur");
-      // 注释掉自动关闭，因为我们现在使用主文档中的搜索面板
-      // this.closeSearchPanel();
-      // this.panelManager.clearAllResults();
-    });
-
     this.searchBox.addEventListener("focus", () => {
-      console.log("Search Box: focus event triggered");
       this.openSearchPanel();
 
       // 检查当前是否为桌面模式，如果是则防止虚拟键盘弹出
@@ -487,7 +455,6 @@ class StatusBar extends HTMLElement {
 
     // 添加点击事件作为备用方案
     this.searchBox.addEventListener("click", () => {
-      console.log("Search Box: click event triggered");
       this.searchBox.focus(); // 确保获得焦点，这会触发focus事件
     });
 
@@ -495,7 +462,6 @@ class StatusBar extends HTMLElement {
     const searchInput = this.shadow.querySelector('#search-panel .input');
     if (searchInput) {
       searchInput.addEventListener("click", (e) => {
-        console.log("Search Input Container: click event triggered");
         if (e.target !== this.searchBox) {
           this.searchBox.focus();
         }
@@ -567,7 +533,6 @@ class StatusBar extends HTMLElement {
 
     this.opensearchEngine = null;
     this.searchBox.addEventListener("keypress", (event) => {
-      console.log(`SearchBox: keypress ${event.key}`);
       if (event.key !== "Enter") {
         return;
       }
@@ -624,7 +589,6 @@ class StatusBar extends HTMLElement {
 
 
   closeSearchPanel() {
-    console.log("closeSearchPanel called");
 
     // 关闭主文档中的搜索面板
     const mainSearchPanel = document.getElementById('main-search-panel');
@@ -656,10 +620,8 @@ class StatusBar extends HTMLElement {
 
     // 移除搜索面板打开状态类名
     this.classList.remove("search-panel-open");
-    console.log("Removed search-panel-open class");
   }
   async openSearchPanel() {
-    console.log("openSearchPanel called");
 
     // 检查是否已经存在主文档中的搜索面板
     let mainSearchPanel = document.getElementById('main-search-panel');
@@ -886,7 +848,6 @@ class StatusBar extends HTMLElement {
 
     // 添加搜索面板打开状态类名
     this.classList.add("search-panel-open");
-    console.log("Added search-panel-open class, classes:", this.className);
 
     // 添加关闭事件监听
     const closePanel = (e) => {
@@ -929,7 +890,6 @@ class StatusBar extends HTMLElement {
   }
 
   maybeOpenURL(url, details = {}) {
-    console.log(`maybeOpenURL ${url}`);
     if (!url || url.length == 0) {
       return false;
     }
@@ -949,7 +909,6 @@ class StatusBar extends HTMLElement {
     }
 
     const isFileUrl = url.startsWith("file://");
-    console.log(`maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
 
     try {
       // No "." in the url that is not a file:// or ipfs:// one, return false since this
@@ -1359,9 +1318,6 @@ class StatusBar extends HTMLElement {
         0.7152 * normalized[1] +
         0.0722 * normalized[2];
       const high_luminance = luminance > 0.179129;
-      console.log(
-        `Found background for ${color}: luminance=${luminance} red=${rgba[0]} green=${rgba[1]} blue=${rgba[2]} high_luminance=${high_luminance}`
-      );
 
       // Set a class accordingly so that the theme can choose which colors to use.
       if (high_luminance) {
@@ -1436,7 +1392,6 @@ class StatusBar extends HTMLElement {
 
       if (window.wm && window.wm.updateFrameList) {
         // 触发frame list更新以显示后台应用
-        console.log('StatusBar: Forcing frame list update on desktop mode switch');
         window.wm.updateFrameList();
       }
     } else {
@@ -1477,9 +1432,6 @@ class StatusBar extends HTMLElement {
       }
     }
 
-    console.log(`StatusBar: Current classes after update:`, this.className);
-    console.log(`StatusBar: Status bar visibility:`, window.getComputedStyle(this).display);
-
     // 确保Home按钮始终有正确的事件处理器
     this.ensureHomeButtonHandler();
   }
@@ -1487,19 +1439,6 @@ class StatusBar extends HTMLElement {
   ensureHomeButtonHandler() {
     const homeElem = this.getElem(`sl-icon[name="home"]`);
     if (homeElem) {
-      console.log('StatusBar: Checking Home button event handler');
-      console.log('StatusBar: homeElem.onclick:', homeElem.onclick);
-      console.log('StatusBar: this.homeClick:', this.homeClick);
-
-      // 检查Home按钮的样式和可见性
-      const computedStyle = window.getComputedStyle(homeElem);
-      console.log('StatusBar: Home button display:', computedStyle.display);
-      console.log('StatusBar: Home button visibility:', computedStyle.visibility);
-      console.log('StatusBar: Home button pointer-events:', computedStyle.pointerEvents);
-      console.log('StatusBar: Home button opacity:', computedStyle.opacity);
-
-      // 强制重新分配事件处理器
-      console.log('StatusBar: Force restoring Home button event handler');
       homeElem.onclick = this.homeClick;
       homeElem.oncontextmenu = this.homeContextMenu;
 
@@ -1510,7 +1449,6 @@ class StatusBar extends HTMLElement {
 
       // 添加额外的事件监听器作为备用
       homeElem.addEventListener('click', (e) => {
-        console.log('StatusBar: Home button addEventListener fired');
         e.preventDefault();
         e.stopPropagation();
         if (this.homeClick) {
@@ -1518,7 +1456,6 @@ class StatusBar extends HTMLElement {
         }
       });
 
-      console.log('StatusBar: Home button handler setup complete');
     } else {
       console.error('StatusBar: Home button element not found!');
     }
@@ -1622,32 +1559,26 @@ class StatusBar extends HTMLElement {
     const leftText = this.getElem('.left-text');
     const favicon = this.getElem('.favicon');
 
-    console.log('StatusBar: Restoring original mobile layout');
-
     // 恢复显示移动模式元素
     if (center) {
       center.style.display = '';
       center.style.visibility = '';
       center.style.opacity = '';
-      console.log('StatusBar: Center restored');
     }
     if (leftText) {
       leftText.style.display = '';
       leftText.style.visibility = '';
       leftText.style.opacity = '';
-      console.log('StatusBar: Left text restored');
     }
     if (favicon) {
       favicon.style.display = '';
       favicon.style.visibility = '';
       favicon.style.opacity = '';
-      console.log('StatusBar: Favicon restored');
     }
     if (batteryIcon) {
       batteryIcon.style.display = '';
       batteryIcon.style.visibility = '';
       batteryIcon.style.opacity = '';
-      console.log('StatusBar: Battery icon restored');
     }
 
     // 移除桌面模式类
@@ -1694,7 +1625,6 @@ class StatusBar extends HTMLElement {
       container.style.gap = '';
       container.style.flexDirection = '';
       container.classList.remove('desktop-taskbar');
-      console.log('StatusBar: Container restored');
     }
 
     // 重置状态栏主机元素的样式
@@ -1708,16 +1638,12 @@ class StatusBar extends HTMLElement {
     this.style.borderBottom = '';
     this.style.position = '';
 
-    console.log('StatusBar: Original layout restoration complete');
   }
 
   updateState(_name, state) {
     if (this.isCarouselOpen) {
       return;
     }
-
-    // 确保Home按钮始终有正确的事件处理器
-    // this.ensureHomeButtonHandler();
 
     // We switched from homescreen <-> content, reorder the sections
     // so they get events properly.

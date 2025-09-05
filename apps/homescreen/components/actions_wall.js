@@ -263,42 +263,6 @@ class ActionsWall extends HTMLElement {
     return element;
   }
 
-  // 检查是否为桌面模式
-  isDesktopMode() {
-    return this.isDesktop;
-  }
-
-  // 交换两个应用的位置（桌面模式下的拖拽交换）
-  swapPositions(draggingBox, targetPosition) {
-    // 找到目标位置的应用
-    const targetBox = this.querySelector(`action-box[position="${targetPosition}"]`);
-
-    if (targetBox && targetBox !== draggingBox) {
-      const draggingPosition = draggingBox.getAttribute("position");
-      const draggingActionId = draggingBox.actionId;
-      const targetActionId = targetBox.actionId;
-
-      console.log(`Swapping positions: ${draggingActionId} (${draggingPosition}) <-> ${targetActionId} (${targetPosition})`);
-
-      // 交换位置属性
-      draggingBox.setAttribute("position", targetPosition);
-      targetBox.setAttribute("position", draggingPosition);
-
-      // 更新存储中的位置信息
-      this.store.updatePositionFor(draggingActionId, targetPosition);
-      this.store.updatePositionFor(targetActionId, draggingPosition);
-
-      console.log(`Successfully swapped positions`);
-    } else if (!targetBox) {
-      // 如果没有找到目标应用，直接移动到目标位置
-      console.log(`No app at target position ${targetPosition}, moving directly`);
-      draggingBox.setAttribute("position", targetPosition);
-      this.store.updatePositionFor(draggingBox.actionId, targetPosition);
-    } else {
-      console.log(`Cannot swap: draggingBox and targetBox are the same`);
-    }
-  }
-
   handleEvent(event) {
     if (event.type === "pointerup") {
       this.removeEventListener("pointermove", this);
@@ -308,36 +272,12 @@ class ActionsWall extends HTMLElement {
       box.animate(false);
       box.classList.remove("no-transition");
 
-      // 检查是否为桌面模式
-      const isDesktopMode = this.isDesktopMode();
-      console.log(`Drag ended in ${isDesktopMode ? 'desktop' : 'mobile'} mode`);
-
       box.translateBy(0, 0);
       if (this.editing.dropPosition) {
-        const currentPosition = box.getAttribute("position");
-        console.log(`Attempting to move from ${currentPosition} to ${this.editing.dropPosition}`);
-
-        if (isDesktopMode) {
-          // 桌面模式：直接移动到目标位置，即使位置被占用也要进行交换
-          if (this.store.isPositionOccupied(this.editing.dropPosition)) {
-            // 如果目标位置被占用，进行位置交换
-            this.swapPositions(box, this.editing.dropPosition);
-          } else {
-            // 目标位置空闲，直接移动
-            box.setAttribute("position", this.editing.dropPosition);
-            this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
-          }
-        } else {
-          // 移动模式：只有在目标位置为空时才更新位置
-          if (!this.store.isPositionOccupied(this.editing.dropPosition)) {
-            box.setAttribute("position", this.editing.dropPosition);
-            this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
-          } else {
-            console.log('Target position occupied - move cancelled in mobile mode');
-          }
+        if (!this.store.isPositionOccupied(this.editing.dropPosition)) {
+          box.setAttribute("position", this.editing.dropPosition);
+          this.store.updatePositionFor(box.actionId, this.editing.dropPosition);
         }
-      } else {
-        console.log('No valid drop position - returning to original position');
       }
 
       this.editing = null;
@@ -348,23 +288,11 @@ class ActionsWall extends HTMLElement {
         document.elementFromPoint(event.clientX, event.clientY)
       );
 
-      const isDesktopMode = this.isDesktopMode();
-
       if (hover) {
         const position = hover.getAttribute("position");
         const isOccupied = !hover.classList.contains("ghost") &&
           this.store.isPositionOccupied(position);
 
-        // if (isDesktopMode) {
-        //   // 桌面模式：允许拖拽到任何位置，包括被占用的位置
-        //   if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
-        //     this.editing.activeGhost.setGhostActive(false);
-        //   }
-        //   hover.setGhostActive(true, true); // 在桌面模式下总是显示为可用
-        //   this.editing.activeGhost = hover;
-        //   this.editing.dropPosition = position;
-        // } else {
-        // 移动模式：检查目标位置是否已被占用
         if (isOccupied) {
           // 目标位置已被占用，取消激活当前 ghost
           if (this.editing.activeGhost) {
@@ -381,7 +309,6 @@ class ActionsWall extends HTMLElement {
           this.editing.activeGhost = hover;
           this.editing.dropPosition = position;
         }
-        // }
       }
 
       let deltaX = event.screenX - this.editing.startCoords.x;
@@ -389,49 +316,6 @@ class ActionsWall extends HTMLElement {
       this.editing.box.translateBy(deltaX, deltaY);
     }
   }
-  // handleEvent(event) {
-  //   if (event.type === "pointerup") {
-  //     this.removeEventListener("pointermove", this);
-  //     this.removeAllGhosts();
-
-  //     let box = this.editing.box;
-  //     box.animate(false);
-  //     box.classList.remove("no-transition");
-
-  //     // Update the box position.
-  //     box.translateBy(0, 0);
-  //     let newPosition = this.editing.dropPosition;
-  //     if (newPosition) {
-  //       box.setAttribute("position", newPosition);
-  //       this.store.updatePositionFor(box.actionId, newPosition);
-  //     }
-
-  //     this.editing = null;
-
-  //     location.hash = "unlock";
-  //   } else if (event.type === "pointermove") {
-  //     // Find if we are intersecting with a box.
-  //     let hover = this.findHoverBox(
-  //       document.elementFromPoint(event.clientX, event.clientY)
-  //     );
-  //     if (hover) {
-  //       // Change the "active ghost"
-  //       if (this.editing.activeGhost && this.editing.activeGhost !== hover) {
-  //         this.editing.activeGhost.setGhostActive(false);
-  //       }
-  //       hover.setGhostActive(true);
-  //       this.editing.activeGhost = hover;
-  //       this.editing.dropPosition = hover.getAttribute("position");
-  //     }
-
-  //     let deltaX = event.screenX - this.editing.startCoords.x;
-  //     let deltaY = event.screenY - this.editing.startCoords.y;
-  //     // Update the translation of the box.
-  //     this.editing.box.translateBy(deltaX, deltaY);
-  //   }
-  // }
-
-
 }
 
 customElements.define("actions-wall", ActionsWall);

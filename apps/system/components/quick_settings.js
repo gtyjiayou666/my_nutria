@@ -185,7 +185,6 @@ class QuickSettings extends HTMLElement {
   async initBrightness() {
     let slider = this.shadowRoot.querySelector("#brightness");
     slider.addEventListener("sl-input", (event) => {
-      // console.log(`Brightness changed to ${event.target.value}`);
       window.powerManager.service.brightness = event.target.value;
     });
 
@@ -265,7 +264,6 @@ class QuickSettings extends HTMLElement {
     settings.addObserver("tor.status", async (setting) => {
       if (setting.value.ready != torReady) {
         torReady = setting.value.ready;
-        console.log(`Tor: status is ${JSON.stringify(setting.value)}`);
         statusIcons.tor = torReady;
         if (torReady) {
           torIcon.classList.remove("enabling");
@@ -477,9 +475,6 @@ class QuickSettings extends HTMLElement {
 
       node.querySelector(".remote").onclick = () => {
         this.drawer.hide();
-        console.log(
-          `ZZZ starting remote control of ${JSON.stringify(session)}`
-        );
         let act = new WebActivity("remote-control", { session });
         act.start();
       };

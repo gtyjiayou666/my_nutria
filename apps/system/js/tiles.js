@@ -16,18 +16,14 @@ async function registerTile(manifestUrl) {
   } catch (e) {}
   if (!app) {
     let appObject = await service.installPwa(manifestUrl);
-    console.log(`Tile registered: ${JSON.stringify(appObject)}`);
-
     // Fetch all the resources linked in the tile manifest.
     let response = await fetch(manifestUrl);
     let manifest = await response.json();
     let tileResources = manifest.tile?.resources;
-    console.log(`Will fetch tile resources: ${tileResources}`);
     let fetches = [];
     tileResources.forEach((resource) => {
       fetches.push(fetch(new URL(resource, manifestUrl)));
     });
-    console.log(`Tile resources fetched`);
     let results = await Promise.allSettled(fetches);
     // Check if all the tile resources were fetched successfully.
     let success = true;
@@ -38,7 +34,6 @@ async function registerTile(manifestUrl) {
     });
     return success;
   } else {
-    console.log(`The tile at ${manifestUrl} is already registered`);
     return true;
   }
 }

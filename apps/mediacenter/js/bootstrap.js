@@ -24,12 +24,10 @@ class KeyBindings {
 }
 
 function openSearchBox() {
-  console.log(`openSearchBox`);
   let searchPanel = document.getElementById("search-panel");
   if (!searchPanel.classList.contains("open")) {
     let searchBox = document.getElementById("search-box");
     searchBox.focus();
-    console.log(`search-box.focus() called`);
   }
 }
 
@@ -79,7 +77,6 @@ const gSearchPanel = new SearchPanel();
 // Helper to decide how to process an window.open url parameter.
 // Returns true if window.open() was called, false otherwise.
 function maybeOpenURL(url, details = {}) {
-  console.log(`maybeOpenURL ${url}`);
   if (!url || url.length == 0) {
     return false;
   }

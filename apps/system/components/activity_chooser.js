@@ -26,7 +26,6 @@ class ActivityChooser extends HTMLElement {
   }
 
   async open(providers) {
-    console.log(`activity_chooser: ${JSON.stringify(providers)}`);
     let apps = [];
     for (let item of providers?.choices) {
       let summary = await window.appsManager.getSummary({
@@ -69,7 +68,6 @@ class ActivityChooser extends HTMLElement {
   }
 
   canceled() {
-    console.log(`activity_chooser: canceled`);
     this.drawer.addEventListener(
       "sl-after-hide",
       () => {
@@ -82,7 +80,6 @@ class ActivityChooser extends HTMLElement {
   }
 
   render() {
-    // console.log(`activity_chooser: activity_chooser render() ${this.activityName}`);
     let menu = this.shadowRoot.querySelector("sl-menu");
 
     menu.innerHTML = "";

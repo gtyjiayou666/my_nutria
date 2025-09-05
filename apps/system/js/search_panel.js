@@ -96,8 +96,6 @@ export class SearchPanel {
   }
 
   handleEnterKey() {
-    console.log("SearchPanel: handleEnterKey called");
-    
     // 检查是否有默认搜索结果可以执行
     if (this.defaultSearchResults && typeof this.defaultSearchResults.onEnterKey === 'function') {
       if (this.defaultSearchResults.onEnterKey()) {
@@ -108,12 +106,9 @@ export class SearchPanel {
     // 获取搜索框的内容
     let input = this.searchBox.value.trim();
     if (!input || input.length === 0) {
-      console.log("SearchPanel: No input to search for");
       return;
     }
 
-    console.log(`SearchPanel: Processing search for: "${input}"`);
-    
     // 模糊搜索框
     this.searchBox.blur();
     
@@ -140,14 +135,12 @@ export class SearchPanel {
     // 使用类似homescreen的逻辑处理URL
     if (!this.maybeOpenURL(input)) {
       // 不是URL，执行关键词搜索
-      console.log(`SearchPanel: Performing keyword search for: "${input}"`);
       const searchUrl = this.opensearchEngine.getSearchUrlFor(input);
       this.maybeOpenURL(searchUrl, { search: input });
     }
   }
 
   maybeOpenURL(url, details = {}) {
-    console.log(`SearchPanel: maybeOpenURL ${url}`);
     if (!url || url.length == 0) {
       return false;
     }
@@ -168,7 +161,6 @@ export class SearchPanel {
     }
 
     const isFileUrl = url.startsWith("file://");
-    console.log(`SearchPanel: maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
 
     try {
       // 没有"."且不是URL，可能是关键词搜索
@@ -192,7 +184,6 @@ export class SearchPanel {
         activate: true,
         details: encoded
       });
-      console.log(`SearchPanel: opened frame for ${url}`);
     } catch (e) {
       console.log(`SearchPanel: maybeOpenUrl error ${e}`);
     }
@@ -292,7 +283,6 @@ export class SearchPanel {
   }
 
   async getTopFrecencyResults() {
-    // console.log(`getTopFrecencyResults`);
     this.defaultSearchResults.classList.remove("hidden");
     this.defaultSearchResults.refresh();
   }

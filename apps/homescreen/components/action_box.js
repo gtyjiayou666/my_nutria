@@ -210,31 +210,26 @@ class ActionBox extends HTMLElement {
     if (slotElement) {
       // 如果是action-bookmark，直接调用其openBookmark方法
       if (slotElement.tagName === 'ACTION-BOOKMARK' && slotElement.openBookmark) {
-        console.log('Calling openBookmark on action-bookmark');
         slotElement.openBookmark();
         return;
       }
 
       // 如果是action-activity，直接调用其startActivity方法
       if (slotElement.tagName === 'ACTION-ACTIVITY' && slotElement.startActivity) {
-        console.log('Calling startActivity on action-activity');
         slotElement.startActivity();
         return;
       }
 
       // 如果是其他类型的元素，尝试触发点击
       if (slotElement.click) {
-        console.log('Triggering click on slot element');
         slotElement.click();
       } else if (slotElement.children && slotElement.children[0] && slotElement.children[0].click) {
-        console.log('Triggering click on first child element');
         slotElement.children[0].click();
       }
     }
 
     // 如果通过slot元素无法触发，尝试查找应用相关的数据并直接打开
     if (this.actionId) {
-      console.log(`Attempting to open app with actionId: ${this.actionId}`);
       // 通过事件系统触发应用打开
       this.dispatchEvent(new CustomEvent('open-app', {
         bubbles: true,
@@ -257,7 +252,6 @@ class ActionBox extends HTMLElement {
 
     // 高亮当前应用
     this.classList.add('selected');
-    console.log('Application highlighted');
 
     // 3秒后自动取消高亮
     setTimeout(() => {
@@ -279,11 +273,8 @@ class ActionBox extends HTMLElement {
         const now = Date.now();
         const timeSinceLastClick = now - this.lastClickTime;
 
-        console.log(`Desktop mode click: timeSinceLastClick=${timeSinceLastClick}, doubleClickDelay=${this.doubleClickDelay}`);
-
         if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
           // 双击检测到，立即打开应用
-          console.log('Double-click detected in desktop mode - opening application');
           if (this.clickTimeout) {
             clearTimeout(this.clickTimeout);
             this.clickTimeout = null;
@@ -292,7 +283,6 @@ class ActionBox extends HTMLElement {
           this.lastClickTime = 0; // 重置点击时间
         } else {
           // 第一次点击或时间间隔太长，等待可能的第二次点击
-          console.log('First click in desktop mode - waiting for potential double-click');
           this.lastClickTime = now;
 
           // 设置延时，如果在doubleClickDelay时间内没有第二次点击，就高亮应用

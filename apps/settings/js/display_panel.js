@@ -405,7 +405,6 @@ class DisplayPanel {
         icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
       }
 
-      this.log(`Resolution section ${isHidden ? 'expanded' : 'collapsed'}`);
     }
   }
 
@@ -422,7 +421,6 @@ class DisplayPanel {
         icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
       }
 
-      this.log(`Display section ${isHidden ? 'expanded' : 'collapsed'}`);
     }
   }
 

@@ -161,9 +161,6 @@ class ParallelGraphLoader {
   applyConfig(value) {
     if (this.config.platform && typeof value === "string") {
       let x = value.replace("__PLATFORM__", this.config.platform);
-      if (x != value) {
-        console.log(`  ${value} -> ${x}`);
-      }
       return x;
     }
     return value;
@@ -214,15 +211,8 @@ class ParallelGraphLoader {
         await Promise.all(promises);
       }
 
-      let selfStart = Date.now();
       let final = await this.getRunnerFor(node)();
       resultMap.set(node.name, final);
-      let end = Date.now();
-      console.log(
-        `Timing for '${node.name}' : self=${end - selfStart}ms full=${
-          end - start
-        }ms`
-      );
     };
   }
 

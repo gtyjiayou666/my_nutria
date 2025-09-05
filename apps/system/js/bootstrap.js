@@ -442,9 +442,6 @@ class TorProxyChannelFilter {
       const hostname = url.hostname;
       doNotProxy =
         this.localhosts.has(hostname) || hostname.endsWith(".localhost");
-      // console.log(
-      //   `TorProxyChannelFilter: doNotProxy=${doNotProxy} for ${hostname}`
-      // );
     } catch (e) { }
     if (doNotProxy) {
       proxyFilter.onProxyFilterResult(defaultProxyInfo);

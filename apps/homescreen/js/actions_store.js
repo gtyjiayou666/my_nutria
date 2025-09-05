@@ -59,7 +59,6 @@ class ActionsStore extends EventTarget {
         for (let child of children) {
           const json = await this.svc.getVariantJson(child.id);
 
-          // this.log(`content for ${child.id}: ${JSON.stringify(json)}`);
           const hasIcon = child.variants.find((variant) => {
             return variant.name === "icon";
           });
@@ -82,8 +81,6 @@ class ActionsStore extends EventTarget {
   }
 
   async loadOrUseDefaults(initEmpty) {
-    this.log(`loadOrUseDefaults initEmpty=${initEmpty}`);
-
     this.actions = await this.loadActions();
     if (initEmpty) {
       this.log(
@@ -290,8 +287,6 @@ class ActionsStore extends EventTarget {
             newPosition: position
           }
         }));
-
-        this.log(`Updated position for action ${id} from ${oldPosition} to ${position}`);
       }
     });
   }

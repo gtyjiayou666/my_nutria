@@ -63,7 +63,6 @@ class EdgeSwipeDetector extends EventTarget {
       this.enable();
     }
     
-    this.log(`Mode updated: ${isDesktop ? 'desktop' : 'mobile'}, edge swipe ${this.enabled ? 'enabled' : 'disabled'}`);
   }
   
   enable() {
@@ -81,7 +80,6 @@ class EdgeSwipeDetector extends EventTarget {
     document.addEventListener('pointerup', this.boundHandlePointerUp, { passive: false });
     document.addEventListener('pointercancel', this.boundHandlePointerCancel, { passive: false });
     
-    this.log('Edge swipe detection enabled for mobile mode');
   }
   
   disable() {
@@ -97,7 +95,6 @@ class EdgeSwipeDetector extends EventTarget {
     }
     
     this.reset();
-    this.log('Edge swipe detection disabled');
   }
   
   handlePointerDown(event) {
@@ -134,8 +131,6 @@ class EdgeSwipeDetector extends EventTarget {
       // 创建并显示滑动箭头提示
       this.createSwipeIndicator(clientX, clientY, this.swipeDirection);
       
-      this.log(`Edge swipe started from ${isFromLeftEdge ? 'left' : 'right'} edge at (${clientX}, ${clientY})`);
-      
       // 可选：触发触觉反馈
       if (window.hapticFeedback && window.hapticFeedback.trigger) {
         window.hapticFeedback.trigger('light');
@@ -156,7 +151,6 @@ class EdgeSwipeDetector extends EventTarget {
     
     // 检查时间是否超限
     if (elapsed > this.maxSwipeTime) {
-      this.log('Gesture timeout, canceling');
       this.removeSwipeIndicator();
       this.reset();
       return;
@@ -164,7 +158,6 @@ class EdgeSwipeDetector extends EventTarget {
     
     // 检查垂直偏移是否过大
     if (deltaY > this.maxVerticalDeviation) {
-      this.log('Vertical deviation too large, canceling gesture');
       this.removeSwipeIndicator();
       this.reset();
       return;
@@ -193,7 +186,6 @@ class EdgeSwipeDetector extends EventTarget {
       // 达到确认退出阈值
       if (this.swipeState !== 'ready_to_exit') {
         this.swipeState = 'ready_to_exit';
-        this.log(`Swipe ready to exit at distance: ${this.currentDistance}px`);
         
         // 触发触觉反馈表示达到阈值
         if (window.hapticFeedback && window.hapticFeedback.trigger) {
@@ -210,7 +202,6 @@ class EdgeSwipeDetector extends EventTarget {
     // 检查是否从ready_to_exit状态回拉到阈值以下
     if (prevState === 'ready_to_exit' && this.currentDistance < this.commitThreshold) {
       this.swipeState = 'swiping';
-      this.log(`Swipe pulled back below threshold, distance: ${this.currentDistance}px`);
       
       // 轻微触觉反馈表示离开退出区域
       if (window.hapticFeedback && window.hapticFeedback.trigger) {
@@ -228,11 +219,9 @@ class EdgeSwipeDetector extends EventTarget {
     // 只处理相同的指针
     if (event.pointerId !== this.currentPointerId) return;
     
-    this.log(`Pointer up, gesture ended. State: ${this.swipeState}, distance: ${this.currentDistance}px, max: ${this.maxReachedDistance}px`);
     
     // 判断是否应该触发退出
     if (this.swipeState === 'ready_to_exit' && this.currentDistance >= this.commitThreshold) {
-      this.log('Triggering exit on pointer up - threshold reached and maintained');
       
       // 显示成功动画
       this.showSwipeSuccess();
@@ -248,8 +237,6 @@ class EdgeSwipeDetector extends EventTarget {
       // 未达到阈值或已回拉，不触发退出
       const reason = this.currentDistance < this.commitThreshold ? 
         'threshold not reached' : 'pulled back before release';
-      this.log(`Not triggering exit: ${reason}`);
-      
       // 显示取消动画
       this.showSwipeCancel();
       
@@ -267,13 +254,11 @@ class EdgeSwipeDetector extends EventTarget {
     // 只处理相同的指针
     if (event.pointerId !== this.currentPointerId) return;
     
-    this.log('Pointer canceled, gesture ended');
     this.removeSwipeIndicator();
     this.reset();
   }
   
   triggerBackGesture() {
-    this.log('Triggering back gesture - attempting to exit app like Android');
     
     // 记录手势时间，用于防抖
     this.lastGestureTime = Date.now();
@@ -294,7 +279,6 @@ class EdgeSwipeDetector extends EventTarget {
     if (window.actionsDispatcher) {
       actionsDispatcher.dispatch("android-back");
       backTriggered = true;
-      this.log('Android-style back action dispatched via actionsDispatcher');
     }
     
     // 方法2：直接通过 window manager（备用方案）
@@ -305,17 +289,14 @@ class EdgeSwipeDetector extends EventTarget {
         // 当前不在主屏幕，直接关闭当前应用
         window.wm.closeFrame();
         backTriggered = true;
-        this.log('Direct app exit: Closed current frame and returned to homescreen');
       } else if (currentFrame && currentFrame.config.isHomescreen) {
         // 已经在主屏幕，尝试页面后退
         window.wm.goBack();
         backTriggered = true;
-        this.log('On homescreen: triggered page back navigation');
       } else {
         // 没有当前窗口，返回主屏幕
         window.wm.goHome();
         backTriggered = true;
-        this.log('No current frame: navigated to homescreen');
       }
     }
     
@@ -323,11 +304,6 @@ class EdgeSwipeDetector extends EventTarget {
     if (!backTriggered && window.history && window.history.length > 1) {
       window.history.back();
       backTriggered = true;
-      this.log('Back action triggered via browser history');
-    }
-    
-    if (!backTriggered) {
-      this.log('Warning: No back action method available');
     }
     
     // 触觉反馈
@@ -377,7 +353,6 @@ class EdgeSwipeDetector extends EventTarget {
     if (params.maxSwipeTime !== undefined) this.maxSwipeTime = params.maxSwipeTime;
     if (params.maxVerticalDeviation !== undefined) this.maxVerticalDeviation = params.maxVerticalDeviation;
     
-    this.log(`Parameters updated: edgeWidth=${this.edgeWidth}, minSwipeDistance=${this.minSwipeDistance}, commitThreshold=${this.commitThreshold}`);
   }
   
   // 创建滑动箭头指示器
@@ -476,7 +451,6 @@ class EdgeSwipeDetector extends EventTarget {
     }
     
     document.body.appendChild(this.swipeIndicator);
-    this.log(`Swipe indicator created at (${x}, ${y}) direction: ${direction}`);
   }
   
   // 更新滑动指示器位置和进度
@@ -532,7 +506,6 @@ class EdgeSwipeDetector extends EventTarget {
       }
     }
     
-    this.log(`Swipe indicator updated: progress=${progress.toFixed(2)}, state=${this.swipeState}, distance=${Math.abs(deltaX).toFixed(0)}px`);
   }
   
   // 显示成功动画
@@ -557,7 +530,6 @@ class EdgeSwipeDetector extends EventTarget {
       window.hapticFeedback.trigger('heavy');
     }
     
-    this.log('Swipe success animation triggered');
   }
   
   // 显示取消动画
@@ -581,7 +553,6 @@ class EdgeSwipeDetector extends EventTarget {
       window.hapticFeedback.trigger('light');
     }
     
-    this.log('Swipe cancel animation triggered');
   }
   
   // 移除滑动指示器

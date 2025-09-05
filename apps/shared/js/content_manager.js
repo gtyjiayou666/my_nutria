@@ -552,9 +552,7 @@ export class ContentManager extends EventTarget {
     let svc = await this.service;
     let start = Date.now();
     let cursor = await svc.topByFrecency(maxCount);
-    console.log(`topByFrecency cursor: ${Date.now() - start}ms`);
     await this.processCursor(cursor, true, ["icon", "poster"], callback);
-    console.log(`topByFrecency full: ${Date.now() - start}ms`);
   }
 
   // Returns the last modified items with a callback interface.
@@ -562,9 +560,7 @@ export class ContentManager extends EventTarget {
     let svc = await this.service;
     let start = Date.now();
     let cursor = await svc.lastModified(maxCount);
-    console.log(`lastModified cursor: ${Date.now() - start}ms`);
     await this.processCursor(cursor, true, ["icon", "poster"], callback);
-    console.log(`lastModified full: ${Date.now() - start}ms`);
   }
 
   async searchPlaces(query, maxCount, callback) {

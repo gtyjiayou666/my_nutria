@@ -157,7 +157,6 @@ export class SearchPanel {
   }
 
   async getTopFrecencyResults() {
-    // console.log(`getTopFrecencyResults`);
     let defaultResults = document.getElementById("default-search-results");
     defaultResults.classList.remove("hidden");
     defaultResults.refresh();

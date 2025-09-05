@@ -3,10 +3,8 @@
 class Places {
   // Returns a Promise that resolves to a result set.
   async search(query, count) {
-    console.log(`Places query ${query}`);
     let results = [];
     await contentManager.searchPlaces(query, count, (result) => {
-      // console.log(`Places result: ${JSON.stringify(result)}`);
       if (result) {
         results.push(result);
       }

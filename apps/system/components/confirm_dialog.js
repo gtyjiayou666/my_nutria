@@ -114,7 +114,6 @@ class ConfirmDialog extends LitElement {
   // If the "remember my choice" toggle is displayed, the resolved value is an
   // object instead: { button: <id>, rememberMe: <toggle checked state> }
   open(data) {
-    this.log(`open dialog=${this.dialog}`);
     if (!data || !data.buttons || !data.buttons.length) {
       this.error(`invalid data!`);
       return Promise.reject();

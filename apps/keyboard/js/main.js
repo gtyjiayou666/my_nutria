@@ -418,7 +418,6 @@ class KeyboardLayout {
   }
 
   handleEvent(event) {
-    // console.log(`Keyboard event is ${event.type}`);
 
     let target = event.target;
     let key = target.getAttribute("data-key");

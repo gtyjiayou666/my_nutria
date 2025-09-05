@@ -30,7 +30,6 @@ function postMessage(evt, message) {
 }
 
 self.onsystemmessage = (evt) => {
-  console.log("onsystemmessage", evt.name);
   if (SYSTEM_MESSAGE_TYPES.includes(evt.name)) {
     if (!self.systemReady && evt.name === "icc-stkcommand") {
       messageCache.push(evt);
@@ -73,12 +72,9 @@ self.onsystemmessage = (evt) => {
 
 self.addEventListener("message", (event) => {
   // Message received from clients
-  console.log("service worker received message: ", event.data);
   const { data } = event;
-  console.log(`SW data=${JSON.stringify(data)}`);
 
   if (data.isKeepalive) {
-    console.log("Receiving a keepalive message, nothing more to do.");
     return;
   }
 
@@ -109,9 +105,6 @@ self.addEventListener("message", (event) => {
       let notification = data.notification;
       let { title, body, icon, tag, actions } = notification;
       let ndata = notification.data;
-      console.log(
-        `SW notif title=${title} body=${body} tag=${tag} data=${ndata}`
-      );
       self.registration
         .showNotification(title, {
           body,
@@ -125,9 +118,6 @@ self.addEventListener("message", (event) => {
         });
 
       self.onnotificationclick = (event) => {
-        console.log(
-          `notification click: action=${event.action} tag=${event.notification.tag}`
-        );
         // Send back the notification click action.
         postMessage(event, {
           category: "notification",
@@ -147,13 +137,11 @@ const ActivityRequests = {
   addHandler(handler) {
     const activityId = `${+new Date()}`;
     this.map.set(activityId, handler);
-    console.log("ActivityRequests::addHandler: ", this.map);
     return activityId;
   },
 
   removeHandler(id) {
     this.map.delete(id);
-    console.log("ActivityRequests::removeHandler: ", this.map);
   },
 
   getHandler(id) {

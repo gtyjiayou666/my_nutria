@@ -69,8 +69,6 @@ class DefaultResults extends LitElement {
   }
 
   async refresh() {
-    console.log(`default-results refresh`);
-
     let results = [];
     await contentManager.topByFrecency(20, (result) => {
       if (result) {

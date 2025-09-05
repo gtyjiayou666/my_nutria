@@ -15,7 +15,6 @@ class AppsSearch {
   }
 
   async updateApps() {
-    console.log(`AppsSearch::updateApps start`);
     try {
       let apps = await window.appsManager.getAll();
       this.apps = [];
@@ -37,21 +36,17 @@ class AppsSearch {
           icon = iconUrl.href;
         }
         let display = manifest.display || "browser";
-        console.log(`AppsSearch::updateApps adding ${name} ${url}`);
         this.apps.push({ name, desc, url, icon, display });
       });
     } catch (e) {
       console.error(`AppsSearch::updateApps error: ${e}`);
     }
-    console.log(`AppsSearch::updateApps end, ${this.apps.length} apps`);
   }
 
   // Returns a Promise that resolves to a result set.
   search(what, count) {
-    console.log(`AppsSearch::search ${what} in ${this.apps.length} apps`);
     let res = [];
     for (let i = 0; i < this.apps.length && res.length <= count; i++) {
-      // console.log(`app[${i}].desc is '${this.apps[i].desc}'`);
       if (this.apps[i].desc.includes(what)) {
         res.push(this.apps[i]);
       }

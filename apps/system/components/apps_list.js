@@ -59,11 +59,7 @@ class AppIcon extends HTMLElement {
       const now = Date.now();
       const timeSinceLastClick = now - this.lastClickTime;
 
-      console.log(`AppIcon desktop mode click: timeSinceLastClick=${timeSinceLastClick}, doubleClickDelay=${this.doubleClickDelay}`);
-
       if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
-        // 双击检测到，立即打开应用
-        console.log('AppIcon double-click detected in desktop mode - opening application');
         if (this.clickTimeout) {
           clearTimeout(this.clickTimeout);
           this.clickTimeout = null;
@@ -72,7 +68,6 @@ class AppIcon extends HTMLElement {
         this.lastClickTime = 0; // 重置点击时间
       } else {
         // 第一次点击或时间间隔太长，等待可能的第二次点击
-        console.log('AppIcon first click in desktop mode - waiting for potential double-click');
         this.lastClickTime = now;
 
         // 清除之前的timeout
@@ -82,7 +77,6 @@ class AppIcon extends HTMLElement {
 
         this.clickTimeout = setTimeout(() => {
           // 单击处理（在桌面模式下显示选中效果）
-          console.log('AppIcon single-click timeout - highlighting app');
           this.highlightApp();
           this.clickTimeout = null;
           this.lastClickTime = 0; // 重置点击时间，为下次双击做准备
@@ -90,7 +84,6 @@ class AppIcon extends HTMLElement {
       }
     } else {
       // 移动模式或在应用列表中：单击直接打开应用
-      console.log(`AppIcon ${isInAppsList ? 'in apps-list' : 'mobile mode'} click - opening application immediately`);
       this.openApplication();
     }
   }
@@ -122,7 +115,6 @@ class AppIcon extends HTMLElement {
 
     // 高亮当前应用
     this.classList.add('selected');
-    console.log('AppIcon: Application highlighted');
 
     // 3秒后自动取消高亮
     setTimeout(() => {
@@ -242,7 +234,6 @@ class AppsList extends LitElement {
     // 为桌面模式添加备用计时器
     const setCanOpenFallback = setTimeout(() => {
       if (!this.canOpen) {
-        console.log('AppsList: Setting canOpen to true via fallback timer');
         this.canOpen = true;
       }
     }, 500); // 500ms后强制设置canOpen为true
@@ -250,7 +241,6 @@ class AppsList extends LitElement {
     this.addEventListener(
       "transitionend",
       () => {
-        console.log('AppsList: Setting canOpen to true via transitionend');
         this.canOpen = true;
         clearTimeout(setCanOpenFallback); // 清除备用计时器
       },
@@ -271,11 +261,7 @@ class AppsList extends LitElement {
         // Force wallpaper to be visible by ensuring no content windows are showing
         homescreenFrame.style.background = "transparent";
       }
-    } else {
-      // 桌面模式：不切换到桌面，保持当前应用可见
-      console.log('AppsList: Desktop mode - not switching to homescreen, keeping current app visible');
-    }
-
+    } 
     this.focus();
     embedder.addSystemEventListener("keypress", this, true);
 
@@ -298,10 +284,7 @@ class AppsList extends LitElement {
         homescreenFrame.classList.remove("deactivated");
         homescreenFrame.style.background = "";
       }
-    } else {
-      // 桌面模式：不需要恢复homescreen，保持当前应用可见
-      console.log('AppsList: Desktop mode - not restoring homescreen, keeping current app visible');
-    }
+    } 
 
     // 移除全局点击监听器
     document.removeEventListener("click", this.globalClickHandler, true);
@@ -318,20 +301,15 @@ class AppsList extends LitElement {
   async handleEvent(event) {
     switch (event.type) {
       case "open-bookmark":
-        console.log(`AppsList: Received open-bookmark event. canOpen=${this.canOpen}, wm exists=${!!window.wm}`);
         if (this.canOpen) {
-          console.log(`AppsList: Opening frame for URL: ${event.detail.url}`);
           window.wm.openFrame(event.detail.url, {
             activate: true,
             details: event.detail,
           });
           this.close();
-        } else {
-          console.log('AppsList: Cannot open - canOpen is false');
-        }
+        } 
         break;
       case "contextmenu":
-        //console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         event.preventDefault();
         this.openContextMenu(event, event.target.data);
         break;
@@ -384,7 +362,6 @@ class AppsList extends LitElement {
     menu.classList.add("hidden");
 
     menu.app = event.target.app;
-    // console.log(menu.app);
 
     let showContextMenu = false;
     this.contextMenuOpen = false;
@@ -497,8 +474,6 @@ class AppsList extends LitElement {
   }
 
   render() {
-    // console.log(`AppsList: ${this.appsNodes.length} apps`);
-
     return html`<link rel="stylesheet" href="components/apps_list.css" />
       <div class="container">${this.appsNodes}</div>
       <sl-menu class="menu hidden">

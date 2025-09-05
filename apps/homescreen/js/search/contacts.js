@@ -5,12 +5,10 @@ class ContactsSearch {
 
   // Returns a Promise that resolves to a result set.
   async search(query, count) {
-    console.log(`ContactsSearch::search ${query}`);
 
     let results = [];
 
     await contentManager.searchContacts(query, count, (result) => {
-      console.log(`Contact result: ${JSON.stringify(result)}`);
       if (result) {
         let main = result.variants.default;
         results.push({

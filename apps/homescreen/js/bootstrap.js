@@ -242,7 +242,6 @@ function updateActionLayout(modeChange) {
   const newPerLine = Math.max(1, Math.floor(containerWidth / effectiveWidth));
   const currentPerLine = parseInt(computedStyle.getPropertyValue('--action-per-line')) || 4;
 
-
   // 更新 CSS 变量
   root.style.setProperty('--action-per-line', newPerLine);
   // 如果每行数量发生变化，重新排列所有 app 图标
@@ -313,7 +312,6 @@ function isPrivateBrowsing() {
 // Helper to decide how to process an window.open url parameter.
 // Returns true if window.open() was called, false otherwise.
 function maybeOpenURL(url, details = {}) {
-  console.log(`maybeOpenURL ${url}`);
   if (!url || url.length == 0) {
     return false;
   }
@@ -333,7 +331,6 @@ function maybeOpenURL(url, details = {}) {
   }
 
   const isFileUrl = url.startsWith("file://");
-  console.log(`maybeOpenURL isUrl=${isUrl} isFileUrl=${isFileUrl}`);
 
   try {
     // No "." in the url that is not a file:// or ipfs:// one, return false since this
@@ -354,7 +351,6 @@ function maybeOpenURL(url, details = {}) {
 
     let encoded = encodeURIComponent(JSON.stringify(details));
     window.open(url, "_blank", `details=${encoded}`);
-    console.log(`maybeOpenURL called window.open(${url})`);
   } catch (e) {
     console.log(`maybeOpenUrl oops ${e}`);
   }
@@ -370,8 +366,6 @@ function handleHashChange() {
     console.log("No hash present.");
     return;
   }
-
-  console.log("Hash changed:", hash);
 
   if (hash === "lock" || hash === "unlock") {
     return;
@@ -448,7 +442,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   searchBox.addEventListener("blur", async () => {
-    console.log("SearchBox: blur event triggered");
     closeSearchPanel();
     panelManager.clearAllResults();
   });
@@ -471,7 +464,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let opensearchEngine;
   searchBox.addEventListener("keypress", (event) => {
     opensearchEngine = opensearchEngine || new OpenSearch();
-    console.log(`SearchBox: keypress ${event.key}`);
     if (event.key !== "Enter") {
       return;
     }
@@ -501,7 +493,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       (result) => {
         // await ensurePanelManager();
         // check that this is a proper url.
-        console.log(`SCAN-QR-CODE: result is ${result}`);
         try {
           // Rewrite ticket: urls to local dweb/$ticket ones.
           if (result.startsWith("ticket:")) {
@@ -557,9 +548,6 @@ async function addToHome(data) {
   let actionsWall = document.querySelector("actions-wall");
   if (data.siteInfo) {
     let siteInfo = data.siteInfo;
-    for (let prop in siteInfo) {
-      console.log(`  ${prop}: ${siteInfo[prop]}`);
-    }
     actionsWall.addNewAction({
       kind: "bookmark",
       title: siteInfo.title,

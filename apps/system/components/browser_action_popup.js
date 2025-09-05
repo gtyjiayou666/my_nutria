@@ -7,9 +7,7 @@ class BrowserActionPopup extends HTMLElement {
     this.action = null;
     this.browsingContextGroupId = null;
 
-    console.log(`BrowserActionPopup::constructor`);
     this.addEventListener("click", (event) => {
-      //   console.log(`BrowserActionPopup click on ${event.target.localName}`);
       if (event.target.localName === "sl-icon") {
         this.hide();
       }
@@ -45,14 +43,12 @@ class BrowserActionPopup extends HTMLElement {
   }
 
   setAction(action, browsingContextGroupId) {
-    console.log(`BrowserActionPopup::setAction action=${action}`);
     this.action = action;
     this.browsingContextGroupId = browsingContextGroupId;
     this.render();
   }
 
   render() {
-    console.log(`BrowserActionPopup::render action=${this.action}`);
     if (!this.action) {
       return;
     }

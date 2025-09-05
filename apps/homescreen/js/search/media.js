@@ -3,11 +3,9 @@
 class Media {
   // Returns a Promise that resolves to a result set.
   async search(query, count) {
-    console.log(`Media query ${query}`);
     let results = [];
 
     await contentManager.searchMedia(query, count, (result) => {
-      // console.log(`Media result: ${JSON.stringify(result)}`);
       if (result) {
         results.push(result);
       }

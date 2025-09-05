@@ -955,12 +955,9 @@ class WindowManager extends HTMLElement {
 
         if (newSrc !== currentSrc) {
           homescreenFrame.webView.setAttribute('src', newSrc);
-        } else {
-          console.log("Hash is already up-to-date.");
-        }
+        } 
       }
       if (this.isCarouselOpen) {
-        console.log("WindowManager: Refreshing carousel layout for mode change");
         this.closeCarousel();
         setTimeout(() => {
           this.openCarousel();
