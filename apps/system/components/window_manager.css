@@ -39,6 +39,13 @@ window-manager .windows > content-window {
   height: 100%;
   width: 100vw;
   overflow-y: hidden;
+  /* 确保应用内容不被底部栏遮挡 */
+  box-sizing: border-box;
+}
+
+/* 桌面模式下为固定底部栏留出空间 */
+#screen.desktop-mode window-manager .windows > content-window {
+  padding-bottom: var(--statusbar-desktop-height, 48px);
 }
 
 window-manager .windows > content-window.opening {
@@ -73,6 +80,13 @@ window-manager .windows > content-window.closing {
 
 window-manager .windows > content-window.split {
   width: 50vw;
+  /* 分屏模式下也需要底部填充避免被状态栏遮挡 */
+  box-sizing: border-box;
+}
+
+/* 桌面模式下分屏窗口的底部填充 */
+#screen.desktop-mode window-manager .windows > content-window.split {
+  padding-bottom: var(--statusbar-desktop-height, 48px);
 }
 
 window-manager .carousel {

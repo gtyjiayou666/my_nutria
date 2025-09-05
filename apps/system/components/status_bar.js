@@ -633,13 +633,13 @@ class StatusBar extends HTMLElement {
             top: 0;
             left: 0;
             width: 100vw;
-            bottom: 4em; /* 使用bottom属性确保不覆盖底部栏 */
-            background-color: rgba(0, 0, 0, 0.8);
+            bottom: 1.5em; /* 使用bottom属性确保不覆盖底部栏 */
+            background-color: transparent;
             z-index: 1000; /* 确保比statusbar的z-index低 */
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding-bottom: 1em;
+            padding-bottom: 0.1em;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -664,7 +664,7 @@ class StatusBar extends HTMLElement {
           #main-search-panel .search-input-container {
             width: 90%;
             max-width: 600px;
-            margin: 0 0 1em 2em; /* 恢复左下角位置 */
+            margin: 0 0 0.2em 2em; /* 恢复左下角位置 */
             /* 完全隐藏主搜索输入框，让用户只看到底部栏的输入 */
             display: none;
           }
@@ -713,7 +713,7 @@ class StatusBar extends HTMLElement {
           #main-search-panel .search-results {
             width: 90%;
             max-width: 600px;
-            margin: 0 0 1em 2em; /* 与搜索输入框对齐，位于左下角 */
+            margin: 0 0 0.3em 2em; /* 与搜索输入框对齐，位于左下角 */
             background-color: rgba(0, 0, 0, 0.95);
             border-radius: 12px;
             padding: 1em;
