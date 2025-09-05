@@ -29,12 +29,15 @@ class WallpaperManager extends EventTarget {
     super();
     this.isDesktop = isDesktop;
     this.loadOrUseDefault().then(() => {
+      this.log(`ready`);
       this.updateBackground();
       this.dispatchEvent(new CustomEvent("wallpaper-ready"));
       window.dispatchEvent(new CustomEvent("wallpaper-manager-ready"));
     });
 
     actionsDispatcher.addListener("set-wallpaper", (_name, url) => {
+      this.log(`about to fetch ${url} as a wallpapper`);
+
       this.fetchAsBlob(url)
         .then(async (blob) => {
           this.ignoreNextChange = true;
@@ -48,6 +51,7 @@ class WallpaperManager extends EventTarget {
   }
 
   async extractPalette(url) {
+    this.log(`extractPalette`);
 
     // Crop the original image to only use the bottom.
     const heightPercent = 5;
@@ -107,6 +111,7 @@ class WallpaperManager extends EventTarget {
         accent = color;
       }
     });
+    this.log(`best contrast: ${bestContrast}`);
 
     let themeData = {
       "theme.wallpaper.vibrant": toCSS(palette.Vibrant),
@@ -122,13 +127,15 @@ class WallpaperManager extends EventTarget {
   }
 
   updateBackground() {
-    let url = this.asURL();\
+    let url = this.asURL();
+    this.log(`updateBackground -> ${url}`);
     if (url) {
       let randomized = `${url}?r=${Math.random()}`;
       this.extractPalette(randomized).then(() => {
         let cssUrl = `url(${randomized})`;
         document.body.style.backgroundImage = cssUrl;
         window.lockscreen.setBackground(cssUrl);
+        this.log(`system & lockscreen updated`);
       });
     } else {
       // Fallback to a gradient.
@@ -163,12 +170,14 @@ class WallpaperManager extends EventTarget {
   }
 
   async ensureWallpaperContainer() {
+    this.log(`ensureWallpaperContainer ${this.wallpaperContainer}`);
     if (!this.wallpaperContainer) {
       await contentManager.as_superuser();
       this.wallpaperContainer = await contentManager.ensureTopLevelContainer(
         "wallpapers"
       );
 
+      this.log(`ensureWallpaperContainer got ${this.wallpaperContainer}`);
 
       // At first launch install an observer for the wallpaper container,
       // making sure we switch when the content manager is used directly
@@ -178,6 +187,8 @@ class WallpaperManager extends EventTarget {
   }
 
   async save(image) {
+    this.log("saving");
+
     if (!image) {
       this.error(`no wallpaper image to save!`);
       this.ignoreNextChange = false;
@@ -217,6 +228,7 @@ class WallpaperManager extends EventTarget {
         return;
       }
 
+      this.log(`id=${this.currentResource.id} ${JSON.stringify(change)}`);
       // Update when the change is either ChildModified or ChildDeleted
       if (
         (change.kind == 4 || change.kind == 5) &&
@@ -231,6 +243,7 @@ class WallpaperManager extends EventTarget {
 
   async loadDefaultWallpaper() {
     let image = await this.fetchAsBlob("./resources/default-wallpaper.webp");
+    this.log(`got default blob ${image}`);
     await this.save(image);
   }
 
@@ -243,6 +256,7 @@ class WallpaperManager extends EventTarget {
         this.wallpaperContainer,
         "current"
       );
+      this.log(`Found current: ${current?.debug()}`);
       return current;
     } catch (e) {
       this.error(`getCurrentWallpaper failed: ${e}`);
@@ -251,9 +265,11 @@ class WallpaperManager extends EventTarget {
   }
 
   async loadOrUseDefault() {
+    this.log(`loadOrUseDefault`);
 
     this.currentResource = await this.getCurrentWallpaper();
     if (!this.currentResource) {
+      this.log("No current wallpaper set");
       await this.loadDefaultWallpaper();
     }
   }

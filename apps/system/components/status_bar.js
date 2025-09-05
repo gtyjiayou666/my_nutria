@@ -43,7 +43,7 @@ class SwipeDetector extends EventTarget {
       const xTolerance = this.xTolerance;
       const yTolerance = this.yTolerance;
 
-      if (dx < xTolerance && dx > -xTolerance && dy < -yTolerance) 
+      if (dx < xTolerance && dx > -xTolerance && dy < -yTolerance) {
         this.dispatchEvent(new CustomEvent("swipe-up"));
       }
       if (dx < xTolerance && dx > -xTolerance && dy > yTolerance) {
@@ -188,7 +188,6 @@ class StatusBar extends HTMLElement {
       }
 
       if (this.isDesktop) {
-        // 桌面模式：不最小化当前应用，但执行一些home相关操作
         // 关闭任何打开的搜索面板
         if (document.getElementById('main-search-panel')?.classList.contains('open')) {
           this.closeSearchPanel();
@@ -929,8 +928,6 @@ class StatusBar extends HTMLElement {
 
       let encoded = encodeURIComponent(JSON.stringify(details)); window.wm.openFrame(url,
         { activate: true, details: encoded })
-      // window.open(url, "_blank", `details=${encoded}`);
-      // console.log(`maybeOpenURL called window.open(${url})`);
     } catch (e) {
       console.log(`maybeOpenUrl oops ${e}`);
     }
@@ -1439,6 +1436,7 @@ class StatusBar extends HTMLElement {
   ensureHomeButtonHandler() {
     const homeElem = this.getElem(`sl-icon[name="home"]`);
     if (homeElem) {
+      // 强制重新分配事件处理器
       homeElem.onclick = this.homeClick;
       homeElem.oncontextmenu = this.homeContextMenu;
 
@@ -1644,6 +1642,9 @@ class StatusBar extends HTMLElement {
     if (this.isCarouselOpen) {
       return;
     }
+
+    // 确保Home按钮始终有正确的事件处理器
+    // this.ensureHomeButtonHandler();
 
     // We switched from homescreen <-> content, reorder the sections
     // so they get events properly.
