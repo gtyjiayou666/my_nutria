@@ -1493,7 +1493,7 @@ class StatusBar extends HTMLElement {
       left.classList.add('desktop-left');
       // 隐藏移动模式特有的元素
       const leftText = this.getElem('.left-text');
-      const favicon = this.getElem('.favicon');
+      const favicon = this.getElem('.favicon'); 
       if (leftText) leftText.style.display = 'none';
       if (favicon) favicon.style.display = 'none';
     }
@@ -1548,7 +1548,7 @@ class StatusBar extends HTMLElement {
       batteryIcon.style.visibility = '';
       batteryIcon.style.opacity = '';
     }
-
+    
     // 移除桌面模式类
     if (left) {
       left.classList.remove('desktop-left');

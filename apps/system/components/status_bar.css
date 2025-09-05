@@ -194,14 +194,16 @@
   justify-content: space-between;
   grid-template-columns: none; /* 重置网格布局 */
   gap: 8px; /* 增加元素间距 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 :host(.desktop-mode) .left {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0; /* 防止收缩 */
-  min-width: 100px; /* 设置最小宽度 */
+  flex-shrink: 0; /* 防止收缩，确保左侧区域始终可见 */
+  min-width: 320px; /* 增加最小宽度，确保开始按钮和搜索框都有足够空间 */
+  max-width: 500px; /* 设置最大宽度 */
 }
 
 :host(.desktop-mode) .center {
@@ -243,7 +245,7 @@
   min-width: 80px;
   max-width: 120px; /* 限制最大宽度 */
   justify-content: center;
-  flex-shrink: 0; /* 防止收缩 */
+  flex-shrink: 0; /* 防止收缩，确保按钮始终可见 */
   white-space: nowrap; /* 防止文字换行 */
 }
 
@@ -793,7 +795,7 @@ sl-badge[variant="primary"]::part(base) {
   position: relative;
   bottom: 0;
   left: 0;
-  width: 100%;
+  width: auto; /* 改为自动宽度 */
   text-align: center;
   transition: all 0.3s;
   z-index: 1;
@@ -802,8 +804,10 @@ sl-badge[variant="primary"]::part(base) {
   color: white;
   background: transparent;
   pointer-events: none;
-  justify-content: center; /* 水平居中 */
+  justify-content: flex-start; /* 改为左对齐，靠近开始按钮 */
   align-items: center; /* 垂直居中，与底部栏其他元素对齐 */
+  margin-left: 12px; /* 添加与开始按钮的间距 */
+  flex: 1; /* 占用剩余空间 */
 }
 
 #search-panel .input {
@@ -831,12 +835,12 @@ sl-badge[variant="primary"]::part(base) {
 
 /* 桌面模式下搜索面板的响应式布局 */
 :host(.desktop-mode) #search-panel .input {
-  /* 桌面模式下继承全局响应式变量 */
-  width: var(--search-input-width);
-  min-width: var(--search-input-min-width);
-  max-width: var(--search-input-max-width);
+  /* 桌面模式下的搜索框宽度 */
+  width: 280px; /* 固定宽度，避免位置变化 */
+  min-width: 200px; /* 最小宽度保证可用性 */
+  max-width: 350px; /* 最大宽度限制 */
   transition: width 0.3s ease; /* 添加平滑过渡 */
-  /* 移除冲突的定位样式，由父容器处理居中 */
+  /* 移除冲突的定位样式，由父容器处理对齐 */
   left: auto;
   transform: none;
   margin: 0;
@@ -853,6 +857,7 @@ sl-badge[variant="primary"]::part(base) {
   padding: 0 12px;
   position: relative;
   overflow: hidden;
+  flex-shrink: 1; /* 允许适当收缩 */
 }
 
 /* 桌面模式下搜索框输入框样式 */
@@ -1451,8 +1456,8 @@ sl-badge[variant="primary"]::part(base) {
 /* 桌面模式下左右区域的响应式调整 */
 @media (max-width: 1200px) {
   :host(.desktop-mode) .left {
-    min-width: 80px; /* 减少最小宽度 */
-    flex-shrink: 1; /* 允许收缩 */
+    min-width: 300px; /* 减少最小宽度但保证开始按钮+搜索框的空间 */
+    flex-shrink: 0; /* 禁止收缩，确保开始按钮始终可见 */
   }
   
   :host(.desktop-mode) .right {
@@ -1464,15 +1469,23 @@ sl-badge[variant="primary"]::part(base) {
     flex: 1;
     min-width: 0; /* 允许收缩到0 */
   }
+
+  /* 调整搜索框宽度以适应较小屏幕 */
+  :host(.desktop-mode) #search-panel .input {
+    width: 250px;
+    min-width: 180px;
+  }
 }
 
 @media (max-width: 900px) {
   :host(.desktop-mode) .left {
-    min-width: 60px;
+    min-width: 280px; /* 进一步减少但保证基本功能 */
+    flex-shrink: 0; /* 禁止收缩 */
   }
   
   :host(.desktop-mode) .right {
     min-width: 100px;
+    flex-shrink: 1; /* 允许收缩 */
   }
   
   /* 在较小屏幕上隐藏一些非必要元素 */
@@ -1483,33 +1496,52 @@ sl-badge[variant="primary"]::part(base) {
   :host(.desktop-mode) .battery-icon {
     font-size: 16px;
   }
+
+  /* 进一步调整搜索框 */
+  :host(.desktop-mode) #search-panel .input {
+    width: 220px;
+    min-width: 160px;
+  }
 }
 
 /* 搜索框在极小屏幕下的处理 */
 @media (max-width: 600px) {
-  :host(.desktop-mode) {
-    --search-input-width: 90%;
-    --search-input-min-width: 150px;
-    --search-input-max-width: 250px;
-  }
-  
-  :host(.desktop-mode) #search-panel .input {
-    font-size: 0.9rem;
-    padding: 0.4em;
-  }
-  
-  /* 在极小屏幕下进一步收缩桌面模式元素 */
   :host(.desktop-mode) .left {
-    min-width: 40px;
+    min-width: 250px; /* 即使在极小屏幕也保证基本空间 */
+    flex-shrink: 0; /* 禁止收缩 */
   }
   
   :host(.desktop-mode) .right {
     min-width: 80px;
     gap: 4px;
+    flex-shrink: 1; /* 允许收缩 */
   }
   
   :host(.desktop-mode) sl-icon {
     font-size: 18px;
+  }
+
+  /* 极小屏幕下的搜索框调整 */
+  :host(.desktop-mode) #search-panel .input {
+    width: 180px;
+    min-width: 140px;
+    font-size: 0.9rem;
+    padding: 0.4em;
+  }
+
+  /* 调整开始按钮在极小屏幕下的样式 */
+  :host(.desktop-mode) .start-button {
+    min-width: 60px; /* 减少最小宽度但保持可见 */
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  :host(.desktop-mode) .start-text {
+    font-size: 12px;
+  }
+
+  :host(.desktop-mode) .start-icon {
+    font-size: 16px;
   }
 }
 
