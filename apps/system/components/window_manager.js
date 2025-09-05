@@ -64,8 +64,8 @@ class WindowManagerKeys {
 
     if (event.key === "Shift") {
       this.isShiftDown = event.type === "keydown";
-      if (event.type === "keyup")
-        this.isShift = !this.isShift;
+      // if (event.type === "keyup")
+      //   this.isShift = !this.isShift;
     }
 
     if (event.key === "Alt") {
@@ -179,7 +179,10 @@ class WindowManagerKeys {
       this.wm.goHome();
       return;
     }
-
+    if (this.isCtrlDown && event.key === " " && event.type === "keydown") {
+      this.isShift = !this.isShift;
+      this.isCtrlDown = false;
+    }
     // Open the url editor with [Ctrl] + [l]
     if (this.isCtrlDown && event.type === "keydown" && event.key === "l") {
       let frame = this.wm.currentFrame();
@@ -261,6 +264,8 @@ class WindowManagerKeys {
         case "Alt":
         case "Tab":
         case "NumLock":
+        case "Insert":
+        case "Escape":
           return;
         case "Backspace":
           if (this.candidateContainer.style.display !== 'none') {
@@ -313,10 +318,12 @@ class WindowManagerKeys {
           }
           return;
         case "Enter":
-          navigator.b2g.inputMethod.endComposition(this.inputText);
-          this.inputText = "";
-          event.preventDefault();
-          this.clearInputText();
+          if (this.candidateContainer.style.display !== 'none') {
+            navigator.b2g.inputMethod.endComposition(this.inputText);
+            this.inputText = "";
+            event.preventDefault();
+            this.clearInputText();
+          }
           return;
         case " ":
           if (this.candidateContainer.style.display !== 'none') {
@@ -521,9 +528,7 @@ class WindowManagerKeys {
   commitText(index) {
     const text = this.candidateList[index];
     const pinyin = this.candidatePinList[index];
-    console.info(this.candidatePinList)
     // this.committedText = this.committedText + text;
-    console.info(index, text, pinyin, this.committedText)
     navigator.b2g.inputMethod.endComposition(text)
     if (pinyin === this.inputText) {
       // navigator.b2g.inputMethod.setComposition(text, 0, text.length)
@@ -951,7 +956,7 @@ class WindowManager extends HTMLElement {
 
         if (newSrc !== currentSrc) {
           homescreenFrame.webView.setAttribute('src', newSrc);
-        } 
+        }
       }
       if (this.isCarouselOpen) {
         this.closeCarousel();

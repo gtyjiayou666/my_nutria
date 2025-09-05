@@ -47,7 +47,6 @@ async function waitForContentManager() {
     if (!contentManager) {
         throw new Error("contentManager 未定义或超时");
     }
-    console.info("✅ contentManager 已就绪");
 }
 
 function updateResolutionOptions() {
@@ -79,7 +78,6 @@ async function initRecorder() {
     }
 
     screenRecorder = navigator.b2g.screenRecorderService;
-    console.info("✅ 获取 screenRecorderService:", screenRecorder);
 
     // 绑定事件
     elements.recordBtn.addEventListener('click', handleRecordToggle);
@@ -132,9 +130,7 @@ async function startRecording() {
     try {
         updateStatus("🚀 启动录制...");
         await screenRecorder.start(outputFile, width, height, framerate);
-        console.info("✅ 录制已启动:", outputFile);
     } catch (err) {
-        console.error("❌ 启动失败:", err);
         showError(`启动失败: ${err.message || err}`);
     }
 }
@@ -144,7 +140,6 @@ async function stopRecording() {
     try {
         updateStatus("🛑 停止录制...");
         await screenRecorder.stop();
-        console.info("✅ 录制已停止");
     } catch (err) {
         console.error("❌ 停止失败:", err);
         showError(`停止失败: ${err.message || err}`);
@@ -189,7 +184,6 @@ async function onRecordingStop() {
 
         // 导入文件（复制）
         const metadata = await svc.importFromPath(container, lastOutputFile, true);
-        console.info("文件已导入:", metadata.id);
 
         // 获取资源 URL
         const resource = await contentManager.resourceFromId(metadata.id);
@@ -258,7 +252,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.addEventListener('beforeunload', () => {
     if (durationInterval) clearInterval(durationInterval);
     if (screenRecorder && isRecording) {
-        console.info("⚠️ 页面关闭，尝试停止录制");
         screenRecorder.stop().catch(console.error);
     }
 });

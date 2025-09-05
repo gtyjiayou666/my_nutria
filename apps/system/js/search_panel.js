@@ -2,7 +2,6 @@
 
 export class SearchPanel {
   init(panel, searchBox, clearSearch, privateBrowsing, searchResults, defaultSearchResults) {
-    console.info("SearchPanel   is     loading")
     this.panel = panel;
     this.searchBox = searchBox;
     this.searchBox.addEventListener("input", this);
@@ -85,7 +84,6 @@ export class SearchPanel {
   }
 
   onClose() {
-    console.info("search  on  onClose !!!!!!!!!!!!!!!!!!!!!")
     this.panel.classList.remove("open");
     this.clearSearch.classList.add("hidden");
     this.privateBrowsing.classList.add("hidden");
