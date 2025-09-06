@@ -72,7 +72,7 @@ class WindowManagerKeys {
       this.isAltDown = event.type === "keydown";
     }
 
-    if (event.key == window.config.metaOrControl) {
+    if (event.key == "Control") {
       this.isCtrlDown = event.type === "keydown";
     }
 
