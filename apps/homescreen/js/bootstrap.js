@@ -12,6 +12,7 @@ function handleSearchPanelVisibility(isDesktop) {
   const searchPanel = document.getElementById("search-panel");
   if (searchPanel) {
     if (isDesktop) {
+      document.documentElement.style.setProperty('--search-box-height', '0em');
       // 桌面模式：隐藏搜索框
       searchPanel.style.setProperty('display', 'none', 'important');
       searchPanel.style.setProperty('visibility', 'hidden', 'important');
@@ -26,6 +27,12 @@ function handleSearchPanelVisibility(isDesktop) {
         searchBox.disabled = true;
       }
     } else {
+      document.documentElement.style.setProperty('--search-box-height', '3.5em');
+      const panel = document.getElementById('actions-panel');
+      panel.style.display = 'none';
+      requestAnimationFrame(() => {
+        panel.style.display = '';
+      });
       searchPanel.style.setProperty('display', 'flex', 'important');
       searchPanel.style.setProperty('flex-direction', 'column', 'important');
       searchPanel.style.setProperty('visibility', 'visible', 'important');
@@ -381,9 +388,9 @@ function handleHashChange() {
     switch (data.action) {
       case "desktop-mode-changed":
         // 触发桌面模式切换事件，让其他组件可以响应
+        handleSearchPanelVisibility(data.isDesktop);
         const actionsWall = document.getElementById('actions-wall');
         actionsWall.changeMode(data.isDesktop);
-        handleSearchPanelVisibility(data.isDesktop);
         updateActionLayout(true);
         break;
 

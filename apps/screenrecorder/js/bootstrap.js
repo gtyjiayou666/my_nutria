@@ -158,7 +158,6 @@ function onRecordingStart() {
     elements.recordBtn.textContent = '⏹️ 停止录制';
     elements.recordBtn.classList.add('recording');
     updateStatus("🔴 正在录制...");
-    hidePreview();
 }
 
 // ✅ 录制停止回调（核心：导入文件 + 预览）
@@ -169,37 +168,35 @@ async function onRecordingStop() {
     elements.recordBtn.textContent = '🔴 开始录制';
     elements.recordBtn.classList.remove('recording');
 
-    const lastOutputFile = localStorage.getItem('lastRecordingFile');
-    if (!lastOutputFile) {
-        showError("❌ 未找到录制文件路径");
-        return;
-    }
+    // const lastOutputFile = localStorage.getItem('lastRecordingFile');
+    // if (!lastOutputFile) {
+    //     showError("❌ 未找到录制文件路径");
+    //     return;
+    // }
 
-    try {
-        updateStatus("🔄 正在保存到文件管理器...");
+    // try {
+    //     updateStatus("🔄 正在保存到文件管理器...");
 
-        await contentManager.as_superuser();
-        const svc = await contentManager.getService();
-        const container = await contentManager.ensureTopLevelContainer("Screen Recordings");
+    //     await contentManager.as_superuser();
+    //     const svc = await contentManager.getService();
+    //     const container = await contentManager.ensureTopLevelContainer("Screen Recordings");
 
-        // 导入文件（复制）
-        const metadata = await svc.importFromPath(container, lastOutputFile, true);
+    //     // 导入文件（复制）
+    //     const metadata = await svc.importFromPath(container, lastOutputFile, true);
 
-        // 获取资源 URL
-        const resource = await contentManager.resourceFromId(metadata.id);
-        const url = resource.variantUrl();
+    //     // 获取资源 URL
+    //     const resource = await contentManager.resourceFromId(metadata.id);
+    //     const url = resource.variantUrl();
 
-        // 设置预览和下载
-        elements.preview.src = url;
-        elements.preview.load();
+    //     // 设置预览和下载
+    //     elements.preview.src = url;
+    //     elements.preview.load();
+    //     updateStatus("✅ 已保存到【Screen Recordings】");
 
-        showPreview();
-        updateStatus("✅ 已保存到【Screen Recordings】");
-
-    } catch (err) {
-        console.error("导入失败:", err);
-        showError(`保存失败: ${err.message || err}`);
-    }
+    // } catch (err) {
+    //     console.error("导入失败:", err);
+    //     showError(`保存失败: ${err.message || err}`);
+    // }
 }
 
 function updateStatus(text) {
@@ -217,14 +214,6 @@ function updateDuration() {
     const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
     const s = String(totalSec % 60).padStart(2, '0');
     elements.duration.textContent = `${h}:${m}:${s}`;
-}
-
-function showPreview() {
-    elements.previewContainer.style.display = 'block';
-}
-
-function hidePreview() {
-    elements.previewContainer.style.display = 'none';
 }
 
 function updateUI() {
@@ -248,7 +237,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     initRecorder();
 });
 
-// ✅ 页面卸载清理
 window.addEventListener('beforeunload', () => {
     if (durationInterval) clearInterval(durationInterval);
     if (screenRecorder && isRecording) {
