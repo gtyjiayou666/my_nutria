@@ -11,8 +11,10 @@ ChromeUtils.defineESModuleGetters(modules, {
 });
 
 window.config.platform = AppConstants.platform;
+// window.config.metaOrControl =
+//   AppConstants.platform == "macosx" ? "Meta" : "Control";
 window.config.metaOrControl =
-  AppConstants.platform == "macosx" ? "Meta" : "Control";
+  AppConstants.platform == "macosx" ? "Meta" : "Alt";
 
 const UAHelper = {
   default: () => {
