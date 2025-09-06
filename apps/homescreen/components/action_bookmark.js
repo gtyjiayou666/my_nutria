@@ -36,8 +36,6 @@ class ActionBookmark extends HTMLElement {
         return false;
       }
       
-      // 移动模式或没有action-box包装时，直接打开应用
-      this.openBookmark();
     };
   }
   

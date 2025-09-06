@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Capyloon
 Comment=Reclaim Your Web!
-Exec=/opt/capyloon/start.sh --type=session
+Exec=/opt/capyloon/start.sh
 Icon=capyloon
 Type=Application
 Categories=Network;

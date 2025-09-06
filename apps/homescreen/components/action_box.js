@@ -311,6 +311,8 @@ class ActionBox extends HTMLElement {
       window.clearTimeout(this.timer);
     } else if (event.type === "contextmenu") {
       event.preventDefault();
+      console.info("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+      this.isDragging = true;
       if (this.longPress == true) {
         this.longPress = false;
         return;
