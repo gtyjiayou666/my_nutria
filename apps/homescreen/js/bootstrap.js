@@ -364,7 +364,6 @@ function maybeOpenURL(url, details = {}) {
   return true;
 }
 
-let isDesktop = false;
 function handleHashChange() {
 
   const hash = window.location.hash.substring(1);

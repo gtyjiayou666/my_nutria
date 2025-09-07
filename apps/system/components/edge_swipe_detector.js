@@ -2,9 +2,8 @@
 // 主要用于移动模式下的退出应用手势
 
 class EdgeSwipeDetector extends EventTarget {
-  constructor(isDesktop) {
+  constructor() {
     super();
-    this.isDesktop = isDesktop;
     
     // 边缘检测区域宽度（像素）
     this.edgeWidth = 30;
@@ -38,7 +37,7 @@ class EdgeSwipeDetector extends EventTarget {
     // 滑动指示器相关
     this.swipeIndicator = null;
     this.swipeDirection = null;
-    
+    this.enable();
     this.init();
   }
   
@@ -52,8 +51,6 @@ class EdgeSwipeDetector extends EventTarget {
   
   
   updateMode(isDesktop) {
-    this.isDesktop = isDesktop;
-    
     if (isDesktop) {
       // 桌面模式：禁用边缘滑动
       this.disable();
@@ -61,7 +58,6 @@ class EdgeSwipeDetector extends EventTarget {
       // 移动模式：启用边缘滑动
       this.enable();
     }
-    
   }
   
   enable() {
@@ -271,40 +267,12 @@ class EdgeSwipeDetector extends EventTarget {
       }
     }));
     
-    // Android风格的应用退出逻辑
     let backTriggered = false;
     
-    // 方法1：通过 actionsDispatcher 发送Android风格退出命令
     if (window.actionsDispatcher) {
       actionsDispatcher.dispatch("android-back");
       backTriggered = true;
     }
-    
-    // 方法2：直接通过 window manager（备用方案）
-    if (!backTriggered && window.wm) {
-      const currentFrame = window.wm.currentFrame();
-      
-      if (currentFrame && !currentFrame.config.isHomescreen) {
-        // 当前不在主屏幕，直接关闭当前应用
-        window.wm.closeFrame();
-        backTriggered = true;
-      } else if (currentFrame && currentFrame.config.isHomescreen) {
-        // 已经在主屏幕，尝试页面后退
-        window.wm.goBack();
-        backTriggered = true;
-      } else {
-        // 没有当前窗口，返回主屏幕
-        window.wm.goHome();
-        backTriggered = true;
-      }
-    }
-    
-    // 方法3：浏览器历史回退 (fallback)
-    if (!backTriggered && window.history && window.history.length > 1) {
-      window.history.back();
-      backTriggered = true;
-    }
-    
     // 触觉反馈
     if (window.hapticFeedback && window.hapticFeedback.trigger) {
       window.hapticFeedback.trigger('medium');
@@ -571,6 +539,8 @@ class EdgeSwipeDetector extends EventTarget {
 }
 
 // 创建全局边缘滑动检测器实例
-if (typeof window !== 'undefined') {
-  window.edgeSwipeDetector = new EdgeSwipeDetector((embedder.sessionType === "desktop" || embedder.sessionType === "session"));
-}
+// if (typeof window !== 'undefined') {
+window.edgeSwipeDetector = new EdgeSwipeDetector();
+// }
+
+// customElements.define("edge-swipeDetector", EdgeSwipeDetector);

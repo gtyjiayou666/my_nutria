@@ -1236,7 +1236,7 @@ class WindowManager extends HTMLElement {
 
     // 如果当前是主屏幕，执行页面后退
     if (currentFrame.config.isHomescreen) {
-      currentFrame.goBack();
+      // currentFrame.goBack();
       return;
     }
 
