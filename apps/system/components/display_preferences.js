@@ -11,14 +11,16 @@ class DisplayPreferences extends HTMLElement {
     this.theme = null;
     this.extension = null;
     this.settings = null;
+
+    this.defaultDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
+    this.quickSettings = document.querySelector('quick-settings');
     window.addEventListener('resize', async () => {
       this.displays.innerHTML = '';
       await this.initDisplays();
       if (this.displayNum <= 1) {
-        let isDesktop = (embedder.sessionType === "desktop" || embedder.sessionType === "session");
-        const quickSettings = document.querySelector('quick-settings');
-        if (quickSettings.isDesktop != isDesktop) {
-          quickSettings.handleNewModeClick();
+        this.extension = this.extensions.querySelector('sl-menu-item[data-extension="0"]');
+        if (this.quickSettings.isDesktop != this.defaultDesktop) {
+          this.quickSettings.handleNewModeClick();
         }
       }
     });
@@ -419,9 +421,12 @@ class DisplayPreferences extends HTMLElement {
     }
     // Uncheck the "old" menu item.
     if (this.extension.dataset.extension == 1) {
-      const quickSettings = document.querySelector('quick-settings');
-      if (!quickSettings.isDesktop) {
-        quickSettings.handleNewModeClick();
+      if (!this.quickSettings.isDesktop) {
+        this.quickSettings.handleNewModeClick();
+      }
+    } else if (this.extension.dataset.extension == 0) {
+      if (this.quickSettings.isDesktop != this.defaultDesktop) {
+        this.quickSettings.handleNewModeClick();
       }
     }
     // Set the new settings value.
