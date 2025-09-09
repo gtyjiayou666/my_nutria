@@ -481,9 +481,9 @@
 }
 
 :host(.desktop-mode) .frame-list div {
-  padding: 6px 8px; /* 减少左右内边距 */
-  min-width: 40px; /* 大幅减少最小宽度，只需容纳图标 */
-  max-width: 50px; /* 减少最大宽度 */
+   padding: 6px 12px;
+  min-width: 140px; /* 设置最小宽度确保应用名称可见 */
+  max-width: 200px; /* 设置最大宽度防止过度扩展 */
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
@@ -556,12 +556,18 @@
 :host(.desktop-mode) .frame-list div .favicon {
   width: 20px;
   height: 20px;
-  margin-right: 0; /* 移除右边距因为不再有文字 */
+  margin-right: 6px;
   flex-shrink: 0;
 }
 
 :host(.desktop-mode) .frame-list div .app-title {
-  display: none; /* 隐藏应用标题文字 */
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :host .container {
