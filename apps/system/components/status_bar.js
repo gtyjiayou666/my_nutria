@@ -402,6 +402,9 @@ class StatusBar extends HTMLElement {
     // Initialize desktop mode state after all event listeners are set
     this.initializeDesktopMode();
 
+    // 添加resize observer来监听容器大小变化
+    this.setupResizeObserver();
+
   }
 
   initSearch() {
@@ -1046,6 +1049,9 @@ class StatusBar extends HTMLElement {
     // 确保frame-list在桌面模式下可见
     frames.style.display = 'flex';
 
+    // 动态调整应用列表的显示模式
+    this.adjustFrameListLayout(frames, filteredFrames.length);
+
     let content = "";
 
     filteredFrames.forEach((frame) => {
@@ -1073,6 +1079,64 @@ class StatusBar extends HTMLElement {
     });
 
     frames.innerHTML = content;
+  }
+
+  // 动态调整frame列表的布局以适应不同数量的应用
+  adjustFrameListLayout(frameListElement, frameCount) {
+    if (!frameListElement || frameCount === 0) return;
+
+    // 使用setTimeout确保DOM已更新
+    setTimeout(() => {
+      // 获取frame-list的实际宽度
+      const frameListWidth = frameListElement.clientWidth;
+      
+      // 计算每个应用项在当前布局下的平均宽度
+      // 减去padding、gap等空间
+      const totalGapWidth = (frameCount - 1) * 2; // 2px gap between items
+      const totalPadding = 16; // 8px左右padding
+      const availableWidth = frameListWidth - totalGapWidth - totalPadding;
+      const averageItemWidth = availableWidth / frameCount;
+      
+      // 移除之前的样式类
+      frameListElement.classList.remove('compact-mode');
+      
+      // 如果平均宽度太小，切换到紧凑模式
+      // 考虑应用数量：应用越多，越容易触发紧凑模式
+      const compactThreshold = Math.max(60, 120 - frameCount * 5);
+      
+      if (averageItemWidth < compactThreshold) {
+        frameListElement.classList.add('compact-mode');
+      }
+    }, 10);
+  }
+
+  // 设置resize observer来监听容器大小变化
+  setupResizeObserver() {
+    if (!window.ResizeObserver) return;
+    
+    this.resizeObserver = new ResizeObserver((entries) => {
+      // 防抖处理，避免频繁调整
+      if (this.resizeTimeout) {
+        clearTimeout(this.resizeTimeout);
+      }
+      
+      this.resizeTimeout = setTimeout(() => {
+        const frameList = this.getElem('.frame-list');
+        if (frameList && this.isDesktop) {
+          // 重新计算当前应用数量
+          const frameItems = frameList.querySelectorAll('div[id^="shortcut-"]');
+          if (frameItems.length > 0) {
+            this.adjustFrameListLayout(frameList, frameItems.length);
+          }
+        }
+      }, 100); // 100ms防抖
+    });
+    
+    // 观察状态栏容器的大小变化
+    const container = this.getElem('.container');
+    if (container) {
+      this.resizeObserver.observe(container);
+    }
   }
 
   openCarousel() {
@@ -1906,6 +1970,18 @@ class StatusBar extends HTMLElement {
     if (this.frameListUpdateInterval) {
       clearInterval(this.frameListUpdateInterval);
       this.frameListUpdateInterval = null;
+    }
+    
+    // 清理resize相关的定时器
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = null;
+    }
+    
+    // 清理resize observer
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
     }
 
     // 清理事件监听器

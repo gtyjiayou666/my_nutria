@@ -186,36 +186,94 @@
     transparent 100%);
 }
 
-:host(.desktop-mode) .container {
-  height: 100%;
-  align-items: center;
-  padding: 0 8px;
-  display: flex;
-  justify-content: space-between;
-  grid-template-columns: none; /* 重置网格布局 */
-  gap: 8px; /* 增加元素间距 */
-  overflow: hidden; /* 防止内容溢出 */
+/* 测试：直接修改所有容器为flex布局，不管桌面模式 */
+.container {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  height: 100% !important;
+  padding: 0 !important; /* 移除所有padding */
+  gap: 0 !important;
+  margin: 0 !important; /* 移除margin */
+  /* 彻底移除所有网格相关属性 */
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+  grid-gap: 0 !important;
+  grid-auto-columns: none !important;
+  grid-auto-rows: none !important;
+  justify-content: flex-start !important;
+  overflow: hidden !important;
 }
 
-:host(.desktop-mode) .left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0; /* 防止收缩，确保左侧区域始终可见 */
-  min-width: 320px; /* 增加最小宽度，确保开始按钮和搜索框都有足够空间 */
-  max-width: 500px; /* 设置最大宽度 */
+/* 测试：让left区域固定宽度 */
+.left {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  width: 400px !important;
+  gap: 4px !important;
+  margin: 0 !important; /* 移除所有margin */
+  padding: 0 8px !important; /* 只保留内部padding */
 }
 
-:host(.desktop-mode) .center {
-  display: none; /* 桌面模式下隐藏中间区域 */
+/* 测试：让right区域占用剩余空间 */
+.right {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 !important;
+  gap: 6px !important;
+  margin: 0 !important; /* 移除所有margin */
+  padding: 0 8px !important; /* 只保留内部padding */
+  position: relative !important; /* 为绝对定位的子元素提供定位上下文 */
 }
 
-:host(.desktop-mode) .right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0; /* 防止收缩 */
-  min-width: 150px; /* 设置最小宽度 */
+/* 强制frame-list排在right区域的最前面 */
+.right .frame-list {
+  order: -1 !important; /* 最高优先级，排在最前面 */
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute !important; /* 绝对定位 */
+  left: 8px !important; /* 紧贴right区域的左边缘（考虑padding） */
+  top: 50% !important;
+  transform: translateY(-50%) !important; /* 垂直居中 */
+  width: calc(100% - 120px) !important; /* 占用大部分空间，为右侧图标预留120px */
+  max-width: calc(100% - 120px) !important;
+}
+
+/* 其他图标排在frame-list后面 */
+.right .go-back {
+  order: 1 !important;
+}
+
+.right sl-icon {
+  order: 2 !important;
+}
+
+.right sl-badge {
+  order: 3 !important;
+}
+
+/* 在桌面模式下调整right区域内元素的顺序 */
+:host(.desktop-mode) .right .frame-list {
+  order: -1; /* 让frame-list排在最前面 */
+}
+
+:host(.desktop-mode) .right .go-back {
+  order: 1;
+}
+
+:host(.desktop-mode) .right sl-icon[name="layout-grid"],
+:host(.desktop-mode) .right sl-icon[name="columns"] {
+  order: 2;
+}
+
+:host(.desktop-mode) .right sl-icon[name="home"] {
+  order: 3;
+}
+
+:host(.desktop-mode) .right sl-badge {
+  order: 4;
 }
 
 :host(.desktop-mode) .container.desktop-taskbar {
@@ -438,6 +496,12 @@
 
 :host(.desktop-mode) .left-text {
   font-size: 14px;
+  flex: 0 1 auto !important; /* 不占用剩余空间，只使用所需空间 */
+  max-width: 200px !important; /* 限制最大宽度 */
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  order: 1 !important; /* 确保在搜索框之前 */
 }
 
 :host(.desktop-mode) .left,
@@ -449,17 +513,19 @@
 /* 桌面模式任务栏 - Windows风格 */
 :host(.desktop-mode) .frame-list {
   gap: 2px;
-  max-width: none; /* 移除宽度限制 */
-  flex: 1; /* 占用剩余空间 */
-  overflow-x: auto; /* 水平滚动 */
+  flex: 1; /* 占用所有剩余空间 */
+  overflow-x: hidden; /* 禁用水平滚动，改为动态调整 */
   overflow-y: visible;
   border-left: none;
   padding: 4px 8px;
-  margin: 0 8px;
+  margin: 0 0 0 4px; /* 只保留小的左边距作为视觉分隔 */
   background: rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  scrollbar-width: thin; /* 显示滚动条便于用户知道可以滚动 */
+  /* 移除max-width限制，让它填满所有可用空间 */
+  min-width: 100px; /* 保证最小宽度 */
+  /* 添加过渡效果使布局变化更平滑 */
+  transition: all 0.3s ease;
 }
 
 :host(.desktop-mode) .frame-list::-webkit-scrollbar {
@@ -482,13 +548,13 @@
 
 :host(.desktop-mode) .frame-list div {
    padding: 6px 12px;
-  min-width: 140px; /* 设置最小宽度确保应用名称可见 */
-  max-width: 200px; /* 设置最大宽度防止过度扩展 */
+  min-width: 80px; /* 减少最小宽度 */
+  max-width: 200px; /* 设置合理的最大宽度 */
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
-  transition: all 0.2s ease;
-  flex-shrink: 0; /* 防止收缩 */
+  transition: all 0.3s ease; /* 延长过渡时间使变化更平滑 */
+  flex: 1; /* 均匀分布，填满整个frame-list */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
   overflow: hidden;
@@ -501,7 +567,7 @@
   /* 添加 flex 布局使图标居中 */
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* 左对齐以便更好地显示内容 */
 }
 
 /* 确保子元素不会阻止父元素的点击事件 */
@@ -554,20 +620,51 @@
 }
 
 :host(.desktop-mode) .frame-list div .favicon {
-  width: 20px;
-  height: 20px;
+  width: 16px; /* 减少图标大小以节省空间 */
+  height: 16px;
   margin-right: 6px;
   flex-shrink: 0;
 }
 
 :host(.desktop-mode) .frame-list div .app-title {
   flex: 1;
-  font-size: 14px;
+  font-size: 13px; /* 稍微减小字体大小 */
   font-weight: 500;
   color: #333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0; /* 允许文本在flex容器中收缩 */
+}
+
+/* 当应用数量过多时，隐藏应用标题只显示图标 */
+:host(.desktop-mode) .frame-list.compact-mode div {
+  min-width: 40px;
+  max-width: 40px;
+  flex: 0 0 40px; /* 固定宽度，不允许伸缩 */
+  padding: 8px;
+  justify-content: center;
+}
+
+:host(.desktop-mode) .frame-list.compact-mode div .app-title {
+  display: none; /* 紧凑模式下隐藏标题 */
+}
+
+:host(.desktop-mode) .frame-list.compact-mode div .favicon {
+  margin-right: 0; /* 紧凑模式下移除右边距 */
+  width: 20px;
+  height: 20px;
+}
+
+/* 紧凑模式下的音频图标调整 */
+:host(.desktop-mode) .frame-list.compact-mode div sl-icon[name="volume-1"],
+:host(.desktop-mode) .frame-list.compact-mode div sl-icon[name="volume-x"] {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
 }
 
 :host .container {
@@ -583,6 +680,12 @@
   grid-template-columns: 1fr min-content;
 }
 
+/* 桌面模式下强制覆盖网格布局 */
+:host(.desktop-mode) .container:not(.homescreen) {
+  display: flex !important;
+  grid-template-columns: none !important;
+}
+
 sl-icon {
   font-size: 1.5rem;
 }
@@ -593,6 +696,22 @@ sl-icon {
 
 .container:not(.homescreen) .center {
   display: none;
+}
+
+/* 强制隐藏center区域 */
+.center {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* 桌面模式center区域完全隐藏 */
+:host(.desktop-mode) .center {
+  display: none !important;
 }
 
 .container.content sl-icon:not(.content-icon) {
@@ -828,28 +947,30 @@ sl-badge[variant="primary"]::part(base) {
   pointer-events: none !important;
 }
 
-/* 桌面模式下确保搜索面板可见 */
-:host(.desktop-mode) #search-panel {
+/* 桌面模式下强制搜索面板占用剩余空间 - 使用更强的选择器 */
+:host(.desktop-mode) .left #search-panel {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
-  /* 确保搜索面板在桌面模式下正确定位 */
   position: relative;
   transform: none;
-  margin: 8px 0; /* 增加上下间距，避免贴近边缘 */
+  margin: 0 !important;
+  flex: 1 !important; /* 占用left区域的剩余空间 */
+  min-width: 0 !important; /* 允许收缩 */
+  order: 999 !important; /* 确保搜索框排在最后 */
 }
 
 /* 桌面模式下搜索面板的响应式布局 */
 :host(.desktop-mode) #search-panel .input {
   /* 桌面模式下的搜索框宽度 */
-  width: 280px; /* 固定宽度，避免位置变化 */
+  width: 100%; /* 填满search-panel的空间 */
   min-width: 200px; /* 最小宽度保证可用性 */
-  max-width: 350px; /* 最大宽度限制 */
+  max-width: none; /* 移除最大宽度限制 */
   transition: width 0.3s ease; /* 添加平滑过渡 */
   /* 移除冲突的定位样式，由父容器处理对齐 */
   left: auto;
   transform: none;
-  margin: 0;
+  margin: 0; /* 确保没有外边距 */
   
   /* Windows风格的搜索框美化 */
   height: 32px;
