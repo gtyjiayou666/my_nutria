@@ -210,40 +210,49 @@
   display: grid !important;
 }
 
-/* 只在桌面模式下让left区域固定宽度 */
+/* 只在桌面模式下让left区域动态宽度，根据搜索框大小调整 */
 :host(.desktop-mode) .left {
   display: flex !important;
   align-items: center !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
-  width: 400px !important;
+  /* 改为动态宽度而不是固定400px */
+  min-width: 250px !important; /* 保证最小宽度容纳开始按钮和最小搜索框 */
+  max-width: 500px !important; /* 限制最大宽度 */
+  width: auto !important; /* 自动宽度 */
   gap: 4px !important;
   margin: 0 !important; /* 移除所有margin */
-  padding: 0 8px !important; /* 只保留内部padding */
+  padding: 0 4px !important; /* 减少右侧padding让应用列表更靠近 */
 }
 
-/* 只在桌面模式下让right区域占用剩余空间 */
+/* 只在桌面模式下让right区域占用剩余空间，无左侧间距 */
 :host(.desktop-mode) .right {
   display: flex !important;
   align-items: center !important;
   flex: 1 !important;
   gap: 6px !important;
   margin: 0 !important; /* 移除所有margin */
-  padding: 0 8px !important; /* 只保留内部padding */
-  position: relative !important; /* 为绝对定位的子元素提供定位上下文 */
+  padding: 0 8px 0 0 !important; /* 移除左侧padding，让应用列表紧贴left区域 */
+  position: relative !important;
+  overflow: hidden !important; /* 防止应用过多时溢出 */
 }
 
-/* 只在桌面模式下强制frame-list排在right区域的最前面 */
+/* 只在桌面模式下让frame-list紧贴搜索框，使用正常流布局 */
 :host(.desktop-mode) .right .frame-list {
   order: -1 !important; /* 最高优先级，排在最前面 */
   margin: 0 !important;
   padding: 0 !important;
-  position: absolute !important; /* 绝对定位 */
-  left: 8px !important; /* 紧贴right区域的左边缘（考虑padding） */
-  top: 50% !important;
-  transform: translateY(-50%) !important; /* 垂直居中 */
-  width: calc(100% - 120px) !important; /* 占用大部分空间，为右侧图标预留120px */
-  max-width: calc(100% - 120px) !important;
+  /* 改为正常流布局，这样它会自动紧贴left区域 */
+  position: static !important;
+  transform: none !important;
+  /* 使用flex布局控制宽度 */
+  flex: 1 !important;
+  min-width: 200px !important; /* 最小宽度保证可用性 */
+  max-width: calc(100% - 100px) !important; /* 为右侧图标预留100px空间 */
+  /* 确保垂直居中和溢出控制 */
+  display: flex !important;
+  align-items: center !important;
+  overflow: hidden !important;
 }
 
 /* 只在桌面模式下调整其他图标排在frame-list后面 */
