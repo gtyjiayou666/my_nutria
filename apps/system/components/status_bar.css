@@ -237,7 +237,7 @@
   overflow: hidden !important; /* 防止应用过多时溢出 */
 }
 
-/* 只在桌面模式下让frame-list紧贴搜索框，使用正常流布局 */
+/* 只在桌面模式下让frame-list紧贴搜索框，使用正常流布局，支持滚动和响应式图标 */
 :host(.desktop-mode) .right .frame-list {
   order: -1 !important; /* 最高优先级，排在最前面 */
   margin: 0 !important;
@@ -248,11 +248,48 @@
   /* 使用flex布局控制宽度 */
   flex: 1 !important;
   min-width: 200px !important; /* 最小宽度保证可用性 */
-  max-width: calc(100% - 100px) !important; /* 为右侧图标预留100px空间 */
-  /* 确保垂直居中和溢出控制 */
+  max-width: calc(100% - 80px) !important; /* 为右侧图标预留80px空间 */
+  /* 确保垂直居中和横向滚动 */
   display: flex !important;
   align-items: center !important;
-  overflow: hidden !important;
+  overflow-x: auto !important; /* 允许横向滚动显示所有应用 */
+  overflow-y: hidden !important;
+  scrollbar-width: none !important; /* 隐藏滚动条保持美观 */
+  /* 减少间距让更多应用能显示 */
+  gap: 0.15em !important;
+}
+
+/* 桌面模式下应用图标的响应式大小调整 */
+:host(.desktop-mode) .right .frame-list div {
+  flex-shrink: 0 !important; /* 防止图标被压缩变形 */
+  padding: 0.1em 0.15em !important; /* 减少内边距 */
+  min-width: auto !important;
+}
+
+/* 桌面模式下根据应用数量调整图标大小 - 兼容性方案 */
+/* 当容器较小时自动缩小图标 */
+@container (max-width: 600px) {
+  :host(.desktop-mode) .right .frame-list div .favicon {
+    width: 1.2em !important;
+  }
+  
+  :host(.desktop-mode) .right .frame-list div sl-icon {
+    font-size: 0.8em !important;
+  }
+}
+
+/* 备用方案：通过CSS变量控制图标大小 */
+:host(.desktop-mode) .right .frame-list {
+  --app-icon-size: 1.5em;
+  --app-icon-font-size: 1em;
+}
+
+:host(.desktop-mode) .right .frame-list div .favicon {
+  width: var(--app-icon-size) !important;
+}
+
+:host(.desktop-mode) .right .frame-list div sl-icon {
+  font-size: var(--app-icon-font-size) !important;
 }
 
 /* 只在桌面模式下调整其他图标排在frame-list后面 */
