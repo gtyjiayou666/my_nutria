@@ -218,7 +218,7 @@
   flex-grow: 0 !important;
   /* 改为动态宽度而不是固定400px */
   min-width: 250px !important; /* 保证最小宽度容纳开始按钮和最小搜索框 */
-  max-width: 500px !important; /* 限制最大宽度 */
+  max-width: 420px !important; /* 减少最大宽度，让搜索框不会过长 */
   width: auto !important; /* 自动宽度 */
   gap: 4px !important;
   margin: 0 !important; /* 移除所有margin */
@@ -1048,7 +1048,7 @@ sl-badge[variant="primary"]::part(base) {
   /* 桌面模式下的搜索框宽度 */
   width: 100%; /* 填满search-panel的空间 */
   min-width: 200px; /* 最小宽度保证可用性 */
-  max-width: none; /* 移除最大宽度限制 */
+  max-width: 320px; /* 设置最大宽度，让搜索框不会过长 */
   transition: width 0.3s ease; /* 添加平滑过渡 */
   /* 移除冲突的定位样式，由父容器处理对齐 */
   left: auto;
