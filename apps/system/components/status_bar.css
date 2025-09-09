@@ -255,26 +255,33 @@
   overflow-x: auto !important; /* 允许横向滚动显示所有应用 */
   overflow-y: hidden !important;
   scrollbar-width: none !important; /* 隐藏滚动条保持美观 */
-  /* 减少间距让更多应用能显示 */
-  gap: 0.15em !important;
+  /* 恢复合理的间距保持美观 */
+  gap: 0.2em !important;
 }
 
-/* 桌面模式下应用图标的响应式大小调整 */
+/* 桌面模式下应用图标的响应式大小调整 - 保持原有高度和饱满度 */
 :host(.desktop-mode) .right .frame-list div {
   flex-shrink: 0 !important; /* 防止图标被压缩变形 */
-  padding: 0.1em 0.15em !important; /* 减少内边距 */
+  padding: 0.25em !important; /* 恢复原来的padding保持饱满度 */
   min-width: auto !important;
+  border-radius: 6px !important; /* 添加圆角美化 */
+  transition: all 0.2s ease !important; /* 添加平滑过渡效果 */
+  /* 确保高度足够，不会过于扁平 */
+  min-height: 2em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* 桌面模式下根据应用数量调整图标大小 - 兼容性方案 */
-/* 当容器较小时自动缩小图标 */
+/* 桌面模式下根据应用数量调整图标大小 - 兼容性方案，保持美观 */
+/* 当容器较小时适度缩小图标，不要过度 */
 @container (max-width: 600px) {
   :host(.desktop-mode) .right .frame-list div .favicon {
-    width: 1.2em !important;
+    width: 1.3em !important; /* 轻微缩小而不是过度缩小 */
   }
   
   :host(.desktop-mode) .right .frame-list div sl-icon {
-    font-size: 0.8em !important;
+    font-size: 0.9em !important; /* 轻微缩小 */
   }
 }
 
@@ -286,10 +293,26 @@
 
 :host(.desktop-mode) .right .frame-list div .favicon {
   width: var(--app-icon-size) !important;
+  transition: all 0.2s ease !important; /* 添加平滑过渡 */
 }
 
 :host(.desktop-mode) .right .frame-list div sl-icon {
   font-size: var(--app-icon-font-size) !important;
+  transition: all 0.2s ease !important; /* 添加平滑过渡 */
+}
+
+/* 桌面模式下活跃应用的美化样式 */
+:host(.desktop-mode) .right .frame-list div.active {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 桌面模式下应用悬停效果 */
+:host(.desktop-mode) .right .frame-list div:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* 只在桌面模式下调整其他图标排在frame-list后面 */
