@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>manual</title>
+  <meta charset="utf-8" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="icon" href="icons/default.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style/main.css" />
+
+  <meta name="defaultLanguage" content="en-US" />
+  <meta name="availableLanguages" content="en-US" />
+  <link rel="localization" href="locales/{locale}/main.ftl" />
+
+  <script src="js/marked.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/main.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="header-left">
+      <strong>📘 用户手册</strong>
+    </div>
+    <div class="header-right">
+      <input type="text" id="search-input" placeholder="🔍 搜索文档..." />
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- 左侧目录 -->
+    <nav id="sidebar">
+      <ul id="doc-tree"></ul>
+    </nav>
+
+    <!-- 右侧内容区 -->
+    <main id="content">
+      <div id="markdown-render">
+        <p>请选择左侧文档开始阅读 👈</p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

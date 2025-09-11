@@ -1,0 +1,50 @@
+[
+  {
+    "type": "directory",
+    "name": "开发指南",
+    "children": [
+      {
+        "type": "file",
+        "name": "capyloon开发指南.md",
+        "path": "resources/开发指南/capyloon开发指南.md"
+      }
+    ]
+  },
+  {
+    "type": "directory",
+    "name": "用户手册",
+    "children": [
+      {
+        "type": "file",
+        "name": "中文输入法-桌面版.md",
+        "path": "resources/用户手册/中文输入法-桌面版.md"
+      },
+      {
+        "type": "file",
+        "name": "中文输入法-移动版.md",
+        "path": "resources/用户手册/中文输入法-移动版.md"
+      },
+      {
+        "type": "file",
+        "name": "显示偏好.md",
+        "path": "resources/用户手册/显示偏好.md"
+      }
+    ]
+  },
+  {
+    "type": "directory",
+    "name": "设计文档",
+    "children": [
+      {
+        "type": "file",
+        "name": "gecko-b2g设计文档.md",
+        "path": "resources/设计文档/gecko-b2g设计文档.md"
+      },
+      {
+        "type": "file",
+        "name": "nutria设计文档.md",
+        "path": "resources/设计文档/nutria设计文档.md"
+      }
+    ]
+  }
+]

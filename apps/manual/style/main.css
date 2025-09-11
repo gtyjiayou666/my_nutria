@@ -1,0 +1,165 @@
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fafafa;
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #eaeaea;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+header .header-left strong {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+#search-input {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+  width: 200px;
+}
+
+.container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 左侧导航栏 */
+#sidebar {
+  width: 260px;
+  background: #f8f9fa;
+  border-right: 1px solid #eaeaea;
+  padding: 16px 0;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+#doc-tree {
+  list-style: none;
+  padding-left: 12px;
+}
+
+#doc-tree li {
+  margin: 4px 0;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #333;
+}
+
+.tree-item:hover {
+  background: #e9ecef;
+}
+
+.tree-item.active {
+  background: #007bff;
+  color: white;
+}
+
+.tree-toggle {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  margin-right: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tree-toggle.empty {
+  visibility: hidden;
+}
+
+/* 子菜单缩进 */
+.tree-children {
+  list-style: none;
+  padding-left: 20px;
+  margin-top: 4px;
+  display: none;
+}
+
+.tree-children.show {
+  display: block;
+}
+
+/* 右侧内容区 */
+#content {
+  flex: 1;
+  padding: 30px;
+  background: #fff;
+  overflow-y: auto;
+}
+
+#markdown-render {
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.7;
+  color: #333;
+}
+
+#markdown-render h1, h2, h3, h4 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  color: #222;
+  scroll-margin-top: 80px;
+}
+
+#markdown-render p, #markdown-render ul, #markdown-render ol {
+  margin: 1em 0;
+}
+
+#markdown-render pre {
+  background: #ffffff !important;
+  color: #000000 !important;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  overflow-x: auto;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+#markdown-render code {
+  font-family: 'SFMono-Regular', Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+#markdown-render img {
+  max-width: 100%;
+  border-radius: 4px;
+  margin: 16px 0;
+}
+
+#markdown-render blockquote {
+  border-left: 4px solid #007bff;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #555;
+}
+/* .markdown-body code {
+  background: #f0f0f0;
+} */
+
