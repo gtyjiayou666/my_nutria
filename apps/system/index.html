@@ -1,98 +1,98 @@
 <!DOCTYPE html>
 <html lang="en-US">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no"
-    />
-    <meta id="theme-color" name="theme-color" content="transparent" />
-    <title>Capyloon</title>
 
-    <meta name="defaultLanguage" content="en-US" />
-    <meta name="availableLanguages" content="en-US,zh-CN,ja" />
-    <link rel="localization" href="main.ftl" />
-    <link rel="localization" href="branding.ftl" />
-    <link rel="stylesheet" href="style/index.css" />
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
+  <meta id="theme-color" name="theme-color" content="transparent" />
+  <title>Capyloon</title>
 
-    <!-- embedding API provider -->
-    <script type="module" src="chrome://b2g/content/embedding/web-embedder.sys.mjs"></script>
+  <meta name="defaultLanguage" content="en-US" />
+  <meta name="availableLanguages" content="en-US,zh-CN,ja" />
+  <link rel="localization" href="main.ftl" />
+  <link rel="localization" href="branding.ftl" />
+  <link rel="stylesheet" href="style/index.css" />
 
-    <!--
+  <!-- embedding API provider -->
+  <script type="module" src="chrome://b2g/content/embedding/web-embedder.sys.mjs"></script>
+
+  <!--
       This will setup Fluent for l10n
       We don't lazy load it because it's needed at startup to localize the boot screen.
     -->
-    <script src="js/config.js"></script>
+  <script src="js/config.js"></script>
 
-    <script type="module" src="js/embedding.js"></script>
-    <script src="js/dependencies.js"></script>
-    <script src="js/bootstrap.js" type="module"></script>
-  </head>
-  <body>
-    <div id="blackOverlay"></div>
-    <div id="logo" class="starting">
-      <div class="title" data-l10n-id="logo-title">Capyloon</div>
-      <div class="subtitle" data-l10n-id="logo-subtitle"></div>
-      <div class="image"></div>
-      <div class="action starting" data-l10n-id="logo-starting"></div>
-      <div class="action shutdown" data-l10n-id="logo-shutdown"></div>
-      <div class="action reboot" data-l10n-id="logo-reboot"></div>
-    </div>
+  <script type="module" src="js/embedding.js"></script>
+  <script src="js/dependencies.js"></script>
+  <script src="js/bootstrap.js" type="module"></script>
+</head>
 
-    <div id="screen">
-      <div id="status-top"></div>
-      <window-manager id="wm"></window-manager>
-      <status-bar id="statusbar"></status-bar>
-    </div>
+<body>
+  <div id="blackOverlay"></div>
+  <div id="logo" class="starting">
+    <div class="title" data-l10n-id="logo-title">Capyloon</div>
+    <div class="subtitle" data-l10n-id="logo-subtitle"></div>
+    <div class="image"></div>
+    <div class="action starting" data-l10n-id="logo-starting"></div>
+    <div class="action shutdown" data-l10n-id="logo-shutdown"></div>
+    <div class="action reboot" data-l10n-id="logo-reboot"></div>
+  </div>
 
-    <sl-drawer no-header placement="bottom" id="quick-settings">
-      <quick-settings></quick-settings>
-    </sl-drawer>
+  <div id="screen">
+    <div id="status-top"></div>
+    <window-manager id="wm"></window-manager>
+    <status-bar id="statusbar"></status-bar>
+  </div>
 
-    <sl-drawer no-header placement="end" id="reboot-menu">
-      <reboot-menu></reboot-menu>
-    </sl-drawer>
+  <sl-drawer no-header placement="bottom" id="quick-settings">
+    <quick-settings></quick-settings>
+  </sl-drawer>
 
-    <sl-drawer no-header placement="bottom" id="site-info">
-      <site-info></site-info>
-    </sl-drawer>
+  <sl-drawer no-header placement="end" id="reboot-menu">
+    <reboot-menu></reboot-menu>
+  </sl-drawer>
 
-    <sl-drawer no-header placement="bottom" id="activity-chooser">
-      <activity-chooser></activity-chooser>
-    </sl-drawer>
+  <sl-drawer no-header placement="bottom" id="site-info">
+    <site-info></site-info>
+  </sl-drawer>
 
-    <apps-list id="apps-list"></apps-list>
-    
-    <context-menu></context-menu>
-    <text-share></text-share>
-    <confirm-dialog></confirm-dialog>
-    <publish-dialog></publish-dialog>
-    <ucan-dialog></ucan-dialog>
-    <pairing-dialog></pairing-dialog>
+  <sl-drawer no-header placement="bottom" id="activity-chooser">
+    <activity-chooser></activity-chooser>
+  </sl-drawer>
 
-    <url-edit class="offscreen"></url-edit>
-    <webext-browser-action class="offscreen"></webext-browser-action>
+  <apps-list id="apps-list"></apps-list>
 
-    <input-method class="offscreen"></input-method>
-    <input-method-desktop class="offscreen"></input-method-desktop>
-    <lock-screen id="lockscreen" class="unlocked"></lock-screen>
-    <wakeup-screen id="wakeupscreen"></wakeup-screen>
-    <audio-volume id="audiovolume" class="offscreen" hidden></audio-volume>
+  <context-menu></context-menu>
+  <text-share></text-share>
+  <confirm-dialog></confirm-dialog>
+  <publish-dialog></publish-dialog>
+  <ucan-dialog></ucan-dialog>
+  <pairing-dialog></pairing-dialog>
 
-    <status-icons id="status-icons" class="hidden"></status-icons>
+  <url-edit class="offscreen"></url-edit>
+  <webext-browser-action class="offscreen"></webext-browser-action>
 
-    <sl-button-group id="caret-selection" class="hidden">
-      <sl-button id="selection-copy" class="default" pill data-l10n-id="caret-selection-copy"></sl-button>
-      <sl-button id="selection-search" class="default" pill data-l10n-id="caret-selection-search"></sl-button>
-      <sl-button id="selection-select-all" class="default" pill data-l10n-id="caret-selection-select-all"></sl-button>
-      <sl-button id="selection-share" class="default" pill data-l10n-id="caret-selection-share"></sl-button>
-    </sl-button-group>
+  <input-method class="offscreen"></input-method>
+  <input-method-desktop class="offscreen"></input-method-desktop>
+  <lock-screen id="lockscreen" class="unlocked"></lock-screen>
+  <wakeup-screen id="wakeupscreen"></wakeup-screen>
+  <audio-volume id="audiovolume" class="offscreen" hidden></audio-volume>
 
-    <template id="toaster-template">
-      <sl-alert duration="2000" closable>
-        <sl-icon slot="icon"></sl-icon>
-        <strong></strong>
-      </sl-alert>
-    </template>
-  </body>
+  <status-icons id="status-icons" class="hidden"></status-icons>
+
+  <sl-button-group id="caret-selection" class="hidden">
+    <sl-button id="selection-copy" class="default" pill data-l10n-id="caret-selection-copy"></sl-button>
+    <sl-button id="selection-search" class="default" pill data-l10n-id="caret-selection-search"></sl-button>
+    <sl-button id="selection-select-all" class="default" pill data-l10n-id="caret-selection-select-all"></sl-button>
+    <sl-button id="selection-share" class="default" pill data-l10n-id="caret-selection-share"></sl-button>
+  </sl-button-group>
+
+  <template id="toaster-template">
+    <sl-alert duration="2000" closable>
+      <sl-icon slot="icon"></sl-icon>
+      <strong></strong>
+    </sl-alert>
+  </template>
+</body>
+
 </html>
