@@ -203,3 +203,11 @@ display-choose-theme = 选择主题
 display-choose = 选择显示器
 display-choose-resolution = 选择分辨率
 display-choose-extension = 选择屏幕扩展
+
+
+
+
+caret-selection-copy = 复制
+caret-selection-search = 搜索
+caret-selection-select-all = 搜索全部
+caret-selection-share = 分享

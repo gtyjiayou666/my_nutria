@@ -1,4 +1,31 @@
+const kDeps = [
+  {
+    name: "main",
+    kind: "virtual",
+    deps: [
+      "shared-fluent",
+      "content manager",
+    ],
+  },
+  {
+    name: "api daemon core",
+    kind: "sharedWindowModule",
+    param: ["js/api_daemon.js", "apiDaemon", "ApiDaemon"],
+  },
+  {
+    name: "content manager",
+    kind: "sharedWindowModule",
+    param: ["js/content_manager.js", "contentManager", "ContentManager"],
+    deps: ["api daemon core"],
+  },
+];
+
+
+
 document.addEventListener('DOMContentLoaded', async () => {
+  await depGraphLoaded;
+  graph = new ParallelGraphLoader(addSharedDeps(addShoelaceDeps(kDeps)));
+  await graph.waitForDeps("main");
   const renderArea = document.getElementById('markdown-render');
   const docTree = document.getElementById('doc-tree');
   const searchInput = document.getElementById('search-input');

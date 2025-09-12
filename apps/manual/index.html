@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="style/main.css" />
 
   <meta name="defaultLanguage" content="en-US" />
-  <meta name="availableLanguages" content="en-US" />
+  <meta name="availableLanguages" content="en-US,zh-CN,ja" />
   <link rel="localization" href="locales/{locale}/main.ftl" />
 
   <script src="js/marked.min.js"></script>
@@ -21,10 +21,10 @@
 <body>
   <header>
     <div class="header-left">
-      <strong data-l10n-id="title">📘 帮助文档</strong>
+      <strong data-l10n-id="title"></strong>
     </div>
     <div class="header-right">
-      <input type="text" id="search-input" placeholder="🔍 搜索文档..." />
+      <input type="text" id="search-input" data-l10n-id="search-documents" />
     </div>
   </header>
 
@@ -34,7 +34,7 @@
     </nav>
     <main id="content">
       <div id="markdown-render">
-        <p>请选择左侧文档开始阅读 👈</p>
+        <p data-l10n-id="select-document"></p>
       </div>
     </main>
   </div>
