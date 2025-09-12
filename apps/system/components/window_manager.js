@@ -912,7 +912,6 @@ class WindowManager extends HTMLElement {
     this.startedAt = {};
     this.isCarouselOpen = false;
     actionsDispatcher.addListener("go-back", this.goBack.bind(this));
-    actionsDispatcher.addListener("android-back", this.androidBack.bind(this));
     actionsDispatcher.addListener("go-forward", this.goForward.bind(this));
     actionsDispatcher.addListener("go-home", this.goHome.bind(this));
     actionsDispatcher.addListener(
@@ -1223,27 +1222,6 @@ class WindowManager extends HTMLElement {
     this.activeFrame && this.frames[this.activeFrame].goBack();
   }
 
-  // Android风格的返回：优先退出应用而不是页面后退
-  androidBack() {
-    if (!this.activeFrame) {
-      return;
-    }
-
-    const currentFrame = this.frames[this.activeFrame];
-    if (!currentFrame) {
-      return;
-    }
-
-    // 如果当前是主屏幕，执行页面后退
-    if (currentFrame.config.isHomescreen) {
-      // currentFrame.goBack();
-      return;
-    }
-
-    // 如果是应用窗口，直接关闭应用返回主屏幕（Android风格）
-    this.closeFrame(this.activeFrame);
-  }
-
   goForward() {
     this.activeFrame && this.frames[this.activeFrame].goForward();
   }
@@ -1305,7 +1283,6 @@ class WindowManager extends HTMLElement {
     } else {
       this.goHome();
     }
-
     this.updateFrameList();
     this.dispatchEvent(new Event("frameclosed"));
   }

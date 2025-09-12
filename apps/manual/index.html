@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <title>manual</title>
+  <title data-l10n-id="title"></title>
   <meta charset="utf-8" />
   <meta name="theme-color" content="#ffffff" />
   <link rel="icon" href="icons/default.svg" />
@@ -21,7 +21,7 @@
 <body>
   <header>
     <div class="header-left">
-      <strong>📘 用户手册</strong>
+      <strong data-l10n-id="title">📘 帮助文档</strong>
     </div>
     <div class="header-right">
       <input type="text" id="search-input" placeholder="🔍 搜索文档..." />
@@ -29,12 +29,9 @@
   </header>
 
   <div class="container">
-    <!-- 左侧目录 -->
     <nav id="sidebar">
       <ul id="doc-tree"></ul>
     </nav>
-
-    <!-- 右侧内容区 -->
     <main id="content">
       <div id="markdown-render">
         <p>请选择左侧文档开始阅读 👈</p>
@@ -42,4 +39,5 @@
     </main>
   </div>
 </body>
+
 </html>

@@ -4,16 +4,16 @@
 class EdgeSwipeDetector extends EventTarget {
   constructor() {
     super();
-    
+
     // 边缘检测区域宽度（像素）
     this.edgeWidth = 30;
-    
+
     // 手势阈值配置
     this.minSwipeDistance = 60;        // 最小滑动距离才触发手势
     this.commitThreshold = 120;        // 确认退出的阈值距离
     this.maxSwipeTime = 1500;          // 最大滑动时间（毫秒）
     this.maxVerticalDeviation = 150;   // 最大垂直偏移
-    
+
     // 当前手势状态
     this.isGesturing = false;
     this.startX = 0;
@@ -21,35 +21,45 @@ class EdgeSwipeDetector extends EventTarget {
     this.startTime = 0;
     this.isFromEdge = false;
     this.currentPointerId = -1;
-    
+
     // 新增手势状态管理
     this.swipeState = 'none';          // 'none' | 'swiping' | 'ready_to_exit' | 'committed'
     this.currentDistance = 0;          // 当前滑动距离
     this.maxReachedDistance = 0;       // 本次手势达到的最大距离
-    
+
     // 只在移动模式下启用
     this.enabled = false;
-    
+
     // 防抖相关 - 降低防抖时间使手势响应更快
     this.lastGestureTime = 0;
     this.gestureDebounceTime = 400; // 400ms内不允许重复触发
-    
+
+    this.stateUpdater = this.updateState.bind(this);
     // 滑动指示器相关
     this.swipeIndicator = null;
     this.swipeDirection = null;
     this.enable();
     this.init();
   }
-  
+
   init() {
     // 监听桌面模式变化
     window.addEventListener('desktop-mode-changed', (event) => {
       this.updateMode(event.detail.isDesktop);
     });
-    
+
+    actionsDispatcher.addListener("update-page-state", this.stateUpdater);
   }
-  
-  
+
+  // close() {
+  //   actionsDispatcher.removeListener("update-page-state", this.stateUpdater);
+  // }
+
+  updateState(_name, state) {
+    // console.log(`SiteInfo::updateState() ${JSON.stringify(state)}`);
+    this.state = state;
+  }
+
   updateMode(isDesktop) {
     if (isDesktop) {
       // 桌面模式：禁用边缘滑动
@@ -59,57 +69,57 @@ class EdgeSwipeDetector extends EventTarget {
       this.enable();
     }
   }
-  
+
   enable() {
     if (this.enabled) return;
-    
+
     this.enabled = true;
-    
+
     this.boundHandlePointerDown = this.handlePointerDown.bind(this);
     this.boundHandlePointerMove = this.handlePointerMove.bind(this);
     this.boundHandlePointerUp = this.handlePointerUp.bind(this);
     this.boundHandlePointerCancel = this.handlePointerCancel.bind(this);
-    
+
     document.addEventListener('pointerdown', this.boundHandlePointerDown, { passive: false });
     document.addEventListener('pointermove', this.boundHandlePointerMove, { passive: false });
     document.addEventListener('pointerup', this.boundHandlePointerUp, { passive: false });
     document.addEventListener('pointercancel', this.boundHandlePointerCancel, { passive: false });
-    
+
   }
-  
+
   disable() {
     if (!this.enabled) return;
-    
+
     this.enabled = false;
-    
+
     if (this.boundHandlePointerDown) {
       document.removeEventListener('pointerdown', this.boundHandlePointerDown);
       document.removeEventListener('pointermove', this.boundHandlePointerMove);
       document.removeEventListener('pointerup', this.boundHandlePointerUp);
       document.removeEventListener('pointercancel', this.boundHandlePointerCancel);
     }
-    
+
     this.reset();
   }
-  
+
   handlePointerDown(event) {
     if (!this.enabled || this.isGesturing) return;
-    
+
     // 只处理主要指针（通常是第一个手指）
     if (event.isPrimary === false) return;
-    
+
     // 检查是否从屏幕边缘开始
     const { clientX, clientY, pointerId } = event;
     const isFromLeftEdge = clientX <= this.edgeWidth;
     const isFromRightEdge = clientX >= window.innerWidth - this.edgeWidth;
-    
+
     if (isFromLeftEdge || isFromRightEdge) {
       // 防抖检查
       const now = Date.now();
       if (now - this.lastGestureTime < this.gestureDebounceTime) {
         return;
       }
-      
+
       this.isGesturing = true;
       this.isFromEdge = true;
       this.startX = clientX;
@@ -117,71 +127,71 @@ class EdgeSwipeDetector extends EventTarget {
       this.startTime = now;
       this.currentPointerId = pointerId;
       this.swipeDirection = isFromLeftEdge ? 'right' : 'left';
-      
+
       // 初始化新的手势状态
       this.swipeState = 'swiping';
       this.currentDistance = 0;
       this.maxReachedDistance = 0;
-      
+
       // 创建并显示滑动箭头提示
       this.createSwipeIndicator(clientX, clientY, this.swipeDirection);
-      
+
       // 可选：触发触觉反馈
       if (window.hapticFeedback && window.hapticFeedback.trigger) {
         window.hapticFeedback.trigger('light');
       }
     }
   }
-  
+
   handlePointerMove(event) {
     if (!this.enabled || !this.isGesturing || !this.isFromEdge) return;
-    
+
     // 只处理相同的指针
     if (event.pointerId !== this.currentPointerId) return;
-    
+
     const { clientX, clientY } = event;
     const deltaX = clientX - this.startX;
     const deltaY = Math.abs(clientY - this.startY);
     const elapsed = Date.now() - this.startTime;
-    
+
     // 检查时间是否超限
     if (elapsed > this.maxSwipeTime) {
       this.removeSwipeIndicator();
       this.reset();
       return;
     }
-    
+
     // 检查垂直偏移是否过大
     if (deltaY > this.maxVerticalDeviation) {
       this.removeSwipeIndicator();
       this.reset();
       return;
     }
-    
+
     // 计算当前滑动距离（绝对值）
     this.currentDistance = Math.abs(deltaX);
     this.maxReachedDistance = Math.max(this.maxReachedDistance, this.currentDistance);
-    
+
     // 检查滑动方向是否正确（从边缘向内滑动）
     const isLeftEdgeSwipeRight = this.startX <= this.edgeWidth && deltaX > 0;
     const isRightEdgeSwipeLeft = this.startX >= window.innerWidth - this.edgeWidth && deltaX < 0;
     const isValidDirection = isLeftEdgeSwipeRight || isRightEdgeSwipeLeft;
-    
+
     if (!isValidDirection) {
       // 滑动方向错误，取消手势
       this.removeSwipeIndicator();
       this.reset();
       return;
     }
-    
+
     // 状态管理和视觉反馈
     const prevState = this.swipeState;
-    
+
     if (this.currentDistance >= this.commitThreshold) {
       // 达到确认退出阈值
       if (this.swipeState !== 'ready_to_exit') {
         this.swipeState = 'ready_to_exit';
-        
+
         // 触发触觉反馈表示达到阈值
         if (window.hapticFeedback && window.hapticFeedback.trigger) {
           window.hapticFeedback.trigger('medium');
@@ -193,48 +203,48 @@ class EdgeSwipeDetector extends EventTarget {
         this.swipeState = 'swiping';
       }
     }
-    
+
     // 检查是否从ready_to_exit状态回拉到阈值以下
     if (prevState === 'ready_to_exit' && this.currentDistance < this.commitThreshold) {
       this.swipeState = 'swiping';
-      
+
       // 轻微触觉反馈表示离开退出区域
       if (window.hapticFeedback && window.hapticFeedback.trigger) {
         window.hapticFeedback.trigger('light');
       }
     }
-    
+
     // 更新滑动指示器
     this.updateSwipeIndicator(clientX, clientY, deltaX);
   }
-  
+
   handlePointerUp(event) {
     if (!this.enabled || !this.isGesturing) return;
-    
+
     // 只处理相同的指针
     if (event.pointerId !== this.currentPointerId) return;
-    
-    
+
+
     // 判断是否应该触发退出
     if (this.swipeState === 'ready_to_exit' && this.currentDistance >= this.commitThreshold) {
-      
+
       // 显示成功动画
       this.showSwipeSuccess();
-      
+
       // 触发退出手势
       setTimeout(() => {
         this.triggerBackGesture();
         this.removeSwipeIndicator();
         this.reset();
       }, 150); // 稍微延长动画时间让用户看到反馈
-      
+
     } else {
       // 未达到阈值或已回拉，不触发退出
-      const reason = this.currentDistance < this.commitThreshold ? 
+      const reason = this.currentDistance < this.commitThreshold ?
         'threshold not reached' : 'pulled back before release';
       // 显示取消动画
       this.showSwipeCancel();
-      
+
       // 延迟清理，让用户看到取消反馈
       setTimeout(() => {
         this.removeSwipeIndicator();
@@ -242,22 +252,22 @@ class EdgeSwipeDetector extends EventTarget {
       }, 300);
     }
   }
-  
+
   handlePointerCancel(event) {
     if (!this.enabled || !this.isGesturing) return;
-    
+
     // 只处理相同的指针
     if (event.pointerId !== this.currentPointerId) return;
-    
+
     this.removeSwipeIndicator();
     this.reset();
   }
-  
+
   triggerBackGesture() {
-    
+
     // 记录手势时间，用于防抖
     this.lastGestureTime = Date.now();
-    
+
     // 分发边缘滑动事件
     this.dispatchEvent(new CustomEvent('edge-swipe-back', {
       detail: {
@@ -266,19 +276,17 @@ class EdgeSwipeDetector extends EventTarget {
         startY: this.startY
       }
     }));
-    
-    let backTriggered = false;
-    
-    if (window.actionsDispatcher) {
-      actionsDispatcher.dispatch("android-back");
-      backTriggered = true;
+    if (this.state.canGoBack) {
+      actionsDispatcher.dispatch("go-back");
+    } else {
+      actionsDispatcher.dispatch("go-home");
     }
     // 触觉反馈
     if (window.hapticFeedback && window.hapticFeedback.trigger) {
       window.hapticFeedback.trigger('medium');
     }
   }
-  
+
   reset() {
     this.isGesturing = false;
     this.isFromEdge = false;
@@ -287,31 +295,31 @@ class EdgeSwipeDetector extends EventTarget {
     this.startTime = 0;
     this.currentPointerId = -1;
     this.swipeDirection = null;
-    
+
     // 重置新的状态变量
     this.swipeState = 'none';
     this.currentDistance = 0;
     this.maxReachedDistance = 0;
   }
-  
+
   log(message) {
     console.log(`EdgeSwipeDetector: ${message}`);
   }
-  
+
   // 公共API：手动启用/禁用
   forceEnable() {
     this.enable();
   }
-  
+
   forceDisable() {
     this.disable();
   }
-  
+
   // 公共API：检查状态
   isEnabled() {
     return this.enabled;
   }
-  
+
   // 公共API：设置参数
   setParameters(params) {
     if (params.edgeWidth !== undefined) this.edgeWidth = params.edgeWidth;
@@ -319,14 +327,14 @@ class EdgeSwipeDetector extends EventTarget {
     if (params.commitThreshold !== undefined) this.commitThreshold = params.commitThreshold;
     if (params.maxSwipeTime !== undefined) this.maxSwipeTime = params.maxSwipeTime;
     if (params.maxVerticalDeviation !== undefined) this.maxVerticalDeviation = params.maxVerticalDeviation;
-    
+
   }
-  
+
   // 创建滑动箭头指示器
   createSwipeIndicator(x, y, direction) {
     // 移除可能存在的旧指示器
     this.removeSwipeIndicator();
-    
+
     // 创建主容器
     this.swipeIndicator = document.createElement('div');
     this.swipeIndicator.className = 'edge-swipe-indicator';
@@ -340,7 +348,7 @@ class EdgeSwipeDetector extends EventTarget {
       width: 40px;
       height: 40px;
     `;
-    
+
     // 创建箭头图标
     const arrow = document.createElement('div');
     arrow.className = 'swipe-arrow';
@@ -358,10 +366,10 @@ class EdgeSwipeDetector extends EventTarget {
       transform: scale(0.5);
       animation: swipeIndicatorIn 0.2s ease-out forwards;
     `;
-    
+
     // 设置箭头方向
     arrow.textContent = direction === 'right' ? '→' : '←';
-    
+
     // 创建进度指示器
     const progress = document.createElement('div');
     progress.className = 'swipe-progress';
@@ -377,10 +385,10 @@ class EdgeSwipeDetector extends EventTarget {
       transform: rotate(-90deg);
       transition: border-top-color 0.2s ease;
     `;
-    
+
     this.swipeIndicator.appendChild(arrow);
     this.swipeIndicator.appendChild(progress);
-    
+
     // 添加CSS动画
     if (!document.getElementById('edge-swipe-styles')) {
       const style = document.createElement('style');
@@ -416,37 +424,37 @@ class EdgeSwipeDetector extends EventTarget {
       `;
       document.head.appendChild(style);
     }
-    
+
     document.body.appendChild(this.swipeIndicator);
   }
-  
+
   // 更新滑动指示器位置和进度
   updateSwipeIndicator(x, y, deltaX) {
     if (!this.swipeIndicator) return;
-    
+
     // 计算基于commitThreshold的滑动进度 (0-1)
     const progress = Math.min(Math.abs(deltaX) / this.commitThreshold, 1);
     const minProgress = Math.min(Math.abs(deltaX) / this.minSwipeDistance, 1);
-    
+
     // 更新位置
     this.swipeIndicator.style.left = `${x - 20}px`;
     this.swipeIndicator.style.top = `${y - 20}px`;
-    
+
     // 获取元素
     const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
     const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
-    
+
     if (progressElement) {
       const angle = progress * 360;
       let color = '#2196F3'; // 默认蓝色
-      
+
       // 根据状态改变颜色
       if (this.swipeState === 'ready_to_exit') {
         color = '#4CAF50'; // 绿色表示可以退出
       } else if (minProgress > 0.5) {
         color = '#FF9800'; // 橙色表示正在滑动
       }
-      
+
       progressElement.style.background = `
         conic-gradient(
           ${color} 0deg ${angle}deg,
@@ -455,7 +463,7 @@ class EdgeSwipeDetector extends EventTarget {
       `;
       progressElement.style.borderTopColor = color;
     }
-    
+
     if (arrow) {
       // 根据状态更新箭头样式
       if (this.swipeState === 'ready_to_exit') {
@@ -472,13 +480,13 @@ class EdgeSwipeDetector extends EventTarget {
         arrow.textContent = '→';
       }
     }
-    
+
   }
-  
+
   // 显示成功动画
   showSwipeSuccess() {
     if (!this.swipeIndicator) return;
-    
+
     const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
     if (arrow) {
       arrow.classList.add('success');
@@ -486,48 +494,48 @@ class EdgeSwipeDetector extends EventTarget {
       arrow.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
       arrow.style.color = 'white';
     }
-    
+
     const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
     if (progressElement) {
       progressElement.style.background = 'rgba(76, 175, 80, 0.9)';
     }
-    
+
     // 触发强烈的触觉反馈
     if (window.hapticFeedback && window.hapticFeedback.trigger) {
       window.hapticFeedback.trigger('heavy');
     }
-    
+
   }
-  
+
   // 显示取消动画
   showSwipeCancel() {
     if (!this.swipeIndicator) return;
-    
+
     const arrow = this.swipeIndicator.querySelector('.swipe-arrow');
     if (arrow) {
       arrow.textContent = '✗';
       arrow.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
       arrow.style.color = 'white';
     }
-    
+
     const progressElement = this.swipeIndicator.querySelector('.swipe-progress');
     if (progressElement) {
       progressElement.style.background = 'rgba(244, 67, 54, 0.3)';
     }
-    
+
     // 轻微触觉反馈表示取消
     if (window.hapticFeedback && window.hapticFeedback.trigger) {
       window.hapticFeedback.trigger('light');
     }
-    
+
   }
-  
+
   // 移除滑动指示器
   removeSwipeIndicator() {
     if (this.swipeIndicator && this.swipeIndicator.parentNode) {
       this.swipeIndicator.style.opacity = '0';
       this.swipeIndicator.style.transform = 'scale(0.5)';
-      
+
       setTimeout(() => {
         if (this.swipeIndicator && this.swipeIndicator.parentNode) {
           this.swipeIndicator.parentNode.removeChild(this.swipeIndicator);

@@ -1,1 +1,1 @@
-welcome = Welcome!
+title = Help Documentation

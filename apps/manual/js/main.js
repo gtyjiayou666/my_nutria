@@ -3,24 +3,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const docTree = document.getElementById('doc-tree');
   const searchInput = document.getElementById('search-input');
 
-  let allNodes = []; // 用于搜索
+  let allNodes = [];
 
   try {
-    // 1. 获取文件树结构
     const response = await fetch('filelist.json');
     if (!response.ok) throw new Error('filelist.json 加载失败');
     const files = await response.json();
 
-    // 2. 构建树形菜单
     buildTree(files, docTree);
 
-    // 3. 默认展开第一项（如果它是目录）
-    // const firstItem = docTree.querySelector('.tree-item');
-    // if (firstItem && firstItem.nextElementSibling?.classList.contains('tree-children')) {
-    //   toggleChildren(firstItem);
-    // }
-
-    // 4. 搜索功能
     searchInput.addEventListener('input', (e) => {
       const term = e.target.value.toLowerCase().trim();
       filterTree(term);
@@ -31,17 +22,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error(err);
   }
 
-  // ========== 核心函数 ==========
-
   function buildTree(items, parentElement) {
     items.forEach(item => {
       const li = document.createElement('li');
 
       if (item.type === 'directory') {
-        // 目录节点
         const div = document.createElement('div');
         div.className = 'tree-item';
-        div.dataset.path = ''; // 目录不可点击渲染
+        div.dataset.path = '';
 
         const toggle = document.createElement('span');
         toggle.className = 'tree-toggle';
@@ -54,15 +42,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         li.appendChild(div);
 
-        // 创建子列表
         const childUl = document.createElement('ul');
         childUl.className = 'tree-children';
         li.appendChild(childUl);
 
-        // 递归构建子树
         buildTree(item.children, childUl);
 
-        // 绑定展开/折叠
         div.addEventListener('click', (e) => {
           if (e.target === toggle || e.target === div) {
             e.stopPropagation();
@@ -71,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
       } else if (item.type === 'file') {
-        // 文件节点
+        
         const div = document.createElement('div');
         div.className = 'tree-item';
         div.dataset.file = item.path;
@@ -86,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         li.appendChild(div);
 
-        // 绑定点击加载
         div.addEventListener('click', () => {
           setActiveItem(div);
           loadMarkdown(item.path);
@@ -133,7 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function filterTree(term) {
     if (!term) {
-      // 显示所有
       document.querySelectorAll('.tree-children').forEach(el => {
         el.classList.remove('search-hidden');
         if (!el.classList.contains('show')) {
@@ -148,16 +131,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // 隐藏所有
     document.querySelectorAll('.tree-item').forEach(el => {
       el.style.display = 'none';
     });
 
-    // 显示匹配项 & 展开其路径
     allNodes.forEach(({ element, text }) => {
       if (text.toLowerCase().includes(term)) {
         element.style.display = '';
-        // 展开父级
         let parent = element.closest('li');
         while (parent) {
           const children = parent.querySelector('.tree-children');
