@@ -26,8 +26,33 @@
       },
       {
         "type": "file",
+        "name": "帮助文档.md",
+        "path": "resources/用户手册/帮助文档.md"
+      },
+      {
+        "type": "file",
+        "name": "录屏功能.md",
+        "path": "resources/用户手册/录屏功能.md"
+      },
+      {
+        "type": "file",
         "name": "显示偏好.md",
         "path": "resources/用户手册/显示偏好.md"
+      },
+      {
+        "type": "file",
+        "name": "桌面模式.md",
+        "path": "resources/用户手册/桌面模式.md"
+      },
+      {
+        "type": "file",
+        "name": "模式切换.md",
+        "path": "resources/用户手册/模式切换.md"
+      },
+      {
+        "type": "file",
+        "name": "移动模式手势滑动.md",
+        "path": "resources/用户手册/移动模式手势滑动.md"
       }
     ]
   },

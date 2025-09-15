@@ -125,7 +125,7 @@ $ sudo apt install --no-install-recommends cubic
 $ cd ~/source
 $ mkdir new_iso
 ```
-① 打开cubic，选择new_iso文件夹
+打开cubic，选择new_iso文件夹
 ![](resources/开发指南/assets/镜像制作/1.png)
 
 ② 选择准备好的ubuntu-22.04.4-desktop-amd64.iso镜像

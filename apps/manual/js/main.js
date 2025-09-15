@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const renderArea = document.getElementById('markdown-render');
   const docTree = document.getElementById('doc-tree');
   const searchInput = document.getElementById('search-input');
-
+  const contentContainer = document.getElementById('content');
   let allNodes = [];
 
   try {
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
       } else if (item.type === 'file') {
-        
+
         const div = document.createElement('div');
         div.className = 'tree-item';
         div.dataset.file = item.path;
@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!response.ok) throw new Error(`加载失败: ${filePath}`);
       const text = await response.text();
       renderArea.innerHTML = marked.parse(text);
+      contentContainer.scrollTop = 0;
     } catch (err) {
       renderArea.innerHTML = `<p style="color: red;">⚠️ ${err.message}</p>`;
     }

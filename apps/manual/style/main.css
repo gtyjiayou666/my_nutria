@@ -119,6 +119,7 @@ header .header-left strong {
   margin: 0 auto;
   line-height: 1.7;
   color: #333;
+  font-size: 20px;
 }
 
 #markdown-render h1, h2, h3, h4 {
@@ -140,7 +141,7 @@ header .header-left strong {
   border: 1px solid #ddd;
   overflow-x: auto;
   margin: 16px 0;
-  font-size: 14px;
+  font-size: 20px;
 }
 
 #markdown-render code {
