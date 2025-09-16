@@ -48,7 +48,7 @@ $ git clone https://github.com/gtyjiayou666/my_nutria.git
 $ cd my_nutria
 $ ./jackady update-prebuilts
 ```
-通过百度网盘下载打包好的 gecko-b2g 文件。https://pan.baidu.com/s/1376Dmi5kiI-OaMrZ3N2UEw?pwd=qfcg
+通过百度网盘下载打包好的 gecko-b2g 文件。https://pan.baidu.com/s/1vYrf8oWRbMKjw1wMbOc4vg?pwd=xxre
 ```
 $ tar -xf b2g-123.0.en-US.linux-x86_64.tar.xz 
 $ mv b2g ./prebuilts
