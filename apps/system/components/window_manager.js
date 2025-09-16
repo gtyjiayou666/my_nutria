@@ -266,6 +266,7 @@ class WindowManagerKeys {
         case "NumLock":
         case "Insert":
         case "Escape":
+        case "Delete":
           return;
         case "Backspace":
           if (this.candidateContainer.style.display !== 'none') {
