@@ -85,7 +85,7 @@ class DisplayPanel {
       if (event.target.id === "resolution-header" || event.target.closest("#resolution-header")) {
         this.toggleResolutionSection();
       } else if (event.target.id === "display-header" || event.target.closest("#display-header")) {
-        this.toggleDisplaySection();
+        await this.toggleDisplaySection();
       }
     }
   }
@@ -365,7 +365,8 @@ class DisplayPanel {
     await this.initResolutions();
   }
 
-  toggleDisplaySection() {
+  async toggleDisplaySection() {
+    await this.initDisplays();
     const header = this.panel.querySelector("#display-header");
     const content = this.panel.querySelector("#display-choose");
     const icon = header?.querySelector(".expand-icon");
@@ -395,22 +396,6 @@ class DisplayPanel {
   toggleResolutionSection() {
     const header = this.panel.querySelector("#resolution-header");
     const content = this.panel.querySelector("#resolution-choose");
-    const icon = header?.querySelector(".expand-icon");
-
-    if (content && header) {
-      const isHidden = content.style.display === "none";
-      content.style.display = isHidden ? "block" : "none";
-
-      if (icon) {
-        icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
-      }
-
-    }
-  }
-
-  toggleDisplaySection() {
-    const header = this.panel.querySelector("#display-header");
-    const content = this.panel.querySelector("#display-choose");
     const icon = header?.querySelector(".expand-icon");
 
     if (content && header) {
