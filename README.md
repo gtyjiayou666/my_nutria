@@ -1,4 +1,5 @@
 import from https://github.com/capyloon/nutria
+我们新增部分可看开发指南、设计文档和用户手册。有详细说明。
 
 # Nutria: An Experimental Web Based OS Frontend
 
